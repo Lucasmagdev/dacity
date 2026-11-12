@@ -1,14 +1,47 @@
 import { memo, useMemo, useState } from "react";
 
 /**
- * Hero key art, tried in order. A painted web/public/hero/keyart.webp wins;
- * otherwise the animated vector keyart.svg is used; if neither loads, the procedural city shows.
+ * Hero key art. A looping web/public/hero/keyart.mp4 wins (skipped for reduced motion);
+ * otherwise the images below are tried in order; if none loads, the procedural city shows.
  */
-const KEYART_SOURCES = ["/hero/keyart.webp", "/hero/keyart.svg"];
+const KEYART_VIDEO = "/hero/keyart.mp4";
+const KEYART_POSTER = "/hero/keyart-poster.jpg";
+const KEYART_VIDEO_SPEED = 0.4; // 1 = normal, menor = mais lento
+const KEYART_SOURCES = ["/hero/keyart.webp", "/hero/keyart.jpg", "/hero/keyart1.svg"];
+
+const prefersReducedMotion = () =>
+  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 function KeyArt() {
+  const [videoFailed, setVideoFailed] = useState(prefersReducedMotion);
   const [index, setIndex] = useState(0);
   const [loaded, setLoaded] = useState(false);
+
+  if (!videoFailed) {
+    return (
+      <video
+        className={`keyart${loaded ? " keyart--on" : ""}`}
+        src={KEYART_VIDEO}
+        poster={KEYART_POSTER}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="auto"
+        aria-hidden
+        onLoadedMetadata={(e) => {
+          e.currentTarget.defaultPlaybackRate = KEYART_VIDEO_SPEED;
+          e.currentTarget.playbackRate = KEYART_VIDEO_SPEED;
+        }}
+        onLoadedData={() => setLoaded(true)}
+        onError={() => {
+          setLoaded(false);
+          setVideoFailed(true);
+        }}
+      />
+    );
+  }
+
   if (index >= KEYART_SOURCES.length) return null;
   return (
     <img
@@ -126,36 +159,6 @@ function Stars() {
   );
 }
 
-/** A small flock crossing the sky, each bird flapping on its own beat. */
-function Birds() {
-  const birds = [
-    { x: 0, y: 0, s: 1, d: 0 },
-    { x: 26, y: 10, s: 0.8, d: 0.2 },
-    { x: 48, y: -6, s: 0.9, d: 0.45 },
-    { x: 14, y: 22, s: 0.7, d: 0.1 },
-    { x: 66, y: 14, s: 0.75, d: 0.6 },
-  ];
-  return (
-    <div className="birds">
-      <svg viewBox="-4 -20 100 50" width="140" height="70">
-        {birds.map((b, i) => (
-          <g key={i} transform={`translate(${b.x} ${b.y}) scale(${b.s})`}>
-            <path
-              className="bird"
-              style={{ animationDelay: `${b.d}s` }}
-              d="M0 0 Q5 -6 10 0 Q15 -6 20 0"
-              fill="none"
-              stroke="#1a0730"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-            />
-          </g>
-        ))}
-      </svg>
-    </div>
-  );
-}
-
 /** Synthwave sunset city: sky, sun, two skyline layers, neon grid floor, palms and CRT overlays. */
 function Scene({ dim = false, keyart = false }: { dim?: boolean; keyart?: boolean }) {
   return (
@@ -171,7 +174,6 @@ function Scene({ dim = false, keyart = false }: { dim?: boolean; keyart?: boolea
         <Skyline className="skyline skyline--back" seed={11} minH={120} maxH={330} density={0.12} palette={BACK_PALETTE} />
         <Skyline className="skyline skyline--front" seed={42} minH={60} maxH={230} density={0.2} palette={FRONT_PALETTE} />
       </div>
-      <Birds />
       <div className="horizon-line" />
       <div className="ground">
         <div className="grid" />
