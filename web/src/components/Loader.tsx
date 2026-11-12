@@ -1,32 +1,17 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import "./loader.css";
 
-// Six loading stars, tinted along the logo gradient (indigo → gold).
-const STAR_COLORS = ["#5a5cf0", "#8f56ec", "#c656d4", "#f2609f", "#fb9a5b", "#f7cf72"];
+// Six classic rating stars: outlined when empty, solid once their sixth of the progress is reached.
+const STAR_COUNT = 6;
+// Regular pentagram (inner radius = 0.382 × outer) for sharp, classic points.
 const STAR_PATH =
-  "M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z";
+  "M12 1.6 L14.47 9.2 L22.46 9.2 L15.99 13.9 L18.47 21.5 L12 16.8 L5.53 21.5 L8.01 13.9 L1.54 9.2 L9.53 9.2 Z";
 
-const LINES = ["audacity", "game"];
 const COVER_SRC = "/loader-cover.webp"; // drop your own artwork in web/public/
 const MIN_MS = 2200;
 const FILL_DELAY_MS = 400; // stars fade in before they start filling
 const EXIT_MS = 700;
 const SAFETY_MS = 7000;
-
-// "AG" monogram in a 340x260 box; G tucks in close to the A. A has a counter (evenodd).
-const A_PATH = "M5 250 L80 10 H130 L205 250 H155 L142 208 H68 L55 250 Z M81 168 H129 L105 90 Z";
-const G_PATH =
-  "M223 10 H333 V62 H250 V198 H283 V170 H268 V125 H333 V250 H223 L193 220 V40 Z";
-
-function Letter({ id, d }: { id: string; d: string }) {
-  return (
-    <g className={`loader__letter loader__letter--${id}`}>
-      <path className="loader__edge loader__edge--dark" d={d} />
-      <path className="loader__edge loader__edge--light" d={d} />
-      <path d={d} fill="url(#ldFill)" fillRule="evenodd" />
-    </g>
-  );
-}
 
 export default function Loader({ onDone }: { onDone: () => void }) {
   const [pct, setPct] = useState(0);
@@ -111,56 +96,23 @@ export default function Loader({ onDone }: { onDone: () => void }) {
       <div className="loader__shade" aria-hidden="true" />
 
       <div className="loader__stage">
+        {/* Same lockup as the hero: gradient wordmark with palms + neon script. */}
         <div className="loader__logo" aria-hidden="true">
-          <svg className="loader__emblem" viewBox="0 0 340 260">
-            <defs>
-              <linearGradient
-                id="ldFill"
-                gradientUnits="userSpaceOnUse"
-                x1="30"
-                y1="0"
-                x2="300"
-                y2="260"
-              >
-                <stop offset="0" stopColor="#5a5cf0" />
-                <stop offset="0.3" stopColor="#b24fe8" />
-                <stop offset="0.58" stopColor="#f2609f" />
-                <stop offset="0.82" stopColor="#fb9a5b" />
-                <stop offset="1" stopColor="#f7cf72" />
-              </linearGradient>
-            </defs>
-            <Letter id="a" d={A_PATH} />
-            <Letter id="g" d={G_PATH} />
-          </svg>
-
-          <div className="loader__word">
-            {LINES.map((line) => (
-              <span key={line} className="loader__line">
-                {line}
-              </span>
-            ))}
-          </div>
+          <div className="wordmark loader__wordmark">Audacity</div>
+          <p className="script loader__script">Game</p>
         </div>
 
         <div className="loader__progress">
-          {STAR_COLORS.map((color, i) => {
-            const fill = Math.min(Math.max(pct * STAR_COLORS.length - i, 0), 1);
-            return (
-              <span
-                key={i}
-                className={`loader__star${fill >= 1 ? " is-full" : ""}`}
-                style={{ "--star": color, "--f": fill, "--i": i } as CSSProperties}
-              >
-                <svg className="loader__star-base" viewBox="0 0 24 24">
-                  <path d={STAR_PATH} />
-                </svg>
-                <span className="loader__star-fill" />
-                <svg className="loader__star-outline" viewBox="0 0 24 24">
-                  <path d={STAR_PATH} />
-                </svg>
-              </span>
-            );
-          })}
+          {Array.from({ length: STAR_COUNT }, (_, i) => (
+            <svg
+              key={i}
+              className={`loader__star${pct * STAR_COUNT >= i + 1 ? " is-full" : ""}`}
+              style={{ "--i": i } as CSSProperties}
+              viewBox="0 0 24 24"
+            >
+              <path d={STAR_PATH} />
+            </svg>
+          ))}
         </div>
       </div>
     </div>

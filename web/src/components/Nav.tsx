@@ -31,7 +31,15 @@ function NavWallet() {
   );
 }
 
-export default function Nav({ links = true, onBack }: { links?: boolean; onBack?: () => void }) {
+export default function Nav({
+  links = true,
+  showChain = true,
+  onBack,
+}: {
+  links?: boolean;
+  showChain?: boolean;
+  onBack?: () => void;
+}) {
   return (
     <header className="nav">
       {onBack ? (
@@ -51,10 +59,12 @@ export default function Nav({ links = true, onBack }: { links?: boolean; onBack?
         </nav>
       )}
       <div className="nav__right">
-        <span className="chain-pill">
-          <span className="chain-pill__dot" />
-          {TARGET_CHAIN.name}
-        </span>
+        {showChain && (
+          <span className="chain-pill">
+            <span className="chain-pill__dot" />
+            {TARGET_CHAIN.name}
+          </span>
+        )}
         <NavWallet />
       </div>
     </header>
