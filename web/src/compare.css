@@ -4,21 +4,43 @@
  * Imported after the other landing css.
  */
 
-.cmp-frame {
-  max-width: 720px;
+/* three prints side by side, each a little tilted and staggered */
+.cmp-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(20px, 3.2vw, 48px);
+  align-items: start;
+  max-width: 1240px;
   margin: 0 auto;
-  padding: 16px 16px 14px;
+}
+
+.cmp-frame {
+  margin: 0;
+  padding: 14px 14px 12px;
   border-radius: 6px;
   background: #f3e9d8;
-  rotate: -1deg;
-  box-shadow: 0 34px 80px rgba(14, 0, 26, 0.55), 0 0 60px rgba(255, 46, 136, 0.2);
+  rotate: -1.2deg;
+  box-shadow: 0 30px 70px rgba(14, 0, 26, 0.55), 0 0 50px rgba(255, 46, 136, 0.18);
+}
+
+.cmp-frame:nth-child(2) {
+  margin-top: 34px;
+  rotate: 1deg;
+}
+
+.cmp-frame:nth-child(3) {
+  rotate: -0.7deg;
+}
+
+.fx-ready [data-fx="pop"].cmp-frame {
+  transition-delay: calc(var(--i, 0) * 0.14s);
 }
 
 .cmp-frame figcaption {
-  padding-top: 12px;
+  padding-top: 11px;
   color: #3a2440;
   font-family: var(--font-display);
-  font-size: 18px;
+  font-size: 17px;
   letter-spacing: 0.14em;
   text-align: center;
   text-transform: uppercase;
@@ -27,6 +49,7 @@
 .cmp {
   position: relative;
   overflow: hidden;
+  container-type: inline-size;
   aspect-ratio: 1 / 1;
   border-radius: 4px;
   background: #1a0a24;
@@ -49,9 +72,8 @@
   pointer-events: none;
 }
 
-/* the "before" shot is wide: keep the iguana's head and body in the square crop */
+/* the object-position of the "before" photo is set per slider (some shots are wide and get cropped) */
 .cmp__img--before {
-  object-position: 24% 50%;
   filter: saturate(0.85);
 }
 
@@ -104,7 +126,7 @@
   z-index: 2;
   color: #fff;
   font-family: var(--font-display);
-  font-size: clamp(26px, 4.4vw, 38px);
+  font-size: clamp(20px, 9.5cqw, 38px);
   letter-spacing: 0.04em;
   line-height: 1;
   text-shadow: 0 2px 0 rgba(26, 10, 36, 0.9), 0 4px 18px rgba(0, 0, 0, 0.6);
@@ -128,6 +150,23 @@
   }
 }
 
+.cmp__grip {
+  width: 46px;
+  height: 46px;
+}
+
+/* tablets and phones: one print per row */
+@media (max-width: 900px) {
+  .cmp-grid {
+    grid-template-columns: 1fr;
+    gap: 34px;
+    max-width: 480px;
+  }
+  .cmp-frame:nth-child(2) {
+    margin-top: 0;
+  }
+}
+
 @media (max-width: 560px) {
   .cmp-frame {
     padding: 10px 10px 10px;
@@ -136,7 +175,7 @@
     font-size: 14px;
   }
   .cmp__grip {
-    width: 44px;
-    height: 44px;
+    width: 42px;
+    height: 42px;
   }
 }

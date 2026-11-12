@@ -51,6 +51,32 @@ const STEPS: { kind: StepKind; title: string; text: string; chips: string[]; hot
 /** Which archetype represents each rarity on the landing lineup (Mechanic, Skater, Hacker, Dealer, Old Boss). */
 const LINEUP_ARCHETYPE = [8, 5, 2, 4, 11];
 
+/** Before / after pairs for the glow-up section. Photos live in /public/compare/<slug>-before.jpg and -after.jpg. */
+const GLOW_UPS = [
+  {
+    slug: "iguana",
+    name: "The Iguana",
+    // the "before" shot is wide: keep the head and body in the square crop
+    beforePosition: "24% 50%",
+    beforeAlt: "A green iguana walking on foot across an empty asphalt road",
+    afterAlt: "The same iguana in sunglasses and a gold chain, lounging on a purple muscle car at a Miami sunset",
+  },
+  {
+    slug: "pinscher",
+    name: "The Pinscher",
+    beforePosition: "50% 50%",
+    beforeAlt: "A thin miniature pinscher standing alone on a cracked sidewalk under a grey sky",
+    afterAlt: "The same pinscher in sunglasses and a gold chain, driving a pastel teal convertible at a Miami sunset",
+  },
+  {
+    slug: "flamingo",
+    name: "The Flamingo",
+    beforePosition: "50% 50%",
+    beforeAlt: "A faded pink flamingo standing alone on a worn wooden dock on a grey day",
+    afterAlt: "The same flamingo in gold sunglasses and a chain at the marble entrance of a bank, surrounded by briefcases of cash",
+  },
+] as const;
+
 /** Lineup order, left -> right: Common, Uncommon, Rare, Epic, Legendary. */
 const LINEUP_ORDER = [0, 1, 2, 3, 4];
 
@@ -162,21 +188,27 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
 
         {/* ------------------------------------------------------------ story (zig-zag) */}
         {/* ------------------------------------------------------------ glow up (before / after slider) */}
-        <section id="glow-up" className="section">
+        <section id="glow-up" className="section section--wide">
           <header className="section__head" data-fx="head">
             <p className="eyebrow">Glow up</p>
             <h2>Buy the Dacity Coin game</h2>
-            <p className="section__lede">Same iguana, new life. Slide to see what changed.</p>
+            <p className="section__lede">Same crew, new life. Hover or drag each photo to slide.</p>
           </header>
-          <figure className="cmp-frame" data-fx="pop">
-            <CompareSlider
-              before="/compare/before.jpg"
-              after="/compare/after.jpg"
-              beforeAlt="A green iguana walking on foot across an empty asphalt road"
-              afterAlt="The same iguana in sunglasses and a gold chain, lounging on a purple muscle car at a Miami sunset"
-            />
-            <figcaption>Hover or drag to slide</figcaption>
-          </figure>
+          <div className="cmp-grid">
+            {GLOW_UPS.map((g, i) => (
+              <figure key={g.name} className="cmp-frame" data-fx="pop" style={{ "--i": i } as React.CSSProperties}>
+                <CompareSlider
+                  before={`/compare/${g.slug}-before.jpg`}
+                  after={`/compare/${g.slug}-after.jpg`}
+                  beforeAlt={g.beforeAlt}
+                  afterAlt={g.afterAlt}
+                  beforePosition={g.beforePosition}
+                  phase={i * 2.1}
+                />
+                <figcaption>{g.name}</figcaption>
+              </figure>
+            ))}
+          </div>
         </section>
 
         <section id="story" className="section section--wide">

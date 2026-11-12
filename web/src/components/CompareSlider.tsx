@@ -12,6 +12,8 @@ export default function CompareSlider({
   afterAlt,
   beforeLabel = "Before",
   afterLabel = "After",
+  beforePosition = "50% 50%",
+  phase = 0,
 }: {
   before: string;
   after: string;
@@ -19,6 +21,10 @@ export default function CompareSlider({
   afterAlt: string;
   beforeLabel?: string;
   afterLabel?: string;
+  /** CSS object-position for the "before" photo when it has to be cropped to a square. */
+  beforePosition?: string;
+  /** Offset (radians) of the idle sweep, so several sliders on one page don't move in sync. */
+  phase?: number;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const touched = useRef(false);
@@ -45,7 +51,7 @@ export default function CompareSlider({
         return;
       }
       if (!t0) t0 = t;
-      setPos(50 + 30 * Math.sin((t - t0) / 1100));
+      setPos(50 + 30 * Math.sin((t - t0) / 1100 + phase));
       raf = requestAnimationFrame(tick);
     };
     const io = new IntersectionObserver(
@@ -63,7 +69,7 @@ export default function CompareSlider({
       io.disconnect();
       cancelAnimationFrame(raf);
     };
-  }, []);
+  }, [phase]);
 
   return (
     <div
@@ -92,7 +98,13 @@ export default function CompareSlider({
         setPos((p) => Math.max(3, Math.min(97, p + (e.key === "ArrowRight" ? 5 : -5))));
       }}
     >
-      <img className="cmp__img cmp__img--before" src={before} alt={beforeAlt} draggable={false} />
+      <img
+        className="cmp__img cmp__img--before"
+        src={before}
+        alt={beforeAlt}
+        draggable={false}
+        style={{ objectPosition: beforePosition }}
+      />
       <img className="cmp__img cmp__img--after" src={after} alt={afterAlt} draggable={false} />
       <span className="cmp__tag cmp__tag--before">{beforeLabel}</span>
       <span className="cmp__tag cmp__tag--after">{afterLabel}</span>
