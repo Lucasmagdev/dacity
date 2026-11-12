@@ -1,7 +1,60 @@
 /** Mirrors the defaults in contracts/DacityGang.sol and DacityVault.sol. Keep both in sync. */
 
 export const DACITY_PER_USDC = 100;
-export const BOX_PRICE_DC = 1_000;
+/** Regular box price: 300 DC = $3.00. */
+export const BOX_PRICE_DC = 300;
+
+/** Max boxes in one purchase (one tx). */
+export const MAX_BOXES_PER_ORDER = 1_000;
+
+/** Launch sale: the first `boxes` boxes sold game-wide cost `priceDc` each (50% off). */
+export const LAUNCH_SALE = { boxes: 250, priceDc: 150 };
+
+/**
+ * Bulk discounts by order size, on regular-price boxes only (they don't stack with the launch price).
+ * Highest matching tier wins.
+ */
+export const BULK_TIERS = [
+  { min: 1_000, pct: 40 },
+  { min: 100, pct: 25 },
+  { min: 50, pct: 15 },
+];
+
+export type BoxQuote = {
+  count: number;
+  launchQty: number;
+  regularQty: number;
+  /** bulk discount % applied to the regular-price boxes */
+  pct: number;
+  totalDc: number;
+  /** what the same boxes would cost at the regular price with no discount */
+  fullDc: number;
+  savedDc: number;
+  /** next bulk tier this order could reach, if any */
+  next: { min: number; pct: number; more: number } | null;
+};
+
+/** Price an order given how many boxes have already been sold game-wide. */
+export function quoteBoxes(count: number, soldSoFar: number): BoxQuote {
+  const launchLeft = Math.max(0, LAUNCH_SALE.boxes - soldSoFar);
+  const launchQty = Math.min(count, launchLeft);
+  const regularQty = count - launchQty;
+  const pct = BULK_TIERS.find((t) => count >= t.min)?.pct ?? 0;
+  const regularDc = Math.round(regularQty * BOX_PRICE_DC * (1 - pct / 100));
+  const totalDc = launchQty * LAUNCH_SALE.priceDc + regularDc;
+  const fullDc = count * BOX_PRICE_DC;
+  const nextTier = [...BULK_TIERS].reverse().find((t) => count < t.min);
+  return {
+    count,
+    launchQty,
+    regularQty,
+    pct,
+    totalDc,
+    fullDc,
+    savedDc: fullDc - totalDc,
+    next: nextTier && nextTier.min <= MAX_BOXES_PER_ORDER ? { ...nextTier, more: nextTier.min - count } : null,
+  };
+}
 /** "Claim all" charges this per gangster claimed. Claiming one gangster at a time is free. */
 export const CLAIM_ALL_FEE_DC = 10;
 

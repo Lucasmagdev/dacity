@@ -8,8 +8,9 @@
  * State lives in localStorage under STORAGE_KEY; "Reset" in the HQ banner wipes it.
  */
 import { useSyncExternalStore } from "react";
+import { platform } from "./platform";
 import deployments from "../contracts/deployments.json";
-import { BOX_PRICE_DC, CLAIM_ALL_FEE_DC, DACITY_PER_USDC, RARITIES, fusedStats, recipeFrom, type FarmStats } from "../config/game";
+import { CLAIM_ALL_FEE_DC, MAX_BOXES_PER_ORDER, quoteBoxes, DACITY_PER_USDC, RARITIES, fusedStats, recipeFrom, type FarmStats } from "../config/game";
 
 const envMock = import.meta.env.VITE_MOCK as string | undefined;
 export const MOCK = envMock === "1" || (envMock !== "0" && Object.keys(deployments).length === 0);
@@ -18,7 +19,7 @@ export const MOCK = envMock === "1" || (envMock !== "0" && Object.keys(deploymen
 export const MOCK_DAY_MS = 60_000;
 /** Simulates the contract's commit-reveal wait (REVEAL_DELAY blocks). */
 export const MOCK_REVEAL_MS = 2_500;
-export const MAX_BOXES_PER_TX = 10;
+export const MAX_BOXES_PER_TX = MAX_BOXES_PER_ORDER;
 
 // ------------------------------------------------------------------ archetypes (off-chain metadata)
 
@@ -116,6 +117,15 @@ function load(): MockState {
 
 let state: MockState = load();
 const listeners = new Set<() => void>();
+
+// keep tabs in sync (admin gifts sent from #/admin in another tab land here without a reload)
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e) => {
+    if (e.key !== STORAGE_KEY) return;
+    state = load();
+    listeners.forEach((l) => l());
+  });
+}
 
 function set(next: MockState) {
   state = next;
@@ -232,19 +242,35 @@ export const mock = {
     set({ ...state, dc: state.dc - dc, usdc: state.usdc + dc / DACITY_PER_USDC });
   },
 
+  /** Admin: mint DC to a player (DacityCoin.mint by an admin/minter role in production). */
+  grantDc(amount: number) {
+    if (!(amount > 0)) throw new Error("Amount must be positive");
+    set({ ...state, dc: state.dc + amount });
+  },
+
+  /** Admin: give sealed boxes to a player, ready to open (an admin grantBoxes in DacityGang in production). */
+  grantBoxes(count: number) {
+    if (!Number.isInteger(count) || count < 1) throw new Error("Count must be a whole number ≥ 1");
+    const ready = Date.now() - MOCK_REVEAL_MS;
+    const boxes = Array.from({ length: count }, (_, i) => ({ id: state.nextBoxId + i, boughtAt: ready }));
+    set({ ...state, boxes: [...state.boxes, ...boxes], nextBoxId: state.nextBoxId + count });
+  },
+
   /** MockUSDC.faucet */
   faucet() {
     set({ ...state, usdc: state.usdc + 1_000 });
   },
 
-  /** DacityGang.buyBoxes */
+  /** DacityGang.buyBoxes: launch price for the first boxes sold game-wide, bulk discount on the rest. */
   buyBoxes(count: number) {
-    const cost = count * BOX_PRICE_DC;
-    if (count < 1 || count > MAX_BOXES_PER_TX) throw new Error(`1 to ${MAX_BOXES_PER_TX} boxes per tx`);
-    if (cost > state.dc) throw new Error("Not enough DACITY");
+    if (!Number.isInteger(count) || count < 1 || count > MAX_BOXES_PER_TX) throw new Error(`1 to ${MAX_BOXES_PER_TX} boxes per order`);
+    const q = quoteBoxes(count, platform.boxesSold());
+    if (q.totalDc > state.dc) throw new Error("Not enough DACITY");
     const now = Date.now();
     const boxes = Array.from({ length: count }, (_, i) => ({ id: state.nextBoxId + i, boughtAt: now }));
-    set({ ...state, dc: state.dc - cost, boxes: [...state.boxes, ...boxes], nextBoxId: state.nextBoxId + count });
+    set({ ...state, dc: state.dc - q.totalDc, boxes: [...state.boxes, ...boxes], nextBoxId: state.nextBoxId + count });
+    platform.recordBoxSale(count);
+    return q;
   },
 
   /** DacityGang.openBox → returns the minted gangster */

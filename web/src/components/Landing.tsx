@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import Scene from "./Scene";
 import Nav from "./Nav";
 import ConnectCTA from "./ConnectCTA";
@@ -6,6 +7,8 @@ import Portrait from "./Portrait";
 import GangsterToy from "./art/GangsterToy";
 import { BOX_PRICE_DC, DACITY_PER_USDC, PROTAGONISTS, RARITIES, SOCIALS, fmt, type Protagonist } from "../config/game";
 import { TARGET_CHAIN } from "../chains";
+import { useScrollFx } from "./useScrollFx";
+import "../landing-fx.css";
 
 const STEPS = [
   {
@@ -64,13 +67,16 @@ function SocialIcon({ icon }: { icon: (typeof SOCIALS)[number]["icon"] }) {
 export default function Landing({ onEnter }: { onEnter: () => void }) {
   const [nina, rico] = PROTAGONISTS;
   const socials = SOCIALS.filter((s) => s.url);
+  const pageRef = useRef<HTMLDivElement>(null);
+  useScrollFx(pageRef);
 
   return (
-    <div className="page">
+    <div className="page" ref={pageRef}>
+      <div className="fx-progress" aria-hidden />
       <Nav />
 
       {/* ------------------------------------------------------------ hero */}
-      <section className="hero">
+      <section className="hero" data-fx-hero>
         <Scene keyart />
         <Teaser p={nina} side="left" />
         <Teaser p={rico} side="right" />
@@ -100,13 +106,13 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
       <main className="magenta">
         {/* ------------------------------------------------------------ how it works */}
         <section id="how-it-works" className="section">
-          <header className="section__head">
+          <header className="section__head" data-fx="head">
             <p className="eyebrow">How it works</p>
             <h2>From deposit to empire</h2>
           </header>
-          <ol className="steps">
+          <ol className="steps" data-fx="steps">
             {STEPS.map((s, i) => (
-              <li key={s.title} className="step">
+              <li key={s.title} className="step" style={{ "--i": i } as React.CSSProperties}>
                 <span className="step__num">{String(i + 1).padStart(2, "0")}</span>
                 <h3>{s.title}</h3>
                 <p>{s.text}</p>
@@ -117,14 +123,14 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
 
         {/* ------------------------------------------------------------ story (zig-zag) */}
         <section id="story" className="section">
-          <header className="section__head">
+          <header className="section__head" data-fx="head">
             <p className="eyebrow">Storyline</p>
             <h2>Welcome to Dacity</h2>
           </header>
 
           <div className="story">
-            <div className="story__row">
-              <div className="story__frame story__frame--city">
+            <div className="story__row" data-fx="story">
+              <div className="story__frame story__frame--city" data-parallax>
                 <Scene />
               </div>
               <div className="story__text">
@@ -145,8 +151,9 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
                 key={p.id}
                 className={`story__row${i % 2 === 0 ? " story__row--flip" : ""}`}
                 style={{ "--accent": p.accent } as React.CSSProperties}
+                data-fx="story"
               >
-                <div className="story__frame">
+                <div className="story__frame" data-parallax>
                   <Portrait protagonist={p} />
                 </div>
                 <div className="story__text">
@@ -166,7 +173,7 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
 
         {/* ------------------------------------------------------------ rarities (slanted lineup) */}
         <section id="rarities" className="section section--wide">
-          <header className="section__head">
+          <header className="section__head" data-fx="head">
             <p className="eyebrow">Gangster Box</p>
             <h2>Who's in the box?</h2>
             <p className="section__lede">
@@ -174,10 +181,11 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
               the contract, and every gangster farms up to their career cap.
             </p>
           </header>
-          <ul className="lineup">
+          <ul className="lineup" data-fx="deal">
             {RARITIES.map((r, i) => (
-              <li key={r.id} className="lineup__panel" style={{ "--rc": r.color } as React.CSSProperties}>
+              <li key={r.id} className="lineup__panel" style={{ "--rc": r.color, "--i": i } as React.CSSProperties}>
                 <div className="lineup__inner">
+                  <span className="lineup__shine" aria-hidden />
                   <div className="lineup__top">
                     <span className="lineup__name">{r.name}</span>
                     <span className="lineup__chance">{r.chance}%</span>
@@ -203,7 +211,7 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
 
         {/* ------------------------------------------------------------ final CTA */}
         <section className="final">
-          <div className="final__card">
+          <div className="final__card" data-fx="pop">
             <h2>The city won't wait.</h2>
             <p>Connect your wallet, pick your boss and open your first box.</p>
             <ConnectCTA onEnter={onEnter} />

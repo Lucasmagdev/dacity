@@ -7,7 +7,8 @@ import Fusion from "./Fusion";
 import CashBox from "./art/CashBox";
 import Coin from "./art/Coin";
 import GangsterToy from "./art/GangsterToy";
-import { BOX_PRICE_DC, CLAIM_ALL_FEE_DC, DACITY_PER_USDC, PROTAGONISTS, RARITIES, fmt } from "../config/game";
+import { BOX_PRICE_DC, BULK_TIERS, CLAIM_ALL_FEE_DC, DACITY_PER_USDC, LAUNCH_SALE, PROTAGONISTS, RARITIES, fmt, quoteBoxes } from "../config/game";
+import { usePlatform } from "../mock/platform";
 import {
   MAX_BOXES_PER_TX,
   MOCK_DAY_MS,
@@ -23,6 +24,11 @@ import {
   useMock,
   type MockGangster,
 } from "../mock";
+
+/** Unopened boxes drawn individually; the rest are summarised. */
+const BOXES_SHOWN = 24;
+/** Boxes opened per reveal, so the reveal stays readable. */
+const OPEN_BATCH = 10;
 
 const fmt1 = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 1, minimumFractionDigits: 1 });
 const fmtUsdc = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 2, minimumFractionDigits: 2 });
@@ -167,7 +173,17 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
             onDeposit={(n) => run(() => mock.deposit(n), `Deposited ${fmt(n)} USDC → ${fmt(n * DACITY_PER_USDC)} DC`)}
             onWithdraw={(n) => run(() => mock.withdraw(n), `Withdrew ${fmt(n)} DC → ${fmtUsdc(n / DACITY_PER_USDC)} USDC`)}
           />
-          <Shop dc={s.dc} onBuy={(n) => run(() => mock.buyBoxes(n), `Bought ${n} box${n > 1 ? "es" : ""}`)} />
+          <Shop
+            dc={s.dc}
+            onBuy={(n) => {
+              try {
+                const q = mock.buyBoxes(n);
+                setToast(`Bought ${fmt(n)} box${n > 1 ? "es" : ""} for ${fmt(q.totalDc)} DC${q.savedDc > 0 ? ` · saved ${fmt(q.savedDc)} DC` : ""}`);
+              } catch (e) {
+                setToast((e as Error).message);
+              }
+            }}
+          />
         </div>
 
         {/* ------------------------------------------------------------ unopened boxes */}
@@ -177,12 +193,17 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
               <h2>
                 Unopened boxes <span className="count">{s.boxes.length}</span>
               </h2>
-              <button type="button" className="btn btn--pink" disabled={ready.length === 0} onClick={() => setOpening(ready.map((b) => b.id))}>
-                Open all ready ({ready.length})
+              <button
+                type="button"
+                className="btn btn--pink"
+                disabled={ready.length === 0}
+                onClick={() => setOpening(ready.slice(0, OPEN_BATCH).map((b) => b.id))}
+              >
+                {ready.length > OPEN_BATCH ? `Open ${OPEN_BATCH} (${fmt(ready.length)} ready)` : `Open all ready (${ready.length})`}
               </button>
             </div>
             <ul className="boxes">
-              {s.boxes.map((b) => {
+              {s.boxes.slice(0, BOXES_SHOWN).map((b) => {
                 const ok = isBoxReady(b, now);
                 return (
                   <li key={b.id} className="boxes__item">
@@ -194,6 +215,12 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
                   </li>
                 );
               })}
+              {s.boxes.length > BOXES_SHOWN && (
+                <li className="boxes__item boxes__more">
+                  <b>+{fmt(s.boxes.length - BOXES_SHOWN)}</b>
+                  <span className="boxes__id">more boxes</span>
+                </li>
+              )}
             </ul>
           </section>
         )}
@@ -405,29 +432,112 @@ function Vault({
   );
 }
 
+const QTY_CHIPS = [1, 10, 50, 100, 1_000];
+const usd = (dc: number) => `$${(dc / DACITY_PER_USDC).toFixed(2)}`;
+const tierPct = (n: number) => BULK_TIERS.find((t) => n >= t.min)?.pct ?? 0;
+
 function Shop({ dc, onBuy }: { dc: number; onBuy: (n: number) => void }) {
+  const sold = usePlatform((p) => p.boxesSold);
   const [count, setCount] = useState(1);
-  const cost = count * BOX_PRICE_DC;
+  const q = quoteBoxes(count, sold);
+  const launchLeft = Math.max(0, LAUNCH_SALE.boxes - sold);
+  const short = q.totalDc > dc;
+  const pick = (n: number) => setCount(Math.min(MAX_BOXES_PER_TX, Math.max(1, Math.floor(n) || 1)));
+
   return (
     <section className="panel panel--shop">
       <div className="panel__art">
         <CashBox />
+        {launchLeft > 0 && <span className="shop__sticker">-50%</span>}
       </div>
       <div className="panel__body">
         <p className="eyebrow">Gangster Box</p>
         <h2>Recruit a gangster</h2>
-        <p className="muted">
-          {fmt(BOX_PRICE_DC)} DC each · up to {MAX_BOXES_PER_TX} per tx. Rarity is rolled when you open it.
-        </p>
-        <div className="stepper">
-          <button type="button" onClick={() => setCount((c) => Math.max(1, c - 1))} aria-label="Fewer">
-            −
-          </button>
-          <output>{count}</output>
-          <button type="button" onClick={() => setCount((c) => Math.min(MAX_BOXES_PER_TX, c + 1))} aria-label="More">
-            +
-          </button>
+
+        {launchLeft > 0 ? (
+          <div className="launch">
+            <div className="launch__top">
+              <span className="launch__tag">Launch sale</span>
+              <span>
+                <b>{usd(LAUNCH_SALE.priceDc)}</b> <s>{usd(BOX_PRICE_DC)}</s> for the first {fmt(LAUNCH_SALE.boxes)}
+              </span>
+            </div>
+            <div className="launch__bar" aria-label={`${launchLeft} of ${LAUNCH_SALE.boxes} launch boxes left`}>
+              <span style={{ width: `${(sold / LAUNCH_SALE.boxes) * 100}%` }} />
+            </div>
+            <small>
+              <b>{fmt(launchLeft)}</b> of {fmt(LAUNCH_SALE.boxes)} left at launch price
+            </small>
+          </div>
+        ) : (
+          <p className="muted">
+            {usd(BOX_PRICE_DC)} ({fmt(BOX_PRICE_DC)} DC) each. Rarity is rolled when you open it.
+          </p>
+        )}
+
+        <div className="qty">
+          <div className="stepper">
+            <button type="button" onClick={() => pick(count - 1)} aria-label="Fewer">
+              −
+            </button>
+            <input
+              className="qty__input"
+              inputMode="numeric"
+              value={count}
+              onChange={(e) => pick(Number(e.target.value.replace(/[^0-9]/g, "")))}
+              aria-label="Number of boxes"
+            />
+            <button type="button" onClick={() => pick(count + 1)} aria-label="More">
+              +
+            </button>
+          </div>
+          <div className="chips qty__chips">
+            {QTY_CHIPS.map((n) => (
+              <button key={n} type="button" aria-pressed={count === n} onClick={() => pick(n)}>
+                {fmt(n)}
+                {tierPct(n) > 0 && <em>-{tierPct(n)}%</em>}
+              </button>
+            ))}
+          </div>
         </div>
+
+        <dl className="bill">
+          {q.launchQty > 0 && (
+            <div>
+              <dt>
+                {fmt(q.launchQty)} × {usd(LAUNCH_SALE.priceDc)} <span className="bill__tag">launch -50%</span>
+              </dt>
+              <dd>{fmt(q.launchQty * LAUNCH_SALE.priceDc)} DC</dd>
+            </div>
+          )}
+          {q.regularQty > 0 && (
+            <div>
+              <dt>
+                {fmt(q.regularQty)} × {usd(BOX_PRICE_DC)}
+                {q.pct > 0 && <span className="bill__tag bill__tag--bulk">bulk -{q.pct}%</span>}
+              </dt>
+              <dd>{fmt(Math.round(q.regularQty * BOX_PRICE_DC * (1 - q.pct / 100)))} DC</dd>
+            </div>
+          )}
+          <div className="bill__total">
+            <dt>Total</dt>
+            <dd>
+              {q.savedDc > 0 && <s>{fmt(q.fullDc)}</s>} {fmt(q.totalDc)} DC <small>≈ {usd(q.totalDc)}</small>
+            </dd>
+          </div>
+        </dl>
+
+        {q.savedDc > 0 && (
+          <p className="bill__saved">
+            You save <b>{fmt(q.savedDc)} DC</b> ({usd(q.savedDc)})
+          </p>
+        )}
+        {q.next && (
+          <button type="button" className="bill__upsell" onClick={() => pick(q.next!.min)}>
+            Add {fmt(q.next.more)} more → <b>-{q.next.pct}%</b> on regular-price boxes
+          </button>
+        )}
+
         <ul className="odds">
           {RARITIES.map((r) => (
             <li key={r.id} style={{ "--rc": r.color } as React.CSSProperties}>
@@ -436,8 +546,8 @@ function Shop({ dc, onBuy }: { dc: number; onBuy: (n: number) => void }) {
             </li>
           ))}
         </ul>
-        <button type="button" className="btn btn--pink btn--block" disabled={cost > dc} onClick={() => onBuy(count)}>
-          {cost > dc ? `Need ${fmt(cost)} DC` : `Buy for ${fmt(cost)} DC`}
+        <button type="button" className="btn btn--pink btn--block" disabled={short} onClick={() => onBuy(count)}>
+          {short ? `Need ${fmt(q.totalDc)} DC` : `Buy ${fmt(count)} for ${fmt(q.totalDc)} DC`}
         </button>
       </div>
     </section>

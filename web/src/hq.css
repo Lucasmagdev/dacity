@@ -1421,3 +1421,249 @@
 .fusion__row.fusion__row--head {
   background: none;
 }
+
+/* ------------------------------------------------------------------ shop: launch sale + bulk pricing */
+
+.panel--shop .panel__art {
+  position: relative;
+}
+
+.shop__sticker {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff3a0, var(--sun) 45%, var(--orange));
+  color: #2a0f00;
+  font-family: var(--font-display);
+  font-size: 18px;
+  rotate: 12deg;
+  box-shadow: 0 6px 18px rgba(255, 138, 61, 0.5), 0 0 0 3px rgba(16, 7, 30, 0.9);
+  animation: sticker-pop 2.2s ease-in-out infinite;
+}
+
+@keyframes sticker-pop {
+  50% {
+    scale: 1.08;
+  }
+}
+
+.launch {
+  display: grid;
+  gap: 6px;
+  margin: 2px 0 14px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 211, 107, 0.45);
+  border-radius: 12px;
+  background: linear-gradient(90deg, rgba(255, 176, 32, 0.16), rgba(255, 46, 136, 0.1));
+  font-size: 13px;
+}
+
+.launch__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.launch__top b {
+  color: var(--sun);
+  font-size: 16px;
+}
+
+.launch__top s,
+.bill s {
+  color: var(--muted);
+  opacity: 0.75;
+}
+
+.launch__tag {
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--sun), var(--orange));
+  color: #2a0f00;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.launch__bar {
+  height: 6px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.launch__bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--sun), var(--pink));
+  box-shadow: 0 0 10px rgba(255, 46, 136, 0.6);
+  transition: width 0.6s ease;
+}
+
+.launch small {
+  color: var(--muted);
+}
+
+.launch small b {
+  color: var(--text);
+}
+
+.qty {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.qty .stepper {
+  margin: 0;
+}
+
+.qty__input {
+  width: 64px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 24px;
+  text-align: center;
+  outline: none;
+}
+
+.qty__chips {
+  margin: 0;
+}
+
+.qty__chips button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.qty__chips button[aria-pressed="true"] {
+  border-color: var(--pink);
+  background: rgba(255, 46, 136, 0.22);
+  color: #fff;
+}
+
+.qty__chips em {
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgba(61, 220, 132, 0.18);
+  color: #3ddc84;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.bill {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(7, 4, 15, 0.5);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.bill div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.bill dt {
+  color: var(--muted);
+}
+
+.bill dd {
+  margin: 0;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.bill__tag {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(255, 211, 107, 0.16);
+  color: var(--sun);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.bill__tag--bulk {
+  background: rgba(61, 220, 132, 0.16);
+  color: #3ddc84;
+}
+
+.bill__total {
+  padding-top: 6px;
+  border-top: 1px dashed var(--line);
+}
+
+.bill__total dt {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.bill__total dd {
+  color: var(--sun);
+  font-size: 16px;
+}
+
+.bill__total small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.bill__saved {
+  margin: 0 0 6px;
+  color: #3ddc84;
+  font-size: 13px;
+}
+
+.bill__upsell {
+  display: block;
+  width: 100%;
+  margin: 0 0 12px;
+  padding: 7px 10px;
+  border: 1px dashed rgba(61, 220, 132, 0.5);
+  border-radius: 10px;
+  background: rgba(61, 220, 132, 0.08);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.bill__upsell b {
+  color: #3ddc84;
+}
+
+.boxes__more {
+  align-content: center;
+  min-height: 130px;
+  border-style: dashed;
+}
+
+.boxes__more b {
+  font-family: var(--font-display);
+  font-size: 28px;
+}
