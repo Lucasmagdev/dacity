@@ -9,7 +9,7 @@
  */
 import { useSyncExternalStore } from "react";
 import deployments from "../contracts/deployments.json";
-import { BOX_PRICE_DC, DACITY_PER_USDC, RARITIES } from "../config/game";
+import { BOX_PRICE_DC, CLAIM_ALL_FEE_DC, DACITY_PER_USDC, RARITIES, fusedStats, recipeFrom, type FarmStats } from "../config/game";
 
 const envMock = import.meta.env.VITE_MOCK as string | undefined;
 export const MOCK = envMock === "1" || (envMock !== "0" && Object.keys(deployments).length === 0);
@@ -76,7 +76,7 @@ export const archetypeOf = (gangsterId: number) => ARCHETYPES[gangsterId % ARCHE
 
 // ------------------------------------------------------------------ state
 
-export type MockGangster = { id: number; rarity: number; mintedAt: number; claimed: number };
+export type MockGangster = { id: number; rarity: number; mintedAt: number; claimed: number; fused?: boolean };
 export type MockBox = { id: number; boughtAt: number };
 export type MockGang = { protagonist: 1 | 2; name: string; createdAt: number };
 
@@ -139,13 +139,45 @@ export function useMock<T = MockState>(select: (s: MockState) => T = (s) => s as
 
 // ------------------------------------------------------------------ farming math (mirrors DacityGang.pendingOf)
 
+/** Daily rate and career cap: the rarity's defaults, or the fused version. */
+// (falls back to the base rarity for fused gangsters saved by older builds, e.g. a fused Common)
+export const statsOf = (g: MockGangster): FarmStats => (g.fused && fusedStats(g.rarity)) || RARITIES[g.rarity];
+
 export function farmedOf(g: MockGangster, now = Date.now()) {
-  const r = RARITIES[g.rarity];
-  return Math.min(r.cap, (r.perDay * (now - g.mintedAt)) / MOCK_DAY_MS);
+  const s = statsOf(g);
+  return Math.min(s.cap, (s.perDay * (now - g.mintedAt)) / MOCK_DAY_MS);
 }
 export const pendingOf = (g: MockGangster, now = Date.now()) => Math.max(0, farmedOf(g, now) - g.claimed);
-export const isRetired = (g: MockGangster, now = Date.now()) => farmedOf(g, now) >= RARITIES[g.rarity].cap;
+export const isRetired = (g: MockGangster, now = Date.now()) => farmedOf(g, now) >= statsOf(g).cap;
+
+/**
+ * Gangsters of `rarity` that can be fused: still farming (not retired) and not fused already.
+ * Sorted closest-to-retirement first, the first two are the ones a fusion consumes.
+ */
+export function fusionCandidates(gangsters: MockGangster[], rarity: number, now = Date.now()) {
+  return gangsters
+    .filter((g) => g.rarity === rarity && !g.fused && !isRetired(g, now))
+    .sort((a, b) => farmedOf(b, now) / statsOf(b).cap - farmedOf(a, now) / statsOf(a).cap);
+}
 export const isBoxReady = (b: MockBox, now = Date.now()) => now - b.boughtAt >= MOCK_REVEAL_MS;
+
+/**
+ * What "Claim all" would do right now. Only gangsters whose pending is above the per-gangster fee
+ * are included, so claiming all never costs more than it pays out for any single gangster.
+ */
+export function claimAllQuote(gangsters: MockGangster[], now = Date.now()) {
+  const ids: number[] = [];
+  let gross = 0;
+  for (const g of gangsters) {
+    const p = pendingOf(g, now);
+    if (p > CLAIM_ALL_FEE_DC) {
+      ids.push(g.id);
+      gross += p;
+    }
+  }
+  const fee = ids.length * CLAIM_ALL_FEE_DC;
+  return { ids, gross, fee, net: gross - fee };
+}
 
 function rollRarity(): number {
   const total = RARITIES.reduce((a, r) => a + r.chance, 0);
@@ -167,6 +199,7 @@ export const mock = {
       { id: 2, rarity: 1, mintedAt: now - MOCK_DAY_MS * 6, claimed: 0 },
       { id: 3, rarity: 2, mintedAt: now - MOCK_DAY_MS * 2, claimed: 0 },
       { id: 4, rarity: 3, mintedAt: now - MOCK_DAY_MS * 0.5, claimed: 0 },
+      { id: 5, rarity: 0, mintedAt: now - MOCK_DAY_MS * 15, claimed: 0 }, // 2nd Common so Fusion can be tried right away
     ];
     set({
       ...initial(),
@@ -177,7 +210,7 @@ export const mock = {
         { id: 2, boughtAt: now - MOCK_REVEAL_MS },
       ],
       gangsters: demo,
-      nextGangsterId: 5,
+      nextGangsterId: 6,
       nextBoxId: 3,
     });
   },
@@ -191,6 +224,12 @@ export const mock = {
       dc: state.dc + usdc * DACITY_PER_USDC,
       stats: { ...state.stats, deposited: state.stats.deposited + usdc },
     });
+  },
+
+  /** Vault withdraw: burns DC, returns USDC at the same 100:1 rate. */
+  withdraw(dc: number) {
+    if (!(dc > 0) || dc > state.dc) throw new Error("Not enough DACITY");
+    set({ ...state, dc: state.dc - dc, usdc: state.usdc + dc / DACITY_PER_USDC });
   },
 
   /** MockUSDC.faucet */
@@ -224,18 +263,58 @@ export const mock = {
     return g;
   },
 
-  /** DacityGang.claim(all) */
-  claimAll(): number {
+  /** Claim a single gangster. Free. */
+  claim(gangsterId: number): number {
     const now = Date.now();
-    let total = 0;
-    const gangsters = state.gangsters.map((g) => {
-      const p = pendingOf(g, now);
-      total += p;
-      return { ...g, claimed: g.claimed + p };
+    const g = state.gangsters.find((x) => x.id === gangsterId);
+    if (!g) throw new Error("Gangster not found");
+    const p = pendingOf(g, now);
+    if (p <= 0) return 0;
+    set({
+      ...state,
+      gangsters: state.gangsters.map((x) => (x.id === gangsterId ? { ...x, claimed: x.claimed + p } : x)),
+      dc: state.dc + p,
+      stats: { ...state.stats, claimed: state.stats.claimed + p },
     });
-    if (total <= 0) return 0;
-    set({ ...state, gangsters, dc: state.dc + total, stats: { ...state.stats, claimed: state.stats.claimed + total } });
-    return total;
+    return p;
+  },
+
+  /** Claim every gangster with pending > fee in one go, paying CLAIM_ALL_FEE_DC per gangster. Returns the quote applied. */
+  claimAll() {
+    const now = Date.now();
+    const q = claimAllQuote(state.gangsters, now);
+    if (q.ids.length === 0 || q.net <= 0) throw new Error("Nothing worth claiming yet");
+    const ids = new Set(q.ids);
+    set({
+      ...state,
+      gangsters: state.gangsters.map((g) => (ids.has(g.id) ? { ...g, claimed: g.claimed + pendingOf(g, now) } : g)),
+      dc: state.dc + q.net,
+      stats: { ...state.stats, claimed: state.stats.claimed + q.net },
+    });
+    return q;
+  },
+
+  /**
+   * DacityGang.fuse: burns the two gangsters of `rarity` closest to retirement and mints one fused gangster
+   * of the NEXT rarity with a fresh career. Their pending DC is paid out first (free), then the fee is charged.
+   */
+  fuse(rarity: number) {
+    const recipe = recipeFrom(rarity);
+    if (!recipe) throw new Error(`${RARITIES[rarity].name} is the top rarity and can't be fused`);
+    const now = Date.now();
+    const [a, b] = fusionCandidates(state.gangsters, rarity, now);
+    if (!a || !b) throw new Error(`Need 2 active ${RARITIES[rarity].name} gangsters`);
+    const payout = pendingOf(a, now) + pendingOf(b, now);
+    if (state.dc + payout < recipe.fee) throw new Error(`Need ${recipe.fee} DC to fuse`);
+    const child: MockGangster = { id: state.nextGangsterId, rarity: recipe.to, mintedAt: now, claimed: 0, fused: true };
+    set({
+      ...state,
+      dc: state.dc + payout - recipe.fee,
+      gangsters: [child, ...state.gangsters.filter((g) => g.id !== a.id && g.id !== b.id)],
+      nextGangsterId: state.nextGangsterId + 1,
+      stats: { ...state.stats, claimed: state.stats.claimed + payout },
+    });
+    return { parents: [a, b] as const, child, payout, fee: recipe.fee };
   },
 
   reset() {

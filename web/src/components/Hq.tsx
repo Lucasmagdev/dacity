@@ -3,24 +3,29 @@ import Scene from "./Scene";
 import Nav from "./Nav";
 import Portrait from "./Portrait";
 import BoxReveal from "./BoxReveal";
+import Fusion from "./Fusion";
 import CashBox from "./art/CashBox";
 import Coin from "./art/Coin";
 import GangsterToy from "./art/GangsterToy";
-import { BOX_PRICE_DC, DACITY_PER_USDC, PROTAGONISTS, RARITIES, fmt } from "../config/game";
+import { BOX_PRICE_DC, CLAIM_ALL_FEE_DC, DACITY_PER_USDC, PROTAGONISTS, RARITIES, fmt } from "../config/game";
 import {
   MAX_BOXES_PER_TX,
   MOCK_DAY_MS,
   archetypeOf,
+  claimAllQuote,
+  fusionCandidates,
   farmedOf,
   isBoxReady,
   isRetired,
   mock,
   pendingOf,
+  statsOf,
   useMock,
   type MockGangster,
 } from "../mock";
 
 const fmt1 = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 1, minimumFractionDigits: 1 });
+const fmtUsdc = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 2, minimumFractionDigits: 2 });
 
 function useNow(ms = 1000) {
   const [now, setNow] = useState(Date.now());
@@ -44,6 +49,7 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
   const now = useNow();
   const [opening, setOpening] = useState<number[] | null>(null);
   const [filter, setFilter] = useState<number | "all">("all");
+  const [tab, setTab] = useState<"crew" | "fusion">("crew");
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
@@ -53,14 +59,15 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
   }, [toast]);
 
   const totals = useMemo(() => {
-    let pending = 0;
     let rate = 0;
     for (const g of s.gangsters) {
-      pending += pendingOf(g, now);
-      if (!isRetired(g, now)) rate += RARITIES[g.rarity].perDay;
+      if (!isRetired(g, now)) rate += statsOf(g).perDay;
     }
-    return { pending, rate };
+    const fusable = RARITIES.filter((r) => fusionCandidates(s.gangsters, r.id, now).length >= 2).length;
+    return { rate, fusable, claimAll: claimAllQuote(s.gangsters, now) };
   }, [s.gangsters, now]);
+  const q = totals.claimAll;
+  const fusable = totals.fusable;
 
   if (!s.gang) {
     return (
@@ -154,7 +161,12 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
 
         {/* ------------------------------------------------------------ vault + shop */}
         <div className="hq__grid">
-          <Vault usdc={s.usdc} onDeposit={(n) => run(() => mock.deposit(n), `Deposited ${fmt(n)} USDC → ${fmt(n * DACITY_PER_USDC)} DC`)} />
+          <Vault
+            usdc={s.usdc}
+            dc={s.dc}
+            onDeposit={(n) => run(() => mock.deposit(n), `Deposited ${fmt(n)} USDC → ${fmt(n * DACITY_PER_USDC)} DC`)}
+            onWithdraw={(n) => run(() => mock.withdraw(n), `Withdrew ${fmt(n)} DC → ${fmtUsdc(n / DACITY_PER_USDC)} USDC`)}
+          />
           <Shop dc={s.dc} onBuy={(n) => run(() => mock.buyBoxes(n), `Bought ${n} box${n > 1 ? "es" : ""}`)} />
         </div>
 
@@ -186,51 +198,83 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
           </section>
         )}
 
-        {/* ------------------------------------------------------------ roster */}
+        {/* ------------------------------------------------------------ crew / fusion tabs */}
         <section className="panel">
           <div className="panel__head">
-            <h2>
-              Your crew <span className="count">{s.gangsters.length}</span>
-            </h2>
-            <button
-              type="button"
-              className="btn btn--gold"
-              disabled={totals.pending < 0.1}
-              onClick={() => {
-                const got = mock.claimAll();
-                setToast(`Claimed ${fmt1(got)} DC`);
-              }}
-            >
-              <Coin size={18} /> Claim {fmt1(totals.pending)} DC
-            </button>
-          </div>
-
-          <div className="filters" role="tablist" aria-label="Filter by rarity">
-            <button type="button" role="tab" aria-selected={filter === "all"} onClick={() => setFilter("all")}>
-              All
-            </button>
-            {RARITIES.map((r) => (
-              <button
-                key={r.id}
-                type="button"
-                role="tab"
-                aria-selected={filter === r.id}
-                style={{ "--rc": r.color } as React.CSSProperties}
-                onClick={() => setFilter(r.id)}
-              >
-                {r.name} · {s.gangsters.filter((g) => g.rarity === r.id).length}
+            <div className="hqtabs" role="tablist" aria-label="Gang">
+              <button type="button" role="tab" aria-selected={tab === "crew"} onClick={() => setTab("crew")}>
+                Your crew <span className="count">{s.gangsters.length}</span>
               </button>
-            ))}
+              <button type="button" role="tab" aria-selected={tab === "fusion"} onClick={() => setTab("fusion")}>
+                Fusion {fusable > 0 && <span className="count count--hot">{fusable}</span>}
+              </button>
+            </div>
+            {tab === "crew" && (
+              <div className="claimall">
+                <button
+                  type="button"
+                  className="btn btn--gold"
+                  disabled={q.net < 0.1}
+                  onClick={() => {
+                    try {
+                      const r = mock.claimAll();
+                      setToast(`Claimed ${fmt1(r.net)} DC (fee ${fmt(r.fee)} DC)`);
+                    } catch (e) {
+                      setToast((e as Error).message);
+                    }
+                  }}
+                >
+                  <Coin size={18} /> Claim all {fmt1(q.net)} DC
+                </button>
+                <span className="claimall__fee">
+                  {q.ids.length > 0
+                    ? `Fee ${fmt(q.fee)} DC · ${q.ids.length} × ${CLAIM_ALL_FEE_DC} · claim one by one for free`
+                    : `${CLAIM_ALL_FEE_DC} DC fee per gangster · claim one by one for free`}
+                </span>
+              </div>
+            )}
           </div>
 
-          {shown.length === 0 ? (
-            <p className="empty">No gangsters here yet. Open a box.</p>
+          {tab === "fusion" ? (
+            <Fusion gangsters={s.gangsters} dc={s.dc} now={now} onToast={setToast} />
           ) : (
-            <ul className="roster">
-              {shown.map((g) => (
-                <GangsterCard key={g.id} g={g} now={now} />
-              ))}
-            </ul>
+            <>
+              <div className="filters" role="tablist" aria-label="Filter by rarity">
+                <button type="button" role="tab" aria-selected={filter === "all"} onClick={() => setFilter("all")}>
+                  All
+                </button>
+                {RARITIES.map((r) => (
+                  <button
+                    key={r.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={filter === r.id}
+                    style={{ "--rc": r.color } as React.CSSProperties}
+                    onClick={() => setFilter(r.id)}
+                  >
+                    {r.name} · {s.gangsters.filter((g) => g.rarity === r.id).length}
+                  </button>
+                ))}
+              </div>
+
+              {shown.length === 0 ? (
+                <p className="empty">No gangsters here yet. Open a box.</p>
+              ) : (
+                <ul className="roster">
+                  {shown.map((g) => (
+                    <GangsterCard
+                      key={g.id}
+                      g={g}
+                      now={now}
+                      onClaim={() => {
+                        const got = mock.claim(g.id);
+                        setToast(`Claimed ${fmt1(got)} DC from “${archetypeOf(g.id).nick}”`);
+                      }}
+                    />
+                  ))}
+                </ul>
+              )}
+            </>
           )}
         </section>
 
@@ -269,37 +313,92 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
   );
 }
 
-function Vault({ usdc, onDeposit }: { usdc: number; onDeposit: (n: number) => void }) {
-  const [amount, setAmount] = useState("10");
+type VaultMode = "deposit" | "withdraw";
+
+const VAULT_MODES = {
+  deposit: { chips: [10, 50, 100], start: "10" },
+  withdraw: { chips: [1_000, 5_000, 10_000], start: "1000" },
+} as const;
+
+function Vault({
+  usdc,
+  dc,
+  onDeposit,
+  onWithdraw,
+}: {
+  usdc: number;
+  dc: number;
+  onDeposit: (n: number) => void;
+  onWithdraw: (n: number) => void;
+}) {
+  const [mode, setMode] = useState<VaultMode>("deposit");
+  const [amount, setAmount] = useState<string>(VAULT_MODES.deposit.start);
+  const dep = mode === "deposit";
   const n = Math.floor(Number(amount) || 0);
+  const balance = Math.floor(dep ? usdc : dc);
+  const short = n > balance;
+
+  const switchTo = (m: VaultMode) => {
+    if (m === mode) return;
+    setMode(m);
+    setAmount(VAULT_MODES[m].start);
+  };
+
   return (
-    <section className="panel panel--vault">
+    <section className={`panel panel--vault vault--${mode}`}>
       <div className="panel__art">
         <Coin size={120} spin />
       </div>
       <div className="panel__body">
-        <p className="eyebrow">Vault</p>
-        <h2>Deposit USDC</h2>
-        <p className="muted">1 USDC = {DACITY_PER_USDC} DC, minted straight to your wallet.</p>
+        <div className="vault__top">
+          <p className="eyebrow">Vault</p>
+          <div className="seg" role="tablist" aria-label="Vault action" data-mode={mode}>
+            <button type="button" role="tab" aria-selected={dep} onClick={() => switchTo("deposit")}>
+              Deposit
+            </button>
+            <button type="button" role="tab" aria-selected={!dep} onClick={() => switchTo("withdraw")}>
+              Withdraw
+            </button>
+          </div>
+        </div>
+        <h2>{dep ? "Deposit USDC" : "Withdraw USDC"}</h2>
+        <p className="muted">
+          {dep
+            ? `1 USDC = ${DACITY_PER_USDC} DC, minted straight to your wallet.`
+            : `${DACITY_PER_USDC} DC = 1 USDC. DC is burned, USDC goes back to your wallet.`}
+        </p>
         <div className="amount">
-          <input inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d]/g, ""))} aria-label="USDC amount" />
-          <span>USDC</span>
+          <input
+            inputMode="numeric"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value.replace(/[^\d]/g, ""))}
+            aria-label={dep ? "USDC amount" : "DC amount"}
+          />
+          <span>{dep ? "USDC" : "DC"}</span>
         </div>
         <div className="chips">
-          {[10, 50, 100].map((v) => (
+          {VAULT_MODES[mode].chips.map((v) => (
             <button key={v} type="button" onClick={() => setAmount(String(v))}>
-              {v}
+              {fmt(v)}
             </button>
           ))}
-          <button type="button" onClick={() => setAmount(String(Math.floor(usdc)))}>
+          <button type="button" onClick={() => setAmount(String(balance))}>
             Max
           </button>
+          <span className="chips__bal">
+            Balance {fmt(balance)} {dep ? "USDC" : "DC"}
+          </span>
         </div>
         <p className="quote">
-          You get <b>{fmt(n * DACITY_PER_USDC)} DC</b>
+          You get <b>{dep ? `${fmt(n * DACITY_PER_USDC)} DC` : `${fmtUsdc(n / DACITY_PER_USDC)} USDC`}</b>
         </p>
-        <button type="button" className="btn btn--pink btn--block" disabled={n < 1 || n > usdc} onClick={() => onDeposit(n)}>
-          {n > usdc ? "Not enough USDC" : "Approve & deposit"}
+        <button
+          type="button"
+          className={`btn btn--block ${dep ? "btn--pink" : "btn--cyan"}`}
+          disabled={n < 1 || short}
+          onClick={() => (dep ? onDeposit(n) : onWithdraw(n))}
+        >
+          {short ? `Not enough ${dep ? "USDC" : "DC"}` : dep ? "Approve & deposit" : "Withdraw"}
         </button>
       </div>
     </section>
@@ -345,17 +444,22 @@ function Shop({ dc, onBuy }: { dc: number; onBuy: (n: number) => void }) {
   );
 }
 
-function GangsterCard({ g, now }: { g: MockGangster; now: number }) {
+function GangsterCard({ g, now, onClaim }: { g: MockGangster; now: number; onClaim: () => void }) {
   const r = RARITIES[g.rarity];
+  const st = statsOf(g);
   const a = archetypeOf(g.id);
   const farmed = farmedOf(g, now);
-  const pct = (farmed / r.cap) * 100;
+  const pct = (farmed / st.cap) * 100;
   const retired = isRetired(g, now);
   const pending = pendingOf(g, now);
   return (
-    <li className={`gcard${retired ? " gcard--retired" : ""}`} style={{ "--rc": r.color } as React.CSSProperties}>
+    <li
+      className={`gcard${retired ? " gcard--retired" : ""}${g.fused ? " gcard--fused" : ""}`}
+      style={{ "--rc": r.color } as React.CSSProperties}
+    >
       <div className="gcard__art">
         <GangsterToy gangsterId={g.id} rarity={g.rarity} />
+        {g.fused && <span className="gcard__fused">Fused</span>}
         {retired && <span className="gcard__stamp">Retired</span>}
       </div>
       <div className="gcard__body">
@@ -371,7 +475,7 @@ function GangsterCard({ g, now }: { g: MockGangster; now: number }) {
           <div>
             <dt>Farmed</dt>
             <dd>
-              {fmt(Math.floor(farmed))} / {fmt(r.cap)}
+              {fmt(Math.floor(farmed))} / {fmt(st.cap)}
             </dd>
           </div>
           <div>
@@ -380,9 +484,12 @@ function GangsterCard({ g, now }: { g: MockGangster; now: number }) {
           </div>
           <div>
             <dt>Rate</dt>
-            <dd>{retired ? "—" : `${r.perDay}/day`}</dd>
+            <dd>{retired ? "—" : `${st.perDay}/day`}</dd>
           </div>
         </dl>
+        <button type="button" className="btn btn--gold gcard__claim" disabled={pending < 0.1} onClick={onClaim}>
+          Claim {fmt1(pending)} DC <small>free</small>
+        </button>
       </div>
     </li>
   );
