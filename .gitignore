@@ -13,7 +13,6 @@ contracts/coverage.json
 # local-only reference art (never commit / deploy)
 local-art/
 web/public/loader-cover.*
-web/public/characters/
 web/public/hero/keyart.jpg
 web/public/hero/keyart.mp4
 web/public/hero/keyart-poster.jpg
