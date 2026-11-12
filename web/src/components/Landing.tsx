@@ -24,7 +24,7 @@ const STEPS: { kind: StepKind; title: string; text: string; chips: string[]; hot
   {
     kind: "gang",
     title: "Found your gang",
-    text: "Pick Nina or Rico as your boss and register your gang's name on-chain.",
+    text: "Pick Lucia or Jason as your boss and register your gang's name on-chain.",
     chips: ["2 bosses", "Name on-chain"],
   },
   {
@@ -44,11 +44,6 @@ const STEPS: { kind: StepKind; title: string; text: string; chips: string[]; hot
 
 /** Which archetype represents each rarity on the landing lineup (Mechanic, Skater, Hacker, Dealer, Old Boss). */
 const LINEUP_ARCHETYPE = [8, 5, 2, 4, 11];
-
-const scrollToId = (id: string) => (e: React.MouseEvent) => {
-  e.preventDefault();
-  document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
-};
 
 function Teaser({ p, side }: { p: Protagonist; side: "left" | "right" }) {
   return (
@@ -107,9 +102,6 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
           <Countdown />
         </div>
 
-        <a className="scroll-hint" href="#how-it-works" onClick={scrollToId("how-it-works")}>
-          Scroll down
-        </a>
       </section>
 
       <main className="magenta">

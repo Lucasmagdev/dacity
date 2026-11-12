@@ -24,9 +24,8 @@ export default function LoreArt() {
       <span className="lore__cloud lore__cloud--b" />
       <span className="lore__sunglow" />
 
-      {/* helicopter spotlight + tail light, plane strobe */}
+      {/* helicopter spotlight, plane strobe */}
       <span className="lore__beam" />
-      <span className="lore__blink lore__blink--heli" />
       <span className="lore__blink lore__blink--plane" />
 
       {/* skyline windows */}

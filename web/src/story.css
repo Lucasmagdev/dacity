@@ -148,13 +148,6 @@
   animation: lore-blink 1.8s steps(1, end) infinite;
 }
 
-.lore__blink--heli {
-  left: 22.4%;
-  top: 11.4%;
-  background: #ff4a4a;
-  box-shadow: 0 0 8px 3px rgba(255, 60, 60, 0.9);
-}
-
 .lore__blink--plane {
   left: 62%;
   top: 18.3%;

@@ -157,7 +157,7 @@ export default function CharacterSelect({ onBack, onEnterHq }: { onBack: () => v
             </button>
           )}
 
-          {!picked && (isConnected || MOCK) && <p className="hint">Select Nina or Rico above.</p>}
+          {!picked && (isConnected || MOCK) && <p className="hint">Select Lucia or Jason above.</p>}
           {error && <p className="note note--error">{(error as BaseError).shortMessage ?? error.message}</p>}
         </form>
       </div>
