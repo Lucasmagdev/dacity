@@ -1,9 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import "./loader.css";
+
+// Six loading stars, tinted along the logo gradient (indigo → gold).
+const STAR_COLORS = ["#5a5cf0", "#8f56ec", "#c656d4", "#f2609f", "#fb9a5b", "#f7cf72"];
+const STAR_PATH =
+  "M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z";
 
 const LINES = ["audacity", "game"];
 const COVER_SRC = "/loader-cover.webp"; // drop your own artwork in web/public/
-const MIN_MS = 3000;
+const MIN_MS = 2200;
+const FILL_DELAY_MS = 400; // stars fade in before they start filling
 const EXIT_MS = 700;
 const SAFETY_MS = 7000;
 
@@ -48,8 +54,10 @@ export default function Loader({ onDone }: { onDone: () => void }) {
 
     let shown = 0;
     const tick = (now: number) => {
-      const t = Math.min((now - start) / MIN_MS, 1);
-      let target = 1 - Math.pow(1 - t, 3);
+      const elapsed = now - start;
+      const t = Math.min(elapsed / MIN_MS, 1);
+      // Linear after the entrance, so every star gets the same beat.
+      let target = Math.min(Math.max((elapsed - FILL_DELAY_MS) / (MIN_MS - FILL_DELAY_MS), 0), 1);
       if (!ready) target = Math.min(target, 0.92);
       shown = Math.max(shown, target);
       setPct(shown);
@@ -135,10 +143,24 @@ export default function Loader({ onDone }: { onDone: () => void }) {
         </div>
 
         <div className="loader__progress">
-          <div className="loader__track">
-            <div className="loader__fill" style={{ transform: `scaleX(${pct})` }} />
-          </div>
-          <span className="loader__pct">{percent}</span>
+          {STAR_COLORS.map((color, i) => {
+            const fill = Math.min(Math.max(pct * STAR_COLORS.length - i, 0), 1);
+            return (
+              <span
+                key={i}
+                className={`loader__star${fill >= 1 ? " is-full" : ""}`}
+                style={{ "--star": color, "--f": fill, "--i": i } as CSSProperties}
+              >
+                <svg className="loader__star-base" viewBox="0 0 24 24">
+                  <path d={STAR_PATH} />
+                </svg>
+                <span className="loader__star-fill" />
+                <svg className="loader__star-outline" viewBox="0 0 24 24">
+                  <path d={STAR_PATH} />
+                </svg>
+              </span>
+            );
+          })}
         </div>
       </div>
     </div>

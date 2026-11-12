@@ -470,37 +470,6 @@ code {
   }
 }
 
-/* ---- motion: birds */
-.birds {
-  position: absolute;
-  top: 18%;
-  left: 0;
-  z-index: 6;
-  animation: fly 38s linear infinite;
-  animation-delay: -12s;
-}
-
-@keyframes fly {
-  0% {
-    transform: translate(-160px, 40px);
-  }
-  100% {
-    transform: translate(calc(100vw + 40px), -30px);
-  }
-}
-
-.bird {
-  transform-box: fill-box;
-  transform-origin: 50% 100%;
-  animation: flap 0.7s ease-in-out infinite alternate;
-}
-
-@keyframes flap {
-  to {
-    transform: scaleY(-0.5);
-  }
-}
-
 /* ---- motion: headlight trails along the horizon road */
 .trail {
   position: absolute;
