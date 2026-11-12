@@ -73,7 +73,7 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
   return (
     <div className="page" ref={pageRef}>
       <div className="fx-progress" aria-hidden />
-      <Nav />
+      <Nav showChain={false} />
 
       {/* ------------------------------------------------------------ hero */}
       <section className="hero" data-fx-hero>
@@ -82,10 +82,6 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
         <Teaser p={rico} side="right" />
 
         <div className="hero__content">
-          <p className="kicker">
-            <span className="kicker__dot" />
-            {TARGET_CHAIN.name}
-          </p>
           <h1 className="wordmark">Audacity</h1>
           <p className="script" aria-hidden>
             Game
@@ -94,7 +90,7 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
             Pick your boss, build your gang and put your gangsters to work across the whole city.
           </p>
 
-          <ConnectCTA onEnter={onEnter} />
+          <ConnectCTA onEnter={onEnter} demoLink={false} />
           <Countdown />
         </div>
 

@@ -1,7 +1,5 @@
 /* ------------------------------------------------------------------ loader */
 .loader {
-  --logo-w: min(80vw, 460px, 66vh);
-  --ink: #1a0b2e;
   position: fixed;
   inset: 0;
   z-index: 1000;
@@ -84,73 +82,28 @@
 
 .loader__logo {
   position: relative;
-  width: var(--logo-w);
-  aspect-ratio: 340 / 260;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 .loader--leave .loader__logo {
   transition: transform 0.7s ease;
   transform: scale(1.04);
 }
 
-.loader__emblem {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.5));
-}
-.loader__edge {
-  fill: none;
-  stroke-linejoin: round;
-}
-.loader__edge--dark {
-  stroke: var(--ink);
-  stroke-width: 16;
-}
-.loader__edge--light {
-  stroke: #fff;
-  stroke-width: 7;
-}
-
-.loader__letter {
+/* Reuses the hero's .wordmark (gradient + palms + grain) and .script (neon), just smaller. */
+.loader__wordmark {
+  font-size: clamp(56px, 13vw, 150px);
   opacity: 0;
-  animation: 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.3s forwards;
+  animation: loader-rise 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.3s forwards;
 }
-.loader__letter--a {
-  animation-name: loader-in-left;
-}
-.loader__letter--g {
-  animation-name: loader-in-right;
-}
-
-.loader__word {
-  position: absolute;
-  left: 50%;
-  top: 52%;
-  transform: translate(-50%, -50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  font-family: var(--font-logo);
-  font-size: calc(var(--logo-w) * 0.18);
-  line-height: 0.8;
-  letter-spacing: -0.035em;
-  color: #fff;
-  white-space: nowrap;
-  text-transform: lowercase;
-}
-.loader__line {
-  display: block;
-  -webkit-text-stroke: 0.14em var(--ink);
-  paint-order: stroke fill;
-  text-shadow: 0 0.06em 0 var(--ink);
+.loader__script {
+  font-size: clamp(36px, 6.4vw, 72px);
   opacity: 0;
-  animation: loader-rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-  animation-delay: 0.75s;
-}
-.loader__line + .loader__line {
-  animation-delay: 0.85s;
+  animation:
+    loader-fade 0.7s ease 0.85s forwards,
+    flicker 6s linear 1.5s infinite;
 }
 
 /* ---- six loading stars ---- */
@@ -165,56 +118,28 @@
 }
 
 .loader__star {
-  --size: clamp(44px, 12vw, 66px);
-  position: relative;
+  --size: clamp(40px, 11vw, 60px);
   width: var(--size);
   height: var(--size);
+  overflow: visible;
   opacity: 0;
   animation: loader-fade 0.3s ease forwards;
   animation-delay: calc(0.1s + var(--i) * 40ms);
-  transition: transform 0.2s ease, filter 0.3s ease;
 }
-.loader__star svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
+.loader__star path {
+  fill: transparent;
+  stroke: #ffd36b;
+  stroke-width: 1.3;
+  stroke-linejoin: miter;
+  transition: fill 0.12s ease;
 }
-.loader__star-base path {
-  fill: rgba(255, 255, 255, 0.05);
-  stroke: rgba(255, 255, 255, 0.16);
-  stroke-width: 1;
-  stroke-linejoin: round;
-}
-.loader__star-outline path {
-  fill: none;
-  stroke: rgba(255, 255, 255, 0.32);
-  stroke-width: 1.2;
-  stroke-linejoin: round;
-  transition: stroke 0.3s ease;
-}
-
-/* Fill rises bottom-up, clipped to the star shape. */
-.loader__star-fill {
-  position: absolute;
-  inset: 0;
-  /* The star spans ~14%–90% of its box (bottom-up), so map fill 0–1 onto that band. */
-  background: linear-gradient(to top, var(--star) 0 calc(14% + var(--f) * 76%), transparent 0);
-  -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z'/></svg>")
-    center / 100% 100% no-repeat;
-  mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z'/></svg>")
-    center / 100% 100% no-repeat;
-}
-/* Full: white outline, soft glow, one quick pop. */
-.loader__star.is-full {
-  filter: drop-shadow(0 0 6px var(--star));
-}
-.loader__star.is-full .loader__star-outline path {
-  stroke: #fff;
-}
-.loader__star.is-full > * {
-  animation: loader-star-pop 0.25s ease-out;
+/* Full: solid sun-yellow with a pink glow, one quick pop. */
+.loader__star.is-full path {
+  fill: #ffd36b;
+  filter: drop-shadow(0 0 6px rgba(255, 46, 136, 0.8));
+  animation: loader-star-pop 0.22s ease-out;
+  transform-box: fill-box;
+  transform-origin: center;
 }
 
 @keyframes loader-star-pop {
@@ -223,26 +148,6 @@
   }
 }
 
-@keyframes loader-in-left {
-  from {
-    opacity: 0;
-    transform: translateX(-28px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-@keyframes loader-in-right {
-  from {
-    opacity: 0;
-    transform: translateX(28px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
 @keyframes loader-rise {
   from {
     opacity: 0;
@@ -260,8 +165,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .loader__letter,
-  .loader__line,
+  .loader__wordmark,
+  .loader__script,
   .loader__progress,
   .loader__cover {
     opacity: 1;
@@ -271,7 +176,7 @@
     mask-image: none;
   }
   .loader__star,
-  .loader__star.is-full > * {
+  .loader__star.is-full path {
     opacity: 1;
     animation: none;
   }

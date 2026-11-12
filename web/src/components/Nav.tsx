@@ -65,7 +65,17 @@ function GameNav() {
   );
 }
 
-export default function Nav({ links = true, game = false, onBack }: { links?: boolean; game?: boolean; onBack?: () => void }) {
+export default function Nav({
+  links = true,
+  game = false,
+  showChain = true,
+  onBack,
+}: {
+  links?: boolean;
+  game?: boolean;
+  showChain?: boolean;
+  onBack?: () => void;
+}) {
   return (
     <header className="nav">
       {onBack ? (
@@ -87,10 +97,12 @@ export default function Nav({ links = true, game = false, onBack }: { links?: bo
       )}
       {game && <GameNav />}
       <div className="nav__right">
-        <span className="chain-pill">
-          <span className="chain-pill__dot" />
-          {TARGET_CHAIN.name}
-        </span>
+        {showChain && (
+          <span className="chain-pill">
+            <span className="chain-pill__dot" />
+            {TARGET_CHAIN.name}
+          </span>
+        )}
         <NavWallet />
       </div>
     </header>

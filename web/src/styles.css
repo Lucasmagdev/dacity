@@ -1,4 +1,8 @@
 :root {
+  --palm-a: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-12 0 224 300' preserveAspectRatio='xMidYMax meet'><g fill='%23501080' fill-opacity='.52'><g><animateTransform attributeName='transform' type='rotate' values='0 100 300;1.6 100 300;0 100 300;-1.6 100 300;0 100 300' dur='7s' begin='0s' repeatCount='indefinite' calcMode='spline' keySplines='.45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1' keyTimes='0;.25;.5;.75;1'/><path d='M98 300C98 220 96 150 102 90L108 90C104 150 108 220 112 300Z'/><path d='M104 90C75 70 35 75 8 120C45 95 75 92 104 90Z'><animateTransform attributeName='transform' type='rotate' values='0 104 90;-3.2 104 90;0 104 90;3.2 104 90;0 104 90' dur='5.6000000000000005s' begin='0s' repeatCount='indefinite' calcMode='spline' keySplines='.45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1' keyTimes='0;.25;.5;.75;1'/></path><path d='M104 90C85 50 50 35 15 45C55 55 80 70 104 90Z'><animateTransform attributeName='transform' type='rotate' values='0 104 90;3.2 104 90;0 104 90;-3.2 104 90;0 104 90' dur='5.970000000000001s' begin='0.2s' repeatCount='indefinite' calcMode='spline' keySplines='.45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1' keyTimes='0;.25;.5;.75;1'/></path><path d='M104 90C100 55 80 25 55 12C80 40 92 62 104 90Z'><animateTransform attributeName='transform' type='rotate' values='0 104 90;-3.2 104 90;0 104 90;3.2 104 90;0 104 90' dur='6.340000000000001s' begin='0.4s' repeatCount='indefinite' calcMode='spline' keySplines='.45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1' keyTimes='0;.25;.5;.75;1'/></path><path d='M104 90C112 50 140 25 170 18C145 42 125 62 104 90Z'><animateTransform attributeName='transform' type='rotate' values='0 104 90;3.2 104 90;0 104 90;-3.2 104 90;0 104 90' dur='6.710000000000001s' begin='0.6000000000000001s' repeatCount='indefinite' calcMode='spline' keySplines='.45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1' keyTimes='0;.25;.5;.75;1'/></path><path d='M104 90C125 55 160 45 195 58C160 62 130 72 104 90Z'><animateTransform attributeName='transform' type='rotate' values='0 104 90;-3.2 104 90;0 104 90;3.2 104 90;0 104 90' dur='7.08s' begin='0.8s' repeatCount='indefinite' calcMode='spline' keySplines='.45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1' keyTimes='0;.25;.5;.75;1'/></path><path d='M104 90C135 75 175 85 198 130C165 103 135 95 104 90Z'><animateTransform attributeName='transform' type='rotate' values='0 104 90;3.2 104 90;0 104 90;-3.2 104 90;0 104 90' dur='7.450000000000001s' begin='1s' repeatCount='indefinite' calcMode='spline' keySplines='.45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1' keyTimes='0;.25;.5;.75;1'/></path><path d='M104 90C98 62 102 40 108 22C110 48 108 68 104 90Z'><animateTransform attributeName='transform' type='rotate' values='0 104 90;-3.2 104 90;0 104 90;3.2 104 90;0 104 90' dur='7.82s' begin='1.2000000000000002s' repeatCount='indefinite' calcMode='spline' keySplines='.45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1' keyTimes='0;.25;.5;.75;1'/></path></g></g></svg>");
+  --palm-b: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-12 0 224 300' preserveAspectRatio='xMidYMax meet'><g fill='%23501080' fill-opacity='.52'><g><animateTransform attributeName='transform' type='rotate' values='0 100 300;2 100 300;0 100 300;-2 100 300;0 100 300' dur='9s' begin='-3s' repeatCount='indefinite' calcMode='spline' keySplines='.45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1' keyTimes='0;.25;.5;.75;1'/><path d='M98 300C98 220 96 150 102 90L108 90C104 150 108 220 112 300Z'/><path d='M104 90C75 70 35 75 8 120C45 95 75 92 104 90Z'><animateTransform attributeName='transform' type='rotate' values='0 104 90;-3.2 104 90;0 104 90;3.2 104 90;0 104 90' dur='7.2s' begin='-3s' repeatCount='indefinite' calcMode='spline' keySplines='.45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1' keyTimes='0;.25;.5;.75;1'/></path><path d='M104 90C85 50 50 35 15 45C55 55 80 70 104 90Z'><animateTransform attributeName='transform' type='rotate' values='0 104 90;3.2 104 90;0 104 90;-3.2 104 90;0 104 90' dur='7.57s' begin='-2.8s' repeatCount='indefinite' calcMode='spline' keySplines='.45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1' keyTimes='0;.25;.5;.75;1'/></path><path d='M104 90C100 55 80 25 55 12C80 40 92 62 104 90Z'><animateTransform attributeName='transform' type='rotate' values='0 104 90;-3.2 104 90;0 104 90;3.2 104 90;0 104 90' dur='7.94s' begin='-2.6s' repeatCount='indefinite' calcMode='spline' keySplines='.45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1' keyTimes='0;.25;.5;.75;1'/></path><path d='M104 90C112 50 140 25 170 18C145 42 125 62 104 90Z'><animateTransform attributeName='transform' type='rotate' values='0 104 90;3.2 104 90;0 104 90;-3.2 104 90;0 104 90' dur='8.31s' begin='-2.4s' repeatCount='indefinite' calcMode='spline' keySplines='.45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1' keyTimes='0;.25;.5;.75;1'/></path><path d='M104 90C125 55 160 45 195 58C160 62 130 72 104 90Z'><animateTransform attributeName='transform' type='rotate' values='0 104 90;-3.2 104 90;0 104 90;3.2 104 90;0 104 90' dur='8.68s' begin='-2.2s' repeatCount='indefinite' calcMode='spline' keySplines='.45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1' keyTimes='0;.25;.5;.75;1'/></path><path d='M104 90C135 75 175 85 198 130C165 103 135 95 104 90Z'><animateTransform attributeName='transform' type='rotate' values='0 104 90;3.2 104 90;0 104 90;-3.2 104 90;0 104 90' dur='9.05s' begin='-2s' repeatCount='indefinite' calcMode='spline' keySplines='.45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1' keyTimes='0;.25;.5;.75;1'/></path><path d='M104 90C98 62 102 40 108 22C110 48 108 68 104 90Z'><animateTransform attributeName='transform' type='rotate' values='0 104 90;-3.2 104 90;0 104 90;3.2 104 90;0 104 90' dur='9.42s' begin='-1.7999999999999998s' repeatCount='indefinite' calcMode='spline' keySplines='.45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1' keyTimes='0;.25;.5;.75;1'/></path></g></g></svg>");
+  --palm-static: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-12 0 224 300' preserveAspectRatio='xMidYMax meet'><g fill='%23501080' fill-opacity='.52'><path d='M98 300C98 220 96 150 102 90L108 90C104 150 108 220 112 300Z'/><path d='M104 90C75 70 35 75 8 120C45 95 75 92 104 90Z'/><path d='M104 90C85 50 50 35 15 45C55 55 80 70 104 90Z'/><path d='M104 90C100 55 80 25 55 12C80 40 92 62 104 90Z'/><path d='M104 90C112 50 140 25 170 18C145 42 125 62 104 90Z'/><path d='M104 90C125 55 160 45 195 58C160 62 130 72 104 90Z'/><path d='M104 90C135 75 175 85 198 130C165 103 135 95 104 90Z'/><path d='M104 90C98 62 102 40 108 22C110 48 108 68 104 90Z'/></g></svg>");
+  --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .2  0 0 0 0 .02  0 0 0 0 .3  0 0 0 -1.6 .88'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
   --night: #07040f;
   --night-2: #120822;
   --violet: #2a0f4a;
@@ -83,8 +87,17 @@ code {
   font-size: 26px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  display: inline-block;
+  line-height: 1.1;
   text-decoration: none;
-  background: linear-gradient(180deg, var(--sun), var(--orange) 50%, var(--pink));
+  /* same palm + grain texture as the hero wordmark, static (no sway) */
+  background:
+    var(--palm-static) 6% 100% / auto 1.35em no-repeat,
+    var(--palm-static) 52% 100% / auto 1.25em no-repeat,
+    var(--palm-static) 99% 100% / auto 1.2em no-repeat,
+    var(--grain) 0 0 / 70px 70px,
+    repeating-linear-gradient(180deg, rgba(60, 10, 90, 0.14) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, var(--sun), var(--orange) 50%, var(--pink));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -561,6 +574,24 @@ code {
   overflow: hidden;
 }
 
+/* Dissolve the bottom of the hero into the color the next section starts with (main.magenta top). */
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: clamp(200px, 38vh, 380px);
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(42, 10, 69, 0) 0%,
+    rgba(42, 10, 69, 0.18) 22%,
+    rgba(42, 10, 69, 0.5) 50%,
+    rgba(42, 10, 69, 0.82) 76%,
+    #2a0a45 100%
+  );
+}
+
 .hero__content {
   position: relative;
   z-index: 2;
@@ -612,7 +643,15 @@ code {
   line-height: 0.84;
   letter-spacing: 0.01em;
   text-transform: uppercase;
-  background: linear-gradient(180deg, #fff7dc 0%, #ffd36b 28%, #ff8a3d 55%, #ff2e88 82%, #b8207c 100%);
+  /* layers (top → bottom): palm silhouettes, film grain, scanlines, gradient */
+  background:
+    var(--palm-a) 3% 100% / 30% 125% no-repeat,
+    var(--palm-b) 38% 100% / 22% 90% no-repeat,
+    var(--palm-a) 66% 100% / 28% 115% no-repeat,
+    var(--palm-b) 98% 100% / 22% 95% no-repeat,
+    var(--grain) 0 0 / 160px 160px,
+    repeating-linear-gradient(180deg, rgba(60, 10, 90, 0.16) 0 2px, transparent 2px 6px),
+    linear-gradient(180deg, #fff7dc 0%, #ffd36b 28%, #ff8a3d 55%, #ff2e88 82%, #b8207c 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -1688,4 +1727,11 @@ code {
   color: var(--sun);
   font-weight: 700;
   text-decoration: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wordmark {
+    --palm-a: var(--palm-static);
+    --palm-b: var(--palm-static);
+  }
 }

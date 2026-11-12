@@ -18,7 +18,15 @@ function WalletIcon() {
  *   wrong network -> "Switch to Robinhood Chain"
  *   connected     -> "Enter the city" + wallet chip
  */
-export default function ConnectCTA({ onEnter, enterLabel = "Enter the city" }: { onEnter?: () => void; enterLabel?: string }) {
+export default function ConnectCTA({
+  onEnter,
+  enterLabel = "Enter the city",
+  demoLink = true,
+}: {
+  onEnter?: () => void;
+  enterLabel?: string;
+  demoLink?: boolean;
+}) {
   return (
     <ConnectButton.Custom>
       {({ account, chain, openConnectModal, openChainModal, openAccountModal, mounted }) => {
@@ -31,7 +39,7 @@ export default function ConnectCTA({ onEnter, enterLabel = "Enter the city" }: {
                   <WalletIcon />
                   <span>Connect wallet</span>
                 </button>
-                {MOCK && onEnter && (
+                {MOCK && demoLink && onEnter && (
                   <button type="button" className="demo-link" onClick={onEnter}>
                     Skip wallet · try the mock demo →
                   </button>
