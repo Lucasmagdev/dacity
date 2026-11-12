@@ -1683,3 +1683,9 @@ code {
     display: none;
   }
 }
+
+.footer__docs {
+  color: var(--sun);
+  font-weight: 700;
+  text-decoration: none;
+}

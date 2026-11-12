@@ -3,11 +3,11 @@ import Scene from "./Scene";
 import Nav from "./Nav";
 import Portrait from "./Portrait";
 import BoxReveal from "./BoxReveal";
-import Fusion from "./Fusion";
 import CashBox from "./art/CashBox";
 import Coin from "./art/Coin";
 import GangsterToy from "./art/GangsterToy";
-import { BOX_PRICE_DC, BULK_TIERS, CLAIM_ALL_FEE_DC, DACITY_PER_USDC, LAUNCH_SALE, PROTAGONISTS, RARITIES, fmt, quoteBoxes } from "../config/game";
+import ResIcon from "./art/ResIcon";
+import { BOX_PRICE_DC, BULK_TIERS, CLAIM_ALL_FEE_RES, DACITY_PER_USDC, LAUNCH_SALE, MEDKIT_PRICE_RES, RESOURCE, fmtRes, PROTAGONISTS, RARITIES, SHOT_CHANCE_PER_DAY, STORE_NAME, WEAPONS, fmt, quoteBoxes } from "../config/game";
 import { usePlatform } from "../mock/platform";
 import {
   MAX_BOXES_PER_TX,
@@ -17,7 +17,13 @@ import {
   fusionCandidates,
   farmedOf,
   isBoxReady,
+  isFarming,
   isRetired,
+  isShot,
+  hasVest,
+  rateOf,
+  shotAt,
+  weaponDaysLeft,
   mock,
   pendingOf,
   statsOf,
@@ -55,7 +61,6 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
   const now = useNow();
   const [opening, setOpening] = useState<number[] | null>(null);
   const [filter, setFilter] = useState<number | "all">("all");
-  const [tab, setTab] = useState<"crew" | "fusion">("crew");
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
@@ -67,7 +72,7 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
   const totals = useMemo(() => {
     let rate = 0;
     for (const g of s.gangsters) {
-      if (!isRetired(g, now)) rate += statsOf(g).perDay;
+      if (isFarming(g, now)) rate += rateOf(g, now);
     }
     const fusable = RARITIES.filter((r) => fusionCandidates(s.gangsters, r.id, now).length >= 2).length;
     return { rate, fusable, claimAll: claimAllQuote(s.gangsters, now) };
@@ -112,13 +117,14 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
   return (
     <div className="page hq" style={{ "--accent": boss.accent } as React.CSSProperties}>
       <Scene dim />
-      <Nav links={false} onBack={onBack} />
+      <Nav links={false} game onBack={onBack} />
 
       <div className="hq__inner">
         <div className="mockbar">
           <span className="mockbar__tag">Mock mode</span>
           <span>Fake data, stored only in this browser. 1 farming day = {MOCK_DAY_MS / 1000}s.</span>
           <button type="button" onClick={() => run(mock.faucet, "+1,000 test USDC")}>+1,000 USDC</button>
+          <button type="button" onClick={() => run(mock.resourceFaucet, "+10,000 test RESOURCE")}>+10,000 RESOURCE</button>
           <button
             type="button"
             onClick={() => {
@@ -154,9 +160,11 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
               <dt>Wallet USDC</dt>
               <dd>{fmt(s.usdc)}</dd>
             </div>
-            <div className="tile">
-              <dt>Gangsters</dt>
-              <dd>{s.gangsters.length}</dd>
+            <div className="tile tile--res">
+              <dt>${RESOURCE.ticker}</dt>
+              <dd>
+                <ResIcon /> {fmt(Math.floor(s.resource))}
+              </dd>
             </div>
             <div className="tile">
               <dt>Farming / day</dt>
@@ -225,27 +233,26 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
           </section>
         )}
 
-        {/* ------------------------------------------------------------ crew / fusion tabs */}
+        {/* ------------------------------------------------------------ crew */}
         <section className="panel">
           <div className="panel__head">
-            <div className="hqtabs" role="tablist" aria-label="Gang">
-              <button type="button" role="tab" aria-selected={tab === "crew"} onClick={() => setTab("crew")}>
+            <div className="crewhead">
+              <h2>
                 Your crew <span className="count">{s.gangsters.length}</span>
-              </button>
-              <button type="button" role="tab" aria-selected={tab === "fusion"} onClick={() => setTab("fusion")}>
-                Fusion {fusable > 0 && <span className="count count--hot">{fusable}</span>}
-              </button>
+              </h2>
+              <a className="crewhead__fuse" href="#/fusion">
+                ⚗ Fusion {fusable > 0 && <span className="count count--hot">{fusable} ready</span>}
+              </a>
             </div>
-            {tab === "crew" && (
               <div className="claimall">
                 <button
                   type="button"
                   className="btn btn--gold"
-                  disabled={q.net < 0.1}
+                  disabled={q.ids.length === 0 || q.fee > s.resource}
                   onClick={() => {
                     try {
-                      const r = mock.claimAll();
-                      setToast(`Claimed ${fmt1(r.net)} DC (fee ${fmt(r.fee)} DC)`);
+                      const r = mock.claimAll(q.ids);
+                      setToast(`Claimed ${fmt1(r.net)} DC · burned ${fmtRes(r.fee)}`);
                     } catch (e) {
                       setToast((e as Error).message);
                     }
@@ -255,17 +262,19 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
                 </button>
                 <span className="claimall__fee">
                   {q.ids.length > 0
-                    ? `Fee ${fmt(q.fee)} DC · ${q.ids.length} × ${CLAIM_ALL_FEE_DC} · claim one by one for free`
-                    : `${CLAIM_ALL_FEE_DC} DC fee per gangster · claim one by one for free`}
+                    ? `🔥 Fee ${fmtRes(q.fee)} (${q.ids.length} × ${CLAIM_ALL_FEE_RES}, burned) · claim one by one for free`
+                    : `${CLAIM_ALL_FEE_RES} RESOURCE fee per gangster, burned · claim one by one for free`}
                 </span>
               </div>
-            )}
           </div>
 
-          {tab === "fusion" ? (
-            <Fusion gangsters={s.gangsters} dc={s.dc} now={now} onToast={setToast} />
-          ) : (
-            <>
+              <MedBar
+                kits={s.medkits}
+                res={s.resource}
+                shotIds={s.gangsters.filter((g) => isShot(g, now)).map((g) => g.id)}
+                onToast={setToast}
+              />
+
               <div className="filters" role="tablist" aria-label="Filter by rarity">
                 <button type="button" role="tab" aria-selected={filter === "all"} onClick={() => setFilter("all")}>
                   All
@@ -293,6 +302,15 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
                       key={g.id}
                       g={g}
                       now={now}
+                      kits={s.medkits}
+                      onHeal={() => {
+                        try {
+                          const r = mock.heal([g.id]);
+                          setToast(`“${archetypeOf(g.id).nick}” is back to work${r.cost ? ` · burned ${fmtRes(r.cost)} for a kit` : " · used 1 kit"}`);
+                        } catch (e) {
+                          setToast((e as Error).message);
+                        }
+                      }}
                       onClaim={() => {
                         const got = mock.claim(g.id);
                         setToast(`Claimed ${fmt1(got)} DC from “${archetypeOf(g.id).nick}”`);
@@ -301,8 +319,6 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
                   ))}
                 </ul>
               )}
-            </>
-          )}
         </section>
 
         {/* ------------------------------------------------------------ roadmap placeholders */}
@@ -554,23 +570,113 @@ function Shop({ dc, onBuy }: { dc: number; onBuy: (n: number) => void }) {
   );
 }
 
-function GangsterCard({ g, now, onClaim }: { g: MockGangster; now: number; onClaim: () => void }) {
+function MedBar({ kits, res, shotIds, onToast }: { kits: number; res: number; shotIds: number[]; onToast: (m: string) => void }) {
+  const missing = Math.max(0, shotIds.length - kits);
+  const healCost = missing * MEDKIT_PRICE_RES;
+  const act = (fn: () => string) => {
+    try {
+      onToast(fn());
+    } catch (e) {
+      onToast((e as Error).message);
+    }
+  };
+  return (
+    <div className={`medbar${shotIds.length ? " medbar--alert" : ""}`}>
+      <span className="medbar__kit" aria-hidden>
+        ✚
+      </span>
+      <div className="medbar__info">
+        <strong>
+          Med kits: {fmt(kits)}
+          {shotIds.length > 0 && <span className="medbar__shot"> · {shotIds.length} shot</span>}
+        </strong>
+        <small>
+          {fmtRes(MEDKIT_PRICE_RES)} each (burned) · heals one shot gangster · <a href="#/armory">{STORE_NAME} →</a> Shot risk per day: {RARITIES.map((r, i) => `${r.name} ${SHOT_CHANCE_PER_DAY[i]}%`).join(" · ")}
+        </small>
+      </div>
+      <div className="medbar__actions">
+        {[1, 5, 10].map((n) => (
+          <button
+            key={n}
+            type="button"
+            className="btn"
+            disabled={n * MEDKIT_PRICE_RES > res}
+            onClick={() => act(() => (mock.buyMedkits(n), `Bought ${n} med kit${n > 1 ? "s" : ""}`))}
+          >
+            +{n}
+          </button>
+        ))}
+        {shotIds.length > 0 && (
+          <button
+            type="button"
+            className="btn btn--heal"
+            disabled={healCost > res}
+            onClick={() =>
+              act(() => {
+                const r = mock.heal(shotIds);
+                return `Healed ${r.healed} gangster${r.healed > 1 ? "s" : ""}${r.cost ? ` · bought ${r.bought} kit${r.bought > 1 ? "s" : ""}` : ""}`;
+              })
+            }
+          >
+            Heal all ({shotIds.length}){healCost > 0 ? ` · ${fmt(healCost)} RES` : ""}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const ago = (t: number, now: number) => {
+  const m = Math.round((now - t) / 60000);
+  return m < 1 ? "just now" : m < 60 ? `${m}m ago` : `${Math.floor(m / 60)}h ago`;
+};
+
+function GangsterCard({
+  g,
+  now,
+  kits,
+  onClaim,
+  onHeal,
+}: {
+  g: MockGangster;
+  now: number;
+  kits: number;
+  onClaim: () => void;
+  onHeal: () => void;
+}) {
   const r = RARITIES[g.rarity];
   const st = statsOf(g);
   const a = archetypeOf(g.id);
   const farmed = farmedOf(g, now);
   const pct = (farmed / st.cap) * 100;
   const retired = isRetired(g, now);
+  const shot = isShot(g, now);
   const pending = pendingOf(g, now);
   return (
     <li
-      className={`gcard${retired ? " gcard--retired" : ""}${g.fused ? " gcard--fused" : ""}`}
+      className={`gcard${retired ? " gcard--retired" : ""}${shot ? " gcard--shot" : ""}${g.fused ? " gcard--fused" : ""}`}
       style={{ "--rc": r.color } as React.CSSProperties}
     >
       <div className="gcard__art">
         <GangsterToy gangsterId={g.id} rarity={g.rarity} />
         {g.fused && <span className="gcard__fused">Fused</span>}
+        {!retired && (weaponDaysLeft(g, now) > 0 || hasVest(g, now)) && (
+          <span className="gcard__gear">
+            {weaponDaysLeft(g, now) > 0 && (
+              <b title={`${WEAPONS[g.weapon!.id].name}: +${WEAPONS[g.weapon!.id].boostPct}% farm, ${weaponDaysLeft(g, now).toFixed(1)} days left`}>
+                ⚔ +{WEAPONS[g.weapon!.id].boostPct}%
+              </b>
+            )}
+            {hasVest(g, now) && <b title="Kevlar vest: stops the next bullet">🛡</b>}
+          </span>
+        )}
         {retired && <span className="gcard__stamp">Retired</span>}
+        {shot && (
+          <span className="gcard__wound" aria-label="Shot">
+            <i />
+            <b>Shot</b>
+          </span>
+        )}
       </div>
       <div className="gcard__body">
         <span className="gcard__rarity">{r.name}</span>
@@ -594,9 +700,22 @@ function GangsterCard({ g, now, onClaim }: { g: MockGangster; now: number; onCla
           </div>
           <div>
             <dt>Rate</dt>
-            <dd>{retired ? "—" : `${st.perDay}/day`}</dd>
+            <dd className={!retired && !shot && weaponDaysLeft(g, now) > 0 ? "boosted" : undefined}>
+              {retired || shot ? "—" : `${fmt1(rateOf(g, now))}/day`}
+            </dd>
           </div>
+          {!retired && (
+            <div>
+              <dt>Shot risk</dt>
+              <dd className={shot ? "red" : undefined}>{shot ? `hit ${ago(shotAt(g, now)!, now)}` : `${SHOT_CHANCE_PER_DAY[g.rarity]}%/day`}</dd>
+            </div>
+          )}
         </dl>
+        {shot && (
+          <button type="button" className="btn btn--heal gcard__claim" onClick={onHeal}>
+            ✚ {kits > 0 ? "Heal · use 1 kit" : `Heal · ${fmt(MEDKIT_PRICE_RES)} RES`}
+          </button>
+        )}
         <button type="button" className="btn btn--gold gcard__claim" disabled={pending < 0.1} onClick={onClaim}>
           Claim {fmt1(pending)} DC <small>free</small>
         </button>

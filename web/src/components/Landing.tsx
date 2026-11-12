@@ -5,7 +5,7 @@ import ConnectCTA from "./ConnectCTA";
 import Countdown from "./Countdown";
 import Portrait from "./Portrait";
 import GangsterToy from "./art/GangsterToy";
-import { BOX_PRICE_DC, DACITY_PER_USDC, PROTAGONISTS, RARITIES, SOCIALS, fmt, type Protagonist } from "../config/game";
+import { BOX_PRICE_DC, DACITY_PER_USDC, PROTAGONISTS, RARITIES, SHOT_CHANCE_PER_DAY, SOCIALS, fmt, type Protagonist } from "../config/game";
 import { TARGET_CHAIN } from "../chains";
 import { useScrollFx } from "./useScrollFx";
 import "../landing-fx.css";
@@ -202,6 +202,10 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
                       <dt>Cap</dt>
                       <dd>{fmt(r.cap)} DC</dd>
                     </div>
+                    <div>
+                      <dt>Shot risk</dt>
+                      <dd>{SHOT_CHANCE_PER_DAY[r.id]}%/day</dd>
+                    </div>
                   </dl>
                 </div>
               </li>
@@ -235,6 +239,9 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
             ))}
           </ul>
         )}
+        <a className="footer__docs" href="#/docs">
+          Read the Docs →
+        </a>
         <p className="footer__legal">Independent game on {TARGET_CHAIN.name}. Digital assets involve risk. 18+ only.</p>
       </footer>
     </div>

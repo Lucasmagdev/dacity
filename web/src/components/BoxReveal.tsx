@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { RARITIES, fmt } from "../config/game";
+import { RARITIES, SHOT_CHANCE_PER_DAY, fmt } from "../config/game";
 import { archetypeOf, type MockGangster } from "../mock";
 import CashBox from "./art/CashBox";
 import GangsterToy from "./art/GangsterToy";
@@ -72,6 +72,10 @@ export default function BoxReveal({ open, onClose }: { open: () => MockGangster[
                       <div>
                         <dt>Career cap</dt>
                         <dd>{fmt(r.cap)} DC</dd>
+                      </div>
+                      <div>
+                        <dt>Shot risk</dt>
+                        <dd>{SHOT_CHANCE_PER_DAY[g.rarity]}%/day</dd>
                       </div>
                     </dl>
                   </div>

@@ -31,7 +31,41 @@ function NavWallet() {
   );
 }
 
-export default function Nav({ links = true, onBack }: { links?: boolean; onBack?: () => void }) {
+/** In-game sections. Black Market is announced but not open yet. */
+function GameNav() {
+  const route = window.location.hash.replace(/^#/, "") || "/";
+  return (
+    <nav className="gamenav" aria-label="Game">
+      <a href="#/hq" aria-current={route === "/hq" ? "page" : undefined}>
+        <span className="gamenav__ico" aria-hidden>⌂</span>
+        HQ
+      </a>
+      <a href="#/fusion" aria-current={route === "/fusion" ? "page" : undefined}>
+        <span className="gamenav__ico" aria-hidden>⚗</span>
+        Fusion
+      </a>
+      <a href="#/armory" aria-current={route === "/armory" ? "page" : undefined}>
+        <span className="gamenav__ico" aria-hidden>⌖</span>
+        Armory
+      </a>
+      <a href="#/dashboard" aria-current={route === "/dashboard" ? "page" : undefined}>
+        <span className="gamenav__ico" aria-hidden>▤</span>
+        Dashboard
+      </a>
+      <span className="gamenav__soon" aria-disabled="true" title="The Black Market opens soon: buy and sell gangsters with other bosses.">
+        <span className="gamenav__ico" aria-hidden>⚖</span>
+        Black Market
+        <em>Soon</em>
+      </span>
+      <a href="#/docs" aria-current={route.startsWith("/docs") ? "page" : undefined}>
+        <span className="gamenav__ico" aria-hidden>?</span>
+        Docs
+      </a>
+    </nav>
+  );
+}
+
+export default function Nav({ links = true, game = false, onBack }: { links?: boolean; game?: boolean; onBack?: () => void }) {
   return (
     <header className="nav">
       {onBack ? (
@@ -48,8 +82,10 @@ export default function Nav({ links = true, onBack }: { links?: boolean; onBack?
           <a href="#how-it-works" onClick={(e) => scrollTo(e, "how-it-works")}>How it works</a>
           <a href="#story" onClick={(e) => scrollTo(e, "story")}>Story</a>
           <a href="#rarities" onClick={(e) => scrollTo(e, "rarities")}>Rarities</a>
+          <a href="#/docs">Docs</a>
         </nav>
       )}
+      {game && <GameNav />}
       <div className="nav__right">
         <span className="chain-pill">
           <span className="chain-pill__dot" />

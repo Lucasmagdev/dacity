@@ -28,6 +28,8 @@ export type PlatformState = {
   log: AdminLogEntry[];
   /** Boxes sold game-wide (drives the launch sale). Admin gifts don't count. */
   boxesSold: number;
+  /** RESOURCE burned game-wide by items and fees. */
+  resourceBurned: number;
 };
 
 const KEY = "dacity.platform.v1";
@@ -39,6 +41,7 @@ const initial = (): PlatformState => ({
   announcement: null,
   log: [],
   boxesSold: 0,
+  resourceBurned: 0,
 });
 
 function read(): PlatformState {
@@ -101,6 +104,11 @@ export const isLive = (a: Announcement | null, now = Date.now()): a is Announcem
 export const platform = {
   /** Read fresh (another tab may have sold boxes). */
   boxesSold: () => read().boxesSold,
+
+  recordBurn(amount: number) {
+    const fresh = read();
+    set({ ...fresh, resourceBurned: fresh.resourceBurned + amount });
+  },
 
   recordBoxSale(count: number) {
     const fresh = read();

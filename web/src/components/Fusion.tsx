@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import GangsterToy from "./art/GangsterToy";
-import Coin from "./art/Coin";
 import { FUSION_RECIPES, RARITIES, fmt } from "../config/game";
-import { archetypeOf, farmedOf, fusionCandidates, mock, pendingOf, statsOf, type MockGangster } from "../mock";
+import ResIcon from "./art/ResIcon";
+import { archetypeOf, farmedOf, fusionCandidates, mock, statsOf, type MockGangster } from "../mock";
 
 type FuseResult = ReturnType<typeof mock.fuse>;
 
@@ -11,8 +11,8 @@ const TOP = RARITIES[RARITIES.length - 1];
 const RULES = [
   "Fusing 2 gangsters of the same rarity gives 1 fused gangster of the next rarity up.",
   "It farms both parents' daily DC combined and its career cap is bigger than the two parents' together.",
-  `The fee grows with the tier. ${TOP.name} is the top rarity and can't be fused.`,
-  "Both gangsters must be active: still farming (not retired) and never fused before.",
+  `The fee is paid in RESOURCE and burned, and grows with the tier. ${TOP.name} is the top rarity and can't be fused.`,
+  "Both gangsters must be active: farming (not shot, not retired) and never fused before. Heal shot gangsters first.",
   "The two gangsters closest to retirement are consumed. Their pending DC is paid out to you first, free.",
   "Fused gangsters start a brand-new career and cannot be fused again.",
 ];
@@ -20,12 +20,12 @@ const RULES = [
 /** Fusion tab: one row per rarity, fuse the two gangsters closest to retirement. */
 export default function Fusion({
   gangsters,
-  dc,
+  resource,
   now,
   onToast,
 }: {
   gangsters: MockGangster[];
-  dc: number;
+  resource: number;
   now: number;
   onToast: (msg: string) => void;
 }) {
@@ -62,12 +62,12 @@ export default function Fusion({
           const from = RARITIES[f.from];
           const to = RARITIES[f.to];
           const parentsCap = from.cap * 2;
-          const extra = f.cap - parentsCap - f.fee;
+          const extra = f.cap - parentsCap;
           const pool = fusionCandidates(gangsters, f.from, now);
           const pair = pool.slice(0, 2);
           const ready = pair.length === 2;
           // mirrors mock.fuse: the parents' pending DC is paid out before the fee is charged
-          const canPay = dc + pair.reduce((t, g) => t + pendingOf(g, now), 0) >= f.fee;
+          const canPay = resource >= f.fee;
           return (
             <div
               key={f.from}
@@ -84,7 +84,7 @@ export default function Fusion({
                 <b>{to.name}</b>
               </span>
               <span role="cell" data-label="Cost">
-                <Coin size={14} /> {fmt(f.fee)} DC
+                <ResIcon size={14} /> {fmt(f.fee)} <small>RES 🔥</small>
               </span>
               <span role="cell" data-label="Farm">
                 <b className="gold">{fmt(f.perDay)}/day</b> <small>regular {to.name} {fmt(to.perDay)}</small>
@@ -93,11 +93,11 @@ export default function Fusion({
                 <b>{fmt(f.cap)} DC</b> <small>parents {fmt(parentsCap)}</small>
               </span>
               <span role="cell" data-label="Extra DC">
-                <b className="fusion__gain">+{fmt(extra)}</b> <small>after fee</small>
+                <b className="fusion__gain">+{fmt(extra)}</b> <small>DC</small>
               </span>
               <span role="cell" className="fusion__act">
                 <button type="button" className="btn btn--fuse" disabled={!ready || !canPay} onClick={() => fuse(f.from)}>
-                  {ready && !canPay ? `Need ${fmt(f.fee)} DC` : "Fuse"}
+                  {ready && !canPay ? `Need ${fmt(f.fee)} RES` : "Fuse"}
                 </button>
                 <small
                   className={ready ? "fusion__ready" : undefined}
