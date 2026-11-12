@@ -84,7 +84,7 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
     return (
       <div className="page select">
         <Scene dim />
-        <Nav links={false} onBack={onBack} />
+        <Nav links={false} game onBack={onBack} />
         <div className="select__inner">
           <header className="section__head">
             <p className="eyebrow">No gang yet</p>
