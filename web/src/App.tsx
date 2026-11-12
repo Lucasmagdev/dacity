@@ -7,6 +7,7 @@ import Dashboard from "./components/Dashboard";
 import FusionPage from "./components/FusionPage";
 import Armory from "./components/Armory";
 import Docs from "./components/Docs";
+import Token from "./components/Token";
 import Admin from "./components/Admin";
 import GlobalNotices, { MaintenanceScreen } from "./components/GlobalNotices";
 import { useAdmin } from "./config/admin";
@@ -14,6 +15,7 @@ import { usePlatform } from "./mock/platform";
 import "./admin.css";
 import "./dashboard.css";
 import "./docs.css";
+import "./token.css";
 
 /** Routes that are closed to players while maintenance is on. */
 const GAME_ROUTES = ["/choose", "/hq", "/fusion", "/armory", "/dashboard"];
@@ -43,6 +45,7 @@ export default function App() {
 
   let page;
   if (route === "/admin") page = <Admin onBack={() => go("/")} />;
+  else if (route === "/token") page = <Token onBack={() => go("/")} />;
   else if (route === "/docs" || route.startsWith("/docs/")) page = <Docs section={route.split("/")[2]} onBack={() => go("/")} />;
   else if (blocked) page = <MaintenanceScreen onBack={() => go("/")} />;
   else if (route === "/choose") page = <CharacterSelect onBack={() => go("/")} onEnterHq={() => go("/hq")} />;
