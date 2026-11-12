@@ -7,7 +7,7 @@ import { memo, useMemo, useState } from "react";
 const KEYART_VIDEO = "/hero/keyart.mp4";
 const KEYART_POSTER = "/hero/keyart-poster.jpg";
 const KEYART_VIDEO_SPEED = 0.4; // 1 = normal, menor = mais lento
-const KEYART_SOURCES = ["/hero/keyart.webp", "/hero/keyart.jpg", "/hero/keyart.svg"];
+const KEYART_SOURCES = ["/hero/keyart.webp", "/hero/keyart.jpg", "/hero/keyart1.svg"];
 
 const prefersReducedMotion = () =>
   typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
