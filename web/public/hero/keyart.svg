@@ -1,0 +1,282 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+  <!-- Audacity Game key art: original duo (Nina & Rico), classic coupe, art deco waterfront at sunset. -->
+  <style>
+    .sway { transform-box: fill-box; transform-origin: 50% 100%; animation: sway 7s ease-in-out infinite; }
+    .sway.s2 { animation-duration: 8.6s; animation-delay: -3s; }
+    .sway.s3 { animation-duration: 6.1s; animation-delay: -1.4s; }
+    .sway.s4 { animation-duration: 9.4s; animation-delay: -5s; }
+    @keyframes sway { 0%,100% { transform: rotate(-1.4deg); } 50% { transform: rotate(1.8deg); } }
+
+    .neon { animation: flicker 5s linear infinite; }
+    .neon.n2 { animation-duration: 7s; animation-delay: -2s; }
+    @keyframes flicker { 0%,17%,21%,24%,60%,64%,100% { opacity: 1; } 19%,23%,62% { opacity: .35; } }
+
+    .stripes { animation: drift 6s linear infinite; }
+    @keyframes drift { from { transform: translateY(0); } to { transform: translateY(24px); } }
+
+    .glint { animation: glint 3.2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+    @keyframes glint { 0%,70%,100% { opacity: .35; transform: scale(.7); } 80% { opacity: 1; transform: scale(1.6); } }
+
+    .shimmer { animation: shimmer 4s ease-in-out infinite alternate; }
+    @keyframes shimmer { from { opacity: .45; } to { opacity: .8; } }
+
+    .lights rect { animation: flicker 9s linear infinite; }
+    .lights rect:nth-child(3n) { animation-delay: -3s; }
+    .lights rect:nth-child(4n) { animation-delay: -6s; }
+
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+  </style>
+
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2f3594"/>
+      <stop offset=".3" stop-color="#6b47b0"/>
+      <stop offset=".52" stop-color="#d566a8"/>
+      <stop offset=".64" stop-color="#ff9a78"/>
+      <stop offset=".7" stop-color="#ffc58a"/>
+    </linearGradient>
+    <radialGradient id="sunGlow" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#ffd38a" stop-opacity=".9"/>
+      <stop offset=".45" stop-color="#ff7aa0" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#ff7aa0" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="sun" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff3b8"/>
+      <stop offset=".5" stop-color="#ffb26b"/>
+      <stop offset="1" stop-color="#ff5f8f"/>
+    </linearGradient>
+    <clipPath id="sunClip"><circle cx="960" cy="650" r="190"/></clipPath>
+
+    <linearGradient id="hotelL" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#a985d9"/>
+      <stop offset=".7" stop-color="#d9b8f0"/>
+      <stop offset="1" stop-color="#f3d6f2"/>
+    </linearGradient>
+    <linearGradient id="hotelR" x1="1" y1="0" x2="0" y2="0">
+      <stop offset="0" stop-color="#e9a8c8"/>
+      <stop offset=".6" stop-color="#ffcfc0"/>
+      <stop offset="1" stop-color="#ffe6cf"/>
+    </linearGradient>
+    <pattern id="winL" width="44" height="42" patternUnits="userSpaceOnUse">
+      <rect x="9" y="10" width="26" height="20" rx="2" fill="#8c6cc8"/>
+      <rect x="9" y="10" width="26" height="6" rx="2" fill="#f7c8e6" opacity=".55"/>
+    </pattern>
+    <pattern id="winR" width="48" height="44" patternUnits="userSpaceOnUse">
+      <rect x="8" y="10" width="32" height="20" rx="2" fill="#b77aa8"/>
+      <rect x="8" y="10" width="32" height="6" rx="2" fill="#fff0d8" opacity=".6"/>
+    </pattern>
+
+    <linearGradient id="road" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6a3f86"/>
+      <stop offset=".35" stop-color="#3f2660"/>
+      <stop offset="1" stop-color="#1c1030"/>
+    </linearGradient>
+    <linearGradient id="carBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b48ad8"/>
+      <stop offset=".25" stop-color="#6d4b99"/>
+      <stop offset=".7" stop-color="#2e1d4a"/>
+      <stop offset="1" stop-color="#170d26"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffc9a8"/>
+      <stop offset=".5" stop-color="#d56aa6"/>
+      <stop offset="1" stop-color="#4b2c78"/>
+    </linearGradient>
+
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="soft" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="14"/></filter>
+    <!-- Neon rim light around the union of a silhouette's shapes -->
+    <filter id="rimPink" x="-20%" y="-20%" width="140%" height="140%">
+      <feMorphology in="SourceAlpha" operator="dilate" radius="2.4" result="d"/>
+      <feFlood flood-color="#ff4fa0"/>
+      <feComposite in2="d" operator="in" result="rim"/>
+      <feGaussianBlur in="rim" stdDeviation="4" result="halo"/>
+      <feMerge><feMergeNode in="halo"/><feMergeNode in="rim"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="rimCyan" x="-20%" y="-20%" width="140%" height="140%">
+      <feMorphology in="SourceAlpha" operator="dilate" radius="2.4" result="d"/>
+      <feFlood flood-color="#33e6ff"/>
+      <feComposite in2="d" operator="in" result="rim"/>
+      <feGaussianBlur in="rim" stdDeviation="4" result="halo"/>
+      <feMerge><feMergeNode in="halo"/><feMergeNode in="rim"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+
+    <!-- Palm: base at (0,0), crown at (17,-582). Fill comes from the <use>. -->
+    <symbol id="palm" overflow="visible">
+      <path d="M-12 0 C-4 -200 18 -400 8 -584 L26 -584 C36 -400 12 -200 12 0 Z"/>
+      <g transform="translate(17 -584)">
+        <path id="leaf" d="M0 0 C60 -56 180 -80 320 -12 C280 -18 256 0 232 14 C208 -2 184 2 160 18 C136 2 110 6 88 20 C64 6 32 4 0 0 Z" transform="rotate(-82)"/>
+        <use href="#leaf" xlink:href="#leaf" transform="rotate(30)"/>
+        <use href="#leaf" xlink:href="#leaf" transform="rotate(58)"/>
+        <use href="#leaf" xlink:href="#leaf" transform="rotate(90)"/>
+        <use href="#leaf" xlink:href="#leaf" transform="rotate(118)"/>
+        <g transform="scale(-1 1)">
+          <use href="#leaf" xlink:href="#leaf" transform="rotate(24)"/>
+          <use href="#leaf" xlink:href="#leaf" transform="rotate(54)"/>
+          <use href="#leaf" xlink:href="#leaf" transform="rotate(86)"/>
+          <use href="#leaf" xlink:href="#leaf" transform="rotate(114)"/>
+        </g>
+        <circle r="16"/>
+      </g>
+    </symbol>
+  </defs>
+
+  <!-- sky + sun -->
+  <rect width="1920" height="1080" fill="url(#sky)"/>
+  <circle cx="960" cy="650" r="520" fill="url(#sunGlow)"/>
+  <g clip-path="url(#sunClip)">
+    <rect x="760" y="440" width="400" height="420" fill="url(#sun)"/>
+    <g class="stripes" fill="#e46aa3">
+      <rect x="760" y="640" width="400" height="6"/>
+      <rect x="760" y="664" width="400" height="9"/>
+      <rect x="760" y="688" width="400" height="12"/>
+      <rect x="760" y="712" width="400" height="15"/>
+      <rect x="760" y="736" width="400" height="18"/>
+      <rect x="760" y="616" width="400" height="4"/>
+    </g>
+  </g>
+  <g fill="#fff" opacity=".7">
+    <circle cx="210" cy="90" r="1.6"/><circle cx="480" cy="160" r="1.2"/><circle cx="760" cy="70" r="1.4"/>
+    <circle cx="1130" cy="120" r="1.2"/><circle cx="1420" cy="60" r="1.6"/><circle cx="1720" cy="150" r="1.2"/>
+    <circle cx="1010" cy="210" r="1"/><circle cx="330" cy="240" r="1"/><circle cx="1610" cy="250" r="1"/>
+  </g>
+
+  <!-- distant skyline -->
+  <g fill="#a87ccf" opacity=".75">
+    <rect x="560" y="610" width="60" height="150"/><rect x="626" y="580" width="44" height="180"/>
+    <rect x="676" y="640" width="70" height="120"/><rect x="1150" y="600" width="56" height="160"/>
+    <rect x="1212" y="560" width="40" height="200"/><rect x="1258" y="630" width="80" height="130"/>
+    <rect x="1344" y="590" width="48" height="170"/><rect x="740" y="670" width="40" height="90"/>
+  </g>
+  <g fill="#ffe2a8" opacity=".85" class="lights">
+    <rect x="636" y="600" width="6" height="8"/><rect x="652" y="630" width="6" height="8"/><rect x="1222" y="580" width="6" height="8"/>
+    <rect x="1236" y="620" width="6" height="8"/><rect x="1356" y="610" width="6" height="8"/><rect x="1166" y="640" width="6" height="8"/>
+    <rect x="690" y="660" width="6" height="8"/><rect x="1280" y="650" width="6" height="8"/><rect x="1370" y="660" width="6" height="8"/>
+  </g>
+
+  <!-- far palms -->
+  <g fill="#8a4c9e" opacity=".8">
+    <g transform="translate(620 770) scale(.42)"><use class="sway s2" href="#palm" xlink:href="#palm"/></g>
+    <g transform="translate(860 770) scale(.34)"><use class="sway s3" href="#palm" xlink:href="#palm"/></g>
+    <g transform="translate(1110 770) scale(.38)"><use class="sway s4" href="#palm" xlink:href="#palm"/></g>
+  </g>
+
+  <!-- left art deco hotel -->
+  <g>
+    <rect x="150" y="400" width="420" height="370" fill="url(#hotelL)"/>
+    <rect x="150" y="400" width="420" height="370" fill="url(#winL)" opacity=".9"/>
+    <rect x="290" y="320" width="150" height="90" rx="10" fill="#e6c9f6"/>
+    <rect x="320" y="270" width="90" height="56" rx="8" fill="#f1dcfa"/>
+    <rect x="354" y="230" width="22" height="540" fill="#f6e6fc"/>
+    <g fill="#f8e9fd">
+      <rect x="140" y="470" width="440" height="7"/><rect x="140" y="560" width="440" height="7"/>
+      <rect x="140" y="650" width="440" height="7"/><rect x="140" y="394" width="440" height="10"/>
+    </g>
+    <g fill="#7b5bb8"><circle cx="180" cy="510" r="12"/><circle cx="180" cy="600" r="12"/><circle cx="180" cy="690" r="12"/></g>
+    <rect x="286" y="316" width="158" height="98" rx="12" fill="none" stroke="#ff4fa0" stroke-width="5" filter="url(#glow)" class="neon"/>
+    <rect x="348" y="440" width="34" height="210" rx="17" fill="none" stroke="#33e6ff" stroke-width="5" filter="url(#glow)" class="neon n2"/>
+    <path d="M150 740 h420 v14 q-21 16 -42 0 q-21 16 -42 0 q-21 16 -42 0 q-21 16 -42 0 q-21 16 -42 0 q-21 16 -42 0 q-21 16 -42 0 q-21 16 -42 0 q-21 16 -42 0 q-21 16 -42 0 z" fill="#ff7ab6"/>
+  </g>
+
+  <!-- right art deco hotel -->
+  <g>
+    <rect x="1420" y="330" width="520" height="440" fill="url(#hotelR)"/>
+    <rect x="1440" y="360" width="480" height="380" fill="url(#winR)" opacity=".9"/>
+    <path d="M1420 330 h120 v-40 q0 -30 30 -30 h80 q30 0 30 30 v40" fill="#ffe0d0"/>
+    <rect x="1520" y="200" width="16" height="130" fill="#ffeadf"/>
+    <rect x="1564" y="170" width="16" height="160" fill="#ffeadf"/>
+    <rect x="1608" y="200" width="16" height="130" fill="#ffeadf"/>
+    <g fill="#fff3e8">
+      <rect x="1410" y="420" width="530" height="8"/><rect x="1410" y="520" width="530" height="8"/>
+      <rect x="1410" y="620" width="530" height="8"/><rect x="1410" y="324" width="530" height="10"/>
+    </g>
+    <path d="M1544 262 h108" stroke="#33e6ff" stroke-width="6" stroke-linecap="round" filter="url(#glow)" class="neon n2"/>
+    <g fill="none" stroke="#ff4fa0" stroke-width="5" filter="url(#glow)" class="neon">
+      <path d="M1740 380 q30 -30 60 0 t60 0"/>
+      <path d="M1740 410 q30 -30 60 0 t60 0"/>
+    </g>
+    <rect x="1420" y="730" width="520" height="40" fill="#e98fb7"/>
+  </g>
+
+  <!-- mid palms -->
+  <g fill="#6a2d7a">
+    <g transform="translate(470 790) scale(.78)"><use class="sway s2" href="#palm" xlink:href="#palm"/></g>
+    <g transform="translate(1480 790) scale(.82)"><use class="sway s3" href="#palm" xlink:href="#palm"/></g>
+    <g transform="translate(1780 790) scale(.66)"><use class="sway" href="#palm" xlink:href="#palm"/></g>
+  </g>
+
+  <!-- street -->
+  <rect x="0" y="770" width="1920" height="26" fill="#d9b1e2"/>
+  <rect x="0" y="794" width="1920" height="6" fill="#9a6cb4"/>
+  <rect x="0" y="800" width="1920" height="280" fill="url(#road)"/>
+  <ellipse cx="960" cy="860" rx="420" ry="40" fill="#ff8fb6" opacity=".55" filter="url(#soft)" class="shimmer"/>
+  <g fill="#f2c6e6" opacity=".55">
+    <rect x="40" y="990" width="120" height="8"/><rect x="300" y="990" width="120" height="8"/>
+    <rect x="560" y="990" width="120" height="8"/><rect x="820" y="990" width="120" height="8"/>
+  </g>
+
+  <!-- car (classic coupe, facing left) -->
+  <ellipse cx="1400" cy="952" rx="350" ry="20" fill="#0c0616" opacity=".55" filter="url(#soft)"/>
+  <g>
+    <path d="M1070 920 L1074 872 Q1080 846 1116 842 L1296 830 Q1336 792 1388 782 L1522 780 Q1572 782 1604 824 L1700 834 Q1728 840 1730 870 L1732 920 Q1732 934 1716 934 L1088 934 Q1070 934 1070 920 Z" fill="url(#carBody)"/>
+    <path d="M1326 828 Q1356 798 1390 792 L1500 791 Q1540 794 1566 824 Z" fill="url(#glass)"/>
+    <path d="M1446 792 L1444 826" stroke="#2a1840" stroke-width="6"/>
+    <path d="M1076 872 Q1082 848 1116 844 L1298 832 Q1338 794 1388 784 L1522 782 Q1572 784 1604 826 L1700 836 Q1726 842 1728 868" fill="none" stroke="#ffd2ea" stroke-width="2.5" opacity=".8"/>
+    <path d="M1080 880 L1724 880" stroke="#e7d6ff" stroke-width="3" opacity=".7"/>
+    <rect x="1070" y="902" width="40" height="14" rx="4" fill="#d7c8ec"/>
+    <rect x="1700" y="902" width="34" height="14" rx="4" fill="#d7c8ec"/>
+    <rect x="1074" y="858" width="16" height="16" rx="4" fill="#fff3c4"/>
+    <circle cx="1082" cy="866" r="9" fill="#fff6d6" filter="url(#glow)" class="glint"/>
+    <rect x="1714" y="848" width="14" height="18" rx="3" fill="#ff3d6e" filter="url(#glow)"/>
+    <g>
+      <circle cx="1172" cy="928" r="46" fill="#120a1d"/>
+      <circle cx="1172" cy="928" r="28" fill="#c2afe0"/>
+      <circle cx="1172" cy="928" r="10" fill="#5d4a80"/>
+      <circle cx="1612" cy="928" r="46" fill="#120a1d"/>
+      <circle cx="1612" cy="928" r="28" fill="#c2afe0"/>
+      <circle cx="1612" cy="928" r="10" fill="#5d4a80"/>
+    </g>
+  </g>
+
+  <!-- Nina: seated on the hood (pink rim) -->
+  <g fill="#1a0b2a" filter="url(#rimPink)">
+    <path d="M1166 670 Q1162 628 1192 626 Q1222 628 1218 670 L1224 702 Q1208 710 1192 706 Q1176 710 1160 702 Z"/>
+    <ellipse cx="1191" cy="668" rx="21" ry="27"/>
+    <rect x="1182" y="690" width="18" height="18"/>
+    <path d="M1158 712 Q1191 702 1224 712 L1218 780 Q1214 806 1224 836 L1158 836 Q1168 806 1164 780 Z"/>
+    <path d="M1152 716 L1126 800 L1120 846 L1136 846 L1146 802 L1166 742 Z"/>
+    <path d="M1228 716 L1252 790 L1236 832 L1222 826 L1232 792 L1214 744 Z"/>
+    <path d="M1158 830 L1228 830 L1218 862 L1122 876 L1112 850 Z"/>
+    <path d="M1112 852 L1136 858 L1130 962 L1108 962 Z"/>
+    <path d="M1150 852 L1174 856 L1164 958 L1144 958 Z"/>
+    <ellipse cx="1116" cy="964" rx="18" ry="7"/>
+    <ellipse cx="1156" cy="960" rx="17" ry="7"/>
+  </g>
+  <circle cx="1170" cy="684" r="3.5" fill="#ffd36b" filter="url(#glow)"/>
+
+  <!-- Rico: standing, arms crossed (cyan rim) -->
+  <g fill="#1a0b2a" filter="url(#rimCyan)">
+    <path d="M1316 626 Q1316 600 1342 598 Q1368 600 1366 626 Q1350 616 1316 626 Z"/>
+    <ellipse cx="1341" cy="640" rx="25" ry="31"/>
+    <rect x="1329" y="664" width="24" height="24"/>
+    <path d="M1280 694 Q1341 676 1402 694 L1406 722 L1388 834 L1294 834 L1276 722 Z"/>
+    <path d="M1278 700 L1262 772 L1286 788 L1294 730 Z"/>
+    <path d="M1404 700 L1420 772 L1396 788 L1388 730 Z"/>
+    <path d="M1284 754 L1394 772 L1390 792 L1280 774 Z"/>
+    <path d="M1398 754 L1288 772 L1292 792 L1402 774 Z"/>
+    <path d="M1294 830 L1338 830 L1324 1006 L1294 1006 Z"/>
+    <path d="M1346 830 L1390 830 L1398 1006 L1368 1006 Z"/>
+    <ellipse cx="1306" cy="1010" rx="22" ry="8"/>
+    <ellipse cx="1386" cy="1010" rx="22" ry="8"/>
+  </g>
+  <rect x="1322" y="633" width="40" height="9" rx="4" fill="#33e6ff" filter="url(#glow)"/>
+
+  <!-- foreground palms framing the edges -->
+  <g fill="#2c0f40">
+    <g transform="translate(30 1100) scale(1.12)"><use class="sway" href="#palm" xlink:href="#palm"/></g>
+    <g transform="translate(1900 1100) scale(-1.04 1.04)"><use class="sway s3" href="#palm" xlink:href="#palm"/></g>
+  </g>
+</svg>

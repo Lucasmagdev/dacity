@@ -1,0 +1,19 @@
+node_modules/
+dist/
+.env
+.env.local
+
+# hardhat
+contracts/artifacts/
+contracts/cache/
+contracts/typechain-types/
+contracts/coverage/
+contracts/coverage.json
+
+# local-only reference art (never commit / deploy)
+local-art/
+web/public/loader-cover.*
+web/public/characters/
+
+# build cache
+*.tsbuildinfo
