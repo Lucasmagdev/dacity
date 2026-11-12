@@ -1,0 +1,313 @@
+/*
+ * Rarity lineup: five gangsters in a row under spotlights, each holding a booking placard with
+ * their rarity and drop chance. Deliberately quiet: one dark room, one light per suspect, no extras.
+ * --r = rarity 0..4 (size, reveal order), --slot = position 0..4, --skin = archetype skin tone.
+ * Imported after rarity.css.
+ */
+
+/* the room is a full-bleed band: it breaks out of the section and runs edge to edge */
+.magenta {
+  overflow-x: clip;
+}
+
+.lu {
+  --wall: clamp(320px, 30vw, 420px);
+  position: relative;
+  isolation: isolate;
+  width: 100vw;
+  margin: 0 calc(50% - 50vw);
+  background: linear-gradient(180deg, #170730 0%, #1d0a38 calc(var(--wall) - 1px), #0f0420 var(--wall), #0a0214 100%);
+  /* fade into the page above and below instead of ending on a hard edge */
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 64px, #000 calc(100% - 72px), transparent);
+  mask-image: linear-gradient(180deg, transparent, #000 64px, #000 calc(100% - 72px), transparent);
+}
+
+/* the floor is just a hairline, fading out toward the edges */
+.lu::before {
+  content: "";
+  position: absolute;
+  top: var(--wall);
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2) 18%, rgba(255, 255, 255, 0.2) 82%, transparent);
+}
+
+.lu__row {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: clamp(4px, 1vw, 16px);
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 clamp(12px, 2.4vw, 32px) 84px;
+  list-style: none;
+}
+
+.suspect {
+  --s: calc(1.16 + var(--r) * 0.07);
+  --h: 1;
+  position: relative;
+  display: grid;
+  grid-template-rows: var(--wall) auto;
+  justify-items: center;
+  outline: none;
+}
+
+.suspect--legend {
+  --s: 1.62;
+  z-index: 2;
+}
+
+.suspect__shadow {
+  position: absolute;
+  top: calc(var(--wall) - 10px);
+  left: 50%;
+  width: calc(58% * var(--s));
+  height: 20px;
+  translate: -50% 0;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.7), transparent);
+  pointer-events: none;
+}
+
+.suspect__fig {
+  position: relative;
+  z-index: 1;
+  align-self: end;
+  width: 100%;
+  container-type: inline-size;
+  /* the toy art leaves ~11% empty under the feet once the pedestal is hidden: pull it onto the floor */
+  margin-bottom: -13%;
+  transform-origin: 50% 100%;
+  scale: calc(var(--s) * var(--h));
+  transition: scale 0.35s var(--fx-ease, ease);
+}
+
+/* strip every extra from the toy art: pedestal, props, aura, rays, sparkles, coins */
+.suspect__fig .toy__fig > :nth-child(-n + 3),
+.suspect__fig .toy__fig > :last-child,
+.suspect__fig .toy > ellipse,
+.suspect__fig .toy__rays,
+.suspect__fig .toy__twinkle,
+.suspect__fig .toy__float,
+.suspect__fig .toy__orbit {
+  display: none;
+}
+
+.suspect__fig .toy {
+  overflow: visible;
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.4));
+  transition: filter 0.3s ease;
+}
+
+/* idle breathing, out of sync (keyframes live in hq.css); the placard moves with the body */
+.suspect__fig .toy__fig,
+.suspect__board {
+  animation: toy-bob 2.4s ease-in-out infinite;
+  animation-delay: calc(var(--slot) * -0.47s);
+  transform-origin: 50% 100%;
+}
+
+/* ---- the placard ---- */
+
+.suspect__board {
+  position: absolute;
+  z-index: 2;
+  left: 27%;
+  top: 56%;
+  width: 46%;
+  overflow: visible;
+  border: 1.2cqw solid #1a0a24;
+  border-radius: 1.6cqw;
+  background: #f6f2fb;
+  box-shadow: 0 1.6cqw 3cqw rgba(0, 0, 0, 0.45);
+  text-align: center;
+}
+
+.suspect__bar {
+  display: block;
+  padding: 1cqw 0;
+  background: var(--rc);
+  color: #1a0a24;
+  font-size: 4.6cqw;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.suspect__pct {
+  display: block;
+  padding: 1.2cqw 0 1.4cqw;
+  color: #1a0a24;
+  font-family: var(--font-display);
+  font-size: 15cqw;
+  line-height: 1;
+}
+
+.suspect--legend .suspect__board {
+  border-color: #3a2400;
+  background: #fff7de;
+  box-shadow: 0 1.6cqw 3cqw rgba(0, 0, 0, 0.45), 0 0 5cqw rgba(255, 190, 60, 0.5);
+}
+
+.suspect--legend .suspect__bar {
+  background: linear-gradient(90deg, #ffd36b, #ff9a3d);
+}
+
+/* two hands hold it */
+.suspect__board::before,
+.suspect__board::after {
+  content: "";
+  position: absolute;
+  bottom: 14%;
+  width: 8.4cqw;
+  aspect-ratio: 1;
+  border: 1.25cqw solid #1a0a24;
+  border-radius: 50%;
+  background: var(--skin, #e8b48a);
+}
+
+.suspect__board::before {
+  left: -4.8cqw;
+}
+
+.suspect__board::after {
+  right: -4.8cqw;
+}
+
+/* ---- stats: plain text under the floor, no boxes ---- */
+
+.suspect__stats {
+  display: grid;
+  gap: 7px;
+  width: min(100%, 176px);
+  margin: 30px 0 0;
+}
+
+.suspect__stats div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 13px;
+}
+
+.suspect__stats div:last-child {
+  border-bottom: 0;
+}
+
+.suspect__stats dt {
+  color: var(--muted);
+}
+
+.suspect__stats dd {
+  margin: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- hover / keyboard focus: one steps forward, the rest dim ---- */
+
+.suspect:hover,
+.suspect:focus-visible {
+  --h: 1.06;
+  z-index: 3;
+}
+
+.lu__row:has(.suspect:hover) .suspect:not(:hover) .toy,
+.lu__row:has(.suspect:focus-visible) .suspect:not(:focus-visible) .toy {
+  filter: brightness(0.55) saturate(0.6);
+}
+
+/* ---- reveal: silhouettes fill with colour one after another, in rarity order ---- */
+
+.fx-ready [data-fx="lineup"]:not(.is-in) .suspect__fig {
+  filter: brightness(0);
+  translate: 0 24px;
+}
+
+.fx-ready [data-fx="lineup"]:not(.is-in) .suspect__stats {
+  opacity: 0;
+  translate: 0 14px;
+}
+
+.fx-ready [data-fx="lineup"].is-in .suspect__fig {
+  animation: lu-reveal 0.9s var(--fx-ease) both;
+  animation-delay: calc(0.4s + var(--r) * 0.26s);
+}
+
+.fx-ready [data-fx="lineup"].is-in .suspect__stats {
+  animation: lu-stats 0.7s var(--fx-ease) both;
+  animation-delay: calc(0.7s + var(--r) * 0.26s);
+}
+
+@keyframes lu-reveal {
+  from {
+    filter: brightness(0);
+    translate: 0 24px;
+  }
+  to {
+    filter: brightness(1);
+    translate: 0 0;
+  }
+}
+
+@keyframes lu-stats {
+  from {
+    opacity: 0;
+    translate: 0 14px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .suspect__fig .toy__fig,
+  .suspect__board {
+    animation: none !important;
+  }
+}
+
+/* ---- responsive ---- */
+
+@media (max-width: 960px) {
+  .suspect__stats div {
+    font-size: 12px;
+  }
+}
+
+/* phones: the room stays put and the suspects become a swipeable row, ordered by rarity */
+@media (max-width: 760px) {
+  .lu {
+    --wall: 320px;
+  }
+  .lu__row {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    padding-inline: 18%;
+  }
+  .lu__row::-webkit-scrollbar {
+    display: none;
+  }
+  .suspect {
+    --s: calc(0.95 + var(--r) * 0.04);
+    flex: 0 0 64%;
+    order: var(--r);
+    scroll-snap-align: center;
+  }
+  .suspect--legend {
+    --s: 1.18;
+  }
+  .suspect__stats div {
+    font-size: 13px;
+  }
+}

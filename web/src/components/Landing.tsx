@@ -7,12 +7,18 @@ import Portrait from "./Portrait";
 import GangsterToy from "./art/GangsterToy";
 import StepArt, { type StepKind } from "./art/StepArt";
 import LoreArt from "./art/LoreArt";
+import DropBox from "./art/DropBox";
+import CompareSlider from "./CompareSlider";
+import { archetypeOf } from "../mock";
 import { BOX_PRICE_DC, DACITY_PER_USDC, PROTAGONISTS, RARITIES, SHOT_CHANCE_PER_DAY, SOCIALS, fmt, type Protagonist } from "../config/game";
 import { TARGET_CHAIN } from "../chains";
 import { useScrollFx } from "./useScrollFx";
 import "../landing-fx.css";
 import "../how.css";
 import "../story.css";
+import "../rarity.css";
+import "../lineup.css";
+import "../compare.css";
 
 const STEPS: { kind: StepKind; title: string; text: string; chips: string[]; hot?: boolean }[] = [
   {
@@ -44,6 +50,9 @@ const STEPS: { kind: StepKind; title: string; text: string; chips: string[]; hot
 
 /** Which archetype represents each rarity on the landing lineup (Mechanic, Skater, Hacker, Dealer, Old Boss). */
 const LINEUP_ARCHETYPE = [8, 5, 2, 4, 11];
+
+/** Lineup order, left -> right: Common, Uncommon, Rare, Epic, Legendary. */
+const LINEUP_ORDER = [0, 1, 2, 3, 4];
 
 function Teaser({ p, side }: { p: Protagonist; side: "left" | "right" }) {
   return (
@@ -152,6 +161,24 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
         </section>
 
         {/* ------------------------------------------------------------ story (zig-zag) */}
+        {/* ------------------------------------------------------------ glow up (before / after slider) */}
+        <section id="glow-up" className="section">
+          <header className="section__head" data-fx="head">
+            <p className="eyebrow">Glow up</p>
+            <h2>Buy the Dacity Coin game</h2>
+            <p className="section__lede">Same iguana, new life. Slide to see what changed.</p>
+          </header>
+          <figure className="cmp-frame" data-fx="pop">
+            <CompareSlider
+              before="/compare/before.jpg"
+              after="/compare/after.jpg"
+              beforeAlt="A green iguana walking on foot across an empty asphalt road"
+              afterAlt="The same iguana in sunglasses and a gold chain, lounging on a purple muscle car at a Miami sunset"
+            />
+            <figcaption>Hover or drag to slide</figcaption>
+          </figure>
+        </section>
+
         <section id="story" className="section section--wide">
           <header className="section__head" data-fx="head">
             <p className="eyebrow">Storyline</p>
@@ -230,44 +257,90 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
               the contract, and every gangster farms up to their career cap.
             </p>
           </header>
-          <ul className="lineup" data-fx="deal">
-            {RARITIES.map((r, i) => (
-              <li key={r.id} className="lineup__panel" style={{ "--rc": r.color, "--i": i } as React.CSSProperties}>
-                <div className="lineup__inner">
-                  <span className="lineup__shine" aria-hidden />
-                  <div className="lineup__top">
-                    <span className="lineup__name">{r.name}</span>
-                    <span className="lineup__chance">{r.chance}%</span>
-                  </div>
-                  <div className="lineup__toy">
-                    <GangsterToy gangsterId={LINEUP_ARCHETYPE[i]} rarity={r.id} bare animate />
-                  </div>
-                  <dl className="lineup__stats">
-                    <div>
-                      <dt>Farm/day</dt>
-                      <dd>{fmt(r.perDay)} DC</dd>
+          <div className="drop" data-fx="drop">
+            <DropBox />
+            <div className="dodds">
+              <div className="dodds__bar" aria-hidden>
+                {RARITIES.map((r) => (
+                  <span key={r.id} style={{ "--rc": r.color, "--g": r.chance } as React.CSSProperties} />
+                ))}
+              </div>
+              <ul className="dodds__legend">
+                {RARITIES.map((r) => (
+                  <li key={r.id} style={{ "--rc": r.color } as React.CSSProperties}>
+                    <i aria-hidden />
+                    {r.name} <b>{r.chance}%</b>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          <div className="lu" data-fx="lineup">
+            <ul className="lu__row">
+              {LINEUP_ORDER.map((ri, slot) => {
+                const r = RARITIES[ri];
+                return (
+                  <li
+                    key={r.id}
+                    className={`suspect${r.id === 4 ? " suspect--legend" : ""}`}
+                    style={
+                      {
+                        "--rc": r.color,
+                        "--r": r.id,
+                        "--slot": slot,
+                        "--skin": archetypeOf(LINEUP_ARCHETYPE[ri]).skin,
+                      } as React.CSSProperties
+                    }
+                    tabIndex={0}
+                  >
+                    <span className="suspect__shadow" aria-hidden />
+                    <div className="suspect__fig">
+                      <GangsterToy gangsterId={LINEUP_ARCHETYPE[ri]} rarity={r.id} bare animate />
+                      {/* the booking placard each gangster holds */}
+                      <div className="suspect__board">
+                        <span className="suspect__bar">{r.name}</span>
+                        <span className="suspect__pct">{r.chance}%</span>
+                      </div>
                     </div>
-                    <div>
-                      <dt>Cap</dt>
-                      <dd>{fmt(r.cap)} DC</dd>
-                    </div>
-                    <div>
-                      <dt>Shot risk</dt>
-                      <dd>{SHOT_CHANCE_PER_DAY[r.id]}%/day</dd>
-                    </div>
-                  </dl>
-                </div>
-              </li>
-            ))}
-          </ul>
+                    <dl className="suspect__stats">
+                      <div>
+                        <dt>Farm/day</dt>
+                        <dd>{fmt(r.perDay)} DC</dd>
+                      </div>
+                      <div>
+                        <dt>Cap</dt>
+                        <dd>{fmt(r.cap)} DC</dd>
+                      </div>
+                      <div>
+                        <dt>Shot risk</dt>
+                        <dd>{SHOT_CHANCE_PER_DAY[r.id]}%/day</dd>
+                      </div>
+                    </dl>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
         </section>
 
         {/* ------------------------------------------------------------ final CTA */}
         <section className="final">
           <div className="final__card" data-fx="pop">
+            <span className="final__bg" aria-hidden />
+            <span className="final__veil" aria-hidden />
+            <p className="eyebrow">Season 01</p>
             <h2>The city won't wait.</h2>
             <p>Connect your wallet, pick your boss and open your first box.</p>
             <ConnectCTA onEnter={onEnter} />
+            <Countdown />
+            <ul className="final__facts">
+              <li>Roll happens on-chain</li>
+              <li>
+                1 USDC = {DACITY_PER_USDC} DC
+              </li>
+              <li>{TARGET_CHAIN.name}</li>
+            </ul>
           </div>
         </section>
       </main>
