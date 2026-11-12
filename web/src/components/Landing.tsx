@@ -5,27 +5,40 @@ import ConnectCTA from "./ConnectCTA";
 import Countdown from "./Countdown";
 import Portrait from "./Portrait";
 import GangsterToy from "./art/GangsterToy";
+import StepArt, { type StepKind } from "./art/StepArt";
+import LoreArt from "./art/LoreArt";
 import { BOX_PRICE_DC, DACITY_PER_USDC, PROTAGONISTS, RARITIES, SHOT_CHANCE_PER_DAY, SOCIALS, fmt, type Protagonist } from "../config/game";
 import { TARGET_CHAIN } from "../chains";
 import { useScrollFx } from "./useScrollFx";
 import "../landing-fx.css";
+import "../how.css";
+import "../story.css";
 
-const STEPS = [
+const STEPS: { kind: StepKind; title: string; text: string; chips: string[]; hot?: boolean }[] = [
   {
+    kind: "deposit",
     title: "Deposit USDC",
     text: `The vault contract converts instantly: 1 USDC becomes ${DACITY_PER_USDC} Dacity Coin, straight to your wallet.`,
+    chips: [`1 USDC = ${DACITY_PER_USDC} DC`, "Instant"],
   },
   {
+    kind: "gang",
     title: "Found your gang",
     text: "Pick Nina or Rico as your boss and register your gang's name on-chain.",
+    chips: ["2 bosses", "Name on-chain"],
   },
   {
+    kind: "boxes",
     title: "Open boxes",
     text: `Each box costs ${fmt(BOX_PRICE_DC)} DC and reveals a gangster from one of 5 rarities.`,
+    chips: [`${fmt(BOX_PRICE_DC)} DC / box`, "5 rarities"],
+    hot: true,
   },
   {
+    kind: "farm",
     title: "Farm DC",
     text: "Every gangster earns Dacity Coin daily until they hit their career cap.",
+    chips: ["Paid daily", "Up to career cap"],
   },
 ];
 
@@ -101,69 +114,117 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
 
       <main className="magenta">
         {/* ------------------------------------------------------------ how it works */}
-        <section id="how-it-works" className="section">
+        <section id="how-it-works" className="section section--wide">
           <header className="section__head" data-fx="head">
             <p className="eyebrow">How it works</p>
             <h2>From deposit to empire</h2>
           </header>
           <ol className="steps" data-fx="steps">
-            {STEPS.map((s, i) => (
-              <li key={s.title} className="step" style={{ "--i": i } as React.CSSProperties}>
-                <span className="step__num">{String(i + 1).padStart(2, "0")}</span>
-                <h3>{s.title}</h3>
-                <p>{s.text}</p>
-              </li>
-            ))}
+            {STEPS.map((s, i) => {
+              const num = String(i + 1).padStart(2, "0");
+              return (
+                <li key={s.title} className={`step${s.hot ? " step--hot" : ""}`} style={{ "--i": i } as React.CSSProperties}>
+                  <div className="step__node" aria-hidden>
+                    <span className="step__badge">{num}</span>
+                    <span className="step__trail" />
+                  </div>
+                  <div className="step__card">
+                    {s.hot && <span className="step__tag">The hook</span>}
+                    <div className="step__art">
+                      <StepArt kind={s.kind} />
+                    </div>
+                    <span className="step__ghost" aria-hidden>
+                      {num}
+                    </span>
+                    <h3>{s.title}</h3>
+                    <p>{s.text}</p>
+                    <ul className="step__chips">
+                      {s.chips.map((c) => (
+                        <li key={c}>{c}</li>
+                      ))}
+                      {s.hot && (
+                        <li aria-label="rarity colors">
+                          <span className="step__dots" aria-hidden>
+                            {RARITIES.map((r) => (
+                              <i key={r.id} style={{ "--c": r.color } as React.CSSProperties} />
+                            ))}
+                          </span>
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                </li>
+              );
+            })}
           </ol>
         </section>
 
         {/* ------------------------------------------------------------ story (zig-zag) */}
-        <section id="story" className="section">
+        <section id="story" className="section section--wide">
           <header className="section__head" data-fx="head">
             <p className="eyebrow">Storyline</p>
             <h2>Welcome to Dacity</h2>
+            <p className="section__lede">Two bosses, one city. Pick the one who takes the waterfront.</p>
           </header>
 
-          <div className="story">
-            <div className="story__row" data-fx="story">
-              <div className="story__frame story__frame--city" data-parallax>
-                <Scene />
-              </div>
-              <div className="story__text">
+          <div className="lore" data-fx="lore">
+            <div className="story__frame story__frame--city lore__frame">
+              <LoreArt />
+              <span className="lore__scan" aria-hidden />
+            </div>
+            <div className="lore__copy">
+              <div>
+                <p className="lore__kicker">The city</p>
                 <p>
                   A neon coastal city where every block has an owner and every owner has a price. The old families are
                   slipping. Somebody new is going to take the waterfront.
                 </p>
-                <ul className="pills">
-                  <li>Crime</li>
-                  <li>Strategy</li>
-                  <li>On-chain</li>
-                </ul>
               </div>
+              <ul className="pills">
+                <li>Crime</li>
+                <li>Strategy</li>
+                <li>On-chain</li>
+              </ul>
             </div>
+          </div>
 
+          <div className="duo">
             {[nina, rico].map((p, i) => (
-              <div
+              <article
                 key={p.id}
-                className={`story__row${i % 2 === 0 ? " story__row--flip" : ""}`}
-                style={{ "--accent": p.accent } as React.CSSProperties}
-                data-fx="story"
+                className={`char char--${p.variant}`}
+                style={{ "--accent": p.accent, "--i": i } as React.CSSProperties}
+                data-fx="char"
               >
-                <div className="story__frame" data-parallax>
-                  <Portrait protagonist={p} />
+                <div className="char__stage">
+                  <div className="char__frame">
+                    <div className="char__photo" data-parallax>
+                      <Portrait protagonist={p} />
+                    </div>
+                    <span className="char__shade" aria-hidden />
+                    <span className="char__scan" aria-hidden />
+                    <span className="char__label">Boss {String(i + 1).padStart(2, "0")}</span>
+                    <span className="char__ghost" aria-hidden>
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <h3 className="char__name">
+                      <span>{p.name}</span>
+                      <em>{p.alias}</em>
+                    </h3>
+                  </div>
                 </div>
-                <div className="story__text">
-                  <h3>
-                    {p.name} <span>· {p.alias}</span>
-                  </h3>
+                <div className="char__panel">
                   <p>{p.bio}</p>
-                  <ul className="pills">
+                  <ul className="char__pills">
                     <li>{p.role}</li>
                     <li>Boss</li>
                   </ul>
                 </div>
-              </div>
+              </article>
             ))}
+            <span className="duo__or" aria-hidden>
+              OR
+            </span>
           </div>
         </section>
 
