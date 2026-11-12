@@ -1,0 +1,673 @@
+/*
+ * Storyline section: cinematic city banner + two tall "boss" cards (portrait photos, staggered).
+ * Imported after styles.css / landing-fx.css so it wins ties. Reveal states only apply under .fx-ready.
+ */
+
+/* ------------------------------------------------------------------ lore banner */
+
+.lore {
+  position: relative;
+  max-width: 1120px;
+  margin: 0 auto 84px;
+}
+
+.lore__frame {
+  aspect-ratio: 16 / 9;
+  border-radius: 26px;
+  border-color: rgba(255, 255, 255, 0.55);
+  background: #1b0833;
+  box-shadow: 0 30px 70px rgba(20, 0, 30, 0.55), 0 0 60px rgba(255, 46, 136, 0.25);
+}
+
+/* ---- key art + subtle living details (all positions are % of the 16:9 picture) ---- */
+
+.lore__art {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  transform-origin: 38% 55%;
+  animation: lore-drift 32s ease-in-out infinite alternate;
+}
+
+@keyframes lore-drift {
+  from {
+    scale: 1.02;
+    translate: 0.6% 0;
+  }
+  to {
+    scale: 1.085;
+    translate: -1.2% -0.8%;
+  }
+}
+
+.lore__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+  /* the source is small: a touch of contrast keeps it crisp when scaled up */
+  filter: contrast(1.05) saturate(1.08);
+}
+
+.lore__art > span {
+  position: absolute;
+  pointer-events: none;
+}
+
+/* clouds: very soft light patches sliding sideways */
+.lore__cloud {
+  top: 4%;
+  width: 46%;
+  height: 20%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255, 190, 220, 0.34), transparent);
+  filter: blur(14px);
+  mix-blend-mode: screen;
+}
+
+.lore__cloud--a {
+  left: 8%;
+  animation: lore-cloud 46s linear infinite alternate;
+}
+
+.lore__cloud--b {
+  top: 14%;
+  left: 40%;
+  width: 40%;
+  height: 16%;
+  opacity: 0.8;
+  animation: lore-cloud 62s linear infinite alternate-reverse;
+}
+
+@keyframes lore-cloud {
+  from {
+    translate: -12% 0;
+  }
+  to {
+    translate: 22% 0;
+  }
+}
+
+/* sunset breathing at the horizon */
+.lore__sunglow {
+  left: 2%;
+  top: 46%;
+  width: 34%;
+  height: 26%;
+  background: radial-gradient(closest-side, rgba(255, 170, 70, 0.55), transparent);
+  mix-blend-mode: screen;
+  animation: lore-breathe 7s ease-in-out infinite;
+}
+
+@keyframes lore-breathe {
+  0%,
+  100% {
+    opacity: 0.35;
+    scale: 0.94;
+  }
+  50% {
+    opacity: 0.9;
+    scale: 1.06;
+  }
+}
+
+/* helicopter spotlight */
+.lore__beam {
+  left: 26.8%;
+  top: 15%;
+  width: 5%;
+  height: 8%;
+  background: radial-gradient(closest-side, rgba(255, 244, 200, 0.95), rgba(255, 220, 150, 0.25) 60%, transparent);
+  mix-blend-mode: screen;
+  animation: lore-beam 3.4s ease-in-out infinite;
+}
+
+@keyframes lore-beam {
+  0%,
+  100% {
+    opacity: 0.55;
+    scale: 0.9;
+  }
+  50% {
+    opacity: 1;
+    scale: 1.15;
+  }
+}
+
+/* aircraft lights */
+.lore__blink {
+  width: 5px;
+  height: 5px;
+  margin: -2.5px 0 0 -2.5px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 8px 2px rgba(255, 255, 255, 0.9);
+  animation: lore-blink 1.8s steps(1, end) infinite;
+}
+
+.lore__blink--heli {
+  left: 22.4%;
+  top: 11.4%;
+  background: #ff4a4a;
+  box-shadow: 0 0 8px 3px rgba(255, 60, 60, 0.9);
+}
+
+.lore__blink--plane {
+  left: 62%;
+  top: 18.3%;
+  width: 3px;
+  height: 3px;
+  margin: -1.5px 0 0 -1.5px;
+  animation-delay: 0.6s;
+}
+
+@keyframes lore-blink {
+  0%,
+  86% {
+    opacity: 0;
+  }
+  87%,
+  100% {
+    opacity: 1;
+  }
+}
+
+/* skyline windows */
+.lore__twinkle {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #ffe9a8;
+  box-shadow: 0 0 6px 1px rgba(255, 220, 140, 0.8);
+  animation: lore-twinkle 3.2s ease-in-out infinite;
+  animation-delay: var(--d, 0s);
+}
+
+@keyframes lore-twinkle {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  45%,
+  60% {
+    opacity: 0.95;
+  }
+}
+
+/* OCEAN VIEW neon: steady pulse, with an occasional flicker */
+.lore__neon {
+  left: 76%;
+  top: 38%;
+  width: 22%;
+  height: 11%;
+  background: radial-gradient(closest-side, rgba(255, 70, 190, 0.6), rgba(255, 70, 190, 0.18) 65%, transparent);
+  mix-blend-mode: screen;
+  animation: lore-neon 5.5s ease-in-out infinite;
+}
+
+@keyframes lore-neon {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  40% {
+    opacity: 0.95;
+  }
+  62% {
+    opacity: 0.35;
+  }
+  64% {
+    opacity: 1;
+  }
+  68% {
+    opacity: 0.5;
+  }
+  72% {
+    opacity: 0.95;
+  }
+}
+
+/* tail lights */
+.lore__tail {
+  top: 70.5%;
+  height: 7%;
+  background: radial-gradient(closest-side, rgba(255, 60, 40, 0.75), rgba(255, 60, 40, 0.2) 65%, transparent);
+  mix-blend-mode: screen;
+  animation: lore-tail 4.6s ease-in-out infinite;
+}
+
+.lore__tail--l {
+  left: 58.5%;
+  width: 12.5%;
+}
+
+.lore__tail--r {
+  left: 79.5%;
+  width: 11.5%;
+  animation-delay: -0.4s;
+}
+
+@keyframes lore-tail {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+/* wet street / water reflections sliding slowly */
+.lore__shimmer {
+  left: 0;
+  top: 62%;
+  width: 64%;
+  height: 12%;
+  opacity: 0.55;
+  background: repeating-linear-gradient(90deg, transparent 0 22px, rgba(255, 205, 235, 0.28) 22px 27px, transparent 27px 64px);
+  mask-image: linear-gradient(180deg, transparent, #000 45%, transparent);
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 45%, transparent);
+  mix-blend-mode: screen;
+  animation: lore-shimmer 9s linear infinite;
+}
+
+@keyframes lore-shimmer {
+  to {
+    background-position: 64px 0;
+  }
+}
+
+.lore__scan,
+.char__scan {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(180deg, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 3px);
+  mix-blend-mode: multiply;
+}
+
+/* text sits in a glass bar overlapping the bottom of the picture, so the whole art stays visible */
+.lore__copy {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 18px 36px;
+  margin: -64px clamp(16px, 4vw, 52px) 0;
+  padding: 24px 30px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(30, 6, 56, 0.72), rgba(20, 4, 40, 0.6));
+  backdrop-filter: blur(10px);
+  box-shadow: 0 20px 50px rgba(10, 0, 20, 0.5);
+}
+
+.lore__copy p {
+  margin: 0;
+  font-size: clamp(15px, 1.35vw, 18px);
+  line-height: 1.6;
+  color: #f6e3f7;
+}
+
+.lore__copy .lore__kicker {
+  margin-bottom: 10px;
+  color: var(--sun);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.lore__copy .pills {
+  margin: 0;
+}
+
+.lore__copy .pills li {
+  padding: 6px 16px;
+  font-size: 13px;
+}
+
+/* ------------------------------------------------------------------ boss duo */
+
+.duo {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(36px, 6vw, 88px);
+  max-width: 1160px;
+  margin: 0 auto;
+  padding-bottom: 28px;
+}
+
+/* second card sits lower: the pair reads as a diagonal, not a grid */
+.char:nth-child(2) {
+  margin-top: 84px;
+}
+
+.char {
+  --accent: var(--pink);
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.char__stage {
+  position: relative;
+}
+
+/* offset outline behind the photo */
+.char__stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  translate: 16px 16px;
+  border: 2px solid var(--accent);
+  border-radius: 30px;
+  opacity: 0.55;
+  box-shadow: 0 0 24px color-mix(in srgb, var(--accent) 50%, transparent);
+  transition: translate 0.45s var(--fx-ease, ease), opacity 0.45s;
+}
+
+.char:nth-child(2) .char__stage::before {
+  translate: -16px 16px;
+}
+
+.char:hover .char__stage::before {
+  translate: 24px 24px;
+  opacity: 0.95;
+}
+
+.char:nth-child(2):hover .char__stage::before {
+  translate: -24px 24px;
+}
+
+.char__frame {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  aspect-ratio: 4 / 5;
+  border: 2px solid color-mix(in srgb, var(--accent) 55%, #fff);
+  border-radius: 30px;
+  background: linear-gradient(180deg, #2a0f4a, #b0207a 60%, #ff8a3d);
+  box-shadow: 0 34px 70px rgba(14, 0, 24, 0.6), 0 0 56px color-mix(in srgb, var(--accent) 38%, transparent);
+  transition: translate 0.45s var(--fx-ease, ease);
+}
+
+.char:hover .char__frame {
+  translate: 0 -6px;
+}
+
+.char__photo {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+}
+
+.char__photo .portrait-img,
+.char__photo .silhouette {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 14%;
+  filter: contrast(1.06) saturate(1.1);
+  transition: scale 0.7s var(--fx-ease, ease);
+}
+
+/* Rico's photo is a tall narrow crop with the head at the very top */
+.char__photo .portrait-img.portrait-img--rico {
+  object-position: 50% 0%;
+}
+
+.fx-ready .char:hover .char__photo > * {
+  scale: 1.16;
+}
+
+.char__shade {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, rgba(10, 0, 20, 0.35) 0%, transparent 26%, transparent 46%, rgba(14, 2, 28, 0.9) 100%),
+    radial-gradient(90% 60% at 50% 105%, color-mix(in srgb, var(--accent) 45%, transparent), transparent 70%);
+}
+
+.char__scan {
+  z-index: -1;
+  opacity: 0.35; /* just enough grain to hide the upscaling softness of the photos */
+}
+
+.char__label {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 999px;
+  background: rgba(14, 2, 28, 0.55);
+  backdrop-filter: blur(6px);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.char__label::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent), 0 0 18px var(--accent);
+}
+
+.char__ghost {
+  position: absolute;
+  top: 6px;
+  right: 14px;
+  font-family: var(--font-display);
+  font-size: clamp(90px, 11vw, 150px);
+  line-height: 1;
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.4);
+  pointer-events: none;
+  user-select: none;
+}
+
+.char__name {
+  position: absolute;
+  left: 22px;
+  right: 22px;
+  bottom: 22px;
+  margin: 0;
+  display: grid;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  text-transform: uppercase;
+  text-shadow: 0 4px 24px rgba(10, 0, 20, 0.8);
+}
+
+.char__name span {
+  font-size: clamp(40px, 4.6vw, 64px);
+  line-height: 0.95;
+}
+
+.char__name em {
+  align-self: start;
+  padding: 4px 12px;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #12041f;
+  font-size: clamp(15px, 1.5vw, 20px);
+  font-style: normal;
+  letter-spacing: 0.06em;
+  text-shadow: none;
+  box-shadow: 0 0 22px color-mix(in srgb, var(--accent) 70%, transparent);
+}
+
+/* bio panel under the photo */
+.char__panel {
+  padding: 20px 22px 22px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px 20px 20px 6px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03));
+  backdrop-filter: blur(6px);
+}
+
+.char__panel p {
+  margin: 0;
+  color: #f6e3f7;
+  font-size: clamp(15px, 1.3vw, 17px);
+  line-height: 1.6;
+}
+
+.char__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.char__pills li {
+  padding: 5px 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 70%, #fff);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 22%, rgba(20, 4, 40, 0.6));
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/* "OR" between the two bosses (same device as step 02) */
+.duo__or {
+  position: absolute;
+  left: 50%;
+  top: 38%;
+  z-index: 3;
+  translate: -50% -50%;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: #fff;
+  color: #1a0a24;
+  font-family: var(--font-display);
+  font-size: 20px;
+  box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.18), 0 0 30px rgba(255, 255, 255, 0.7);
+}
+
+/* ------------------------------------------------------------------ scroll reveal */
+
+.fx-ready [data-fx="lore"] .lore__frame {
+  clip-path: inset(0 100% 0 0 round 26px);
+  scale: 0.94;
+  transition: clip-path 1.2s var(--fx-ease), scale 1.2s var(--fx-ease);
+}
+
+.fx-ready [data-fx="lore"].is-in .lore__frame {
+  clip-path: inset(-80px -80px -80px -80px round 26px);
+  scale: 1;
+}
+
+.fx-ready [data-fx="lore"] .lore__copy {
+  opacity: 0;
+  translate: 0 36px;
+  transition: opacity 0.9s var(--fx-ease), translate 1s var(--fx-ease);
+  transition-delay: 0.6s;
+}
+
+.fx-ready [data-fx="lore"].is-in .lore__copy {
+  opacity: 1;
+  translate: 0 0;
+}
+
+.fx-ready [data-fx="char"] {
+  opacity: 0;
+  translate: 0 90px;
+  rotate: calc(-2.5deg + var(--i, 0) * 5deg);
+  filter: blur(8px);
+  transition: opacity 0.8s var(--fx-ease), translate 1s var(--fx-bounce), rotate 1s var(--fx-ease), filter 0.8s var(--fx-ease);
+  transition-delay: calc(var(--i, 0) * 0.18s);
+}
+
+.fx-ready [data-fx="char"].is-in {
+  opacity: 1;
+  translate: 0 0;
+  rotate: 0deg;
+  filter: none;
+}
+
+/* name plate slides up after the card lands */
+.fx-ready [data-fx="char"] .char__name {
+  opacity: 0;
+  translate: 0 26px;
+  transition: opacity 0.7s var(--fx-ease), translate 0.8s var(--fx-ease);
+  transition-delay: calc(0.5s + var(--i, 0) * 0.18s);
+}
+
+.fx-ready [data-fx="char"].is-in .char__name {
+  opacity: 1;
+  translate: 0 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lore__art,
+  .lore__art > span {
+    animation: none !important;
+  }
+  .char__frame,
+  .char__stage::before,
+  .char__photo > * {
+    transition: none;
+  }
+}
+
+/* ------------------------------------------------------------------ responsive */
+
+@media (max-width: 900px) {
+  .lore__copy {
+    grid-template-columns: 1fr;
+    margin: -40px 12px 0;
+    padding: 20px 20px 22px;
+  }
+}
+
+@media (max-width: 560px) {
+  .lore__frame {
+    aspect-ratio: 4 / 3;
+    border-radius: 20px;
+  }
+  /* 4:3 crops the sides of the 16:9 art: keep the car and the neon in frame */
+  .lore__art {
+    inset: 0 -16% 0 -6%;
+  }
+}
+
+@media (max-width: 760px) {
+  .duo {
+    grid-template-columns: 1fr;
+    gap: 56px;
+    max-width: 460px;
+    padding-bottom: 16px;
+  }
+  .char:nth-child(2) {
+    margin-top: 0;
+  }
+  .duo__or {
+    top: calc(50% - 24px);
+  }
+  .char__stage::before,
+  .char:nth-child(2) .char__stage::before {
+    translate: 10px 10px;
+  }
+}

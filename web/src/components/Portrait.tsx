@@ -213,5 +213,5 @@ function Rico({ uid, accent }: { uid: string; accent: string }) {
 export default function Portrait({ protagonist }: { protagonist: Protagonist }) {
   const [failed, setFailed] = useState(false);
   if (failed) return <MockPortrait variant={protagonist.variant} accent={protagonist.accent} />;
-  return <img className="portrait-img" src={protagonist.image} alt={protagonist.name} onError={() => setFailed(true)} />;
+  return <img className={`portrait-img portrait-img--${protagonist.variant}`} src={protagonist.image} alt={protagonist.name} onError={() => setFailed(true)} />;
 }
