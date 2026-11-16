@@ -10,6 +10,7 @@
 import { useSyncExternalStore } from "react";
 import { platform } from "./platform";
 import { ammoFor, fmtUsd } from "../price";
+import { WITHDRAW_COOLDOWN_HOURS, WITHDRAW_COOLDOWN_MS } from "../config/game";
 import { CLAIM_ALL_FEE_USD, MAX_BOXES_PER_ORDER, MEDKIT_PRICE_USD, fmtAmmo, SHOT_CHANCE_PER_DAY, STORE_NAME, VEST, WEAPONS, quoteBoxes, type WeaponId, DACITY_PER_USDC, RARITIES, fusedStats, recipeFrom, type FarmStats } from "../config/game";
 
 const envMock = import.meta.env.VITE_MOCK as string | undefined;
@@ -104,6 +105,8 @@ export type MockState = {
   usdc: number; // fake wallet USDC (in the player's Solana wallet)
   /** fake $AMMO sitting in the player's Solana wallet, not yet deposited into the game */
   walletAmmo: number;
+  /** when the last USDC withdrawal was made (0 = never): one withdrawal per WITHDRAW_COOLDOWN_MS */
+  lastWithdrawAt: number;
   dc: number; // DACITY balance
   boxes: MockBox[];
   gangsters: MockGangster[];
@@ -160,6 +163,7 @@ const initial = (): MockState => ({
   medkits: 0,
   ammo: 0,
   walletAmmo: ammoFor(DEMO_WALLET_USD),
+  lastWithdrawAt: 0,
   inventory: { pistol: 0, smg: 0, rifle: 0, vest: 0 },
 });
 
@@ -349,6 +353,17 @@ function rollRarity(): number {
   return 0;
 }
 
+/** Time left until this player can withdraw USDC again (0 = can withdraw now). */
+export const withdrawWaitMs = (s: Pick<MockState, "lastWithdrawAt">, now = Date.now()) =>
+  Math.max(0, (s.lastWithdrawAt || 0) + WITHDRAW_COOLDOWN_MS - now);
+
+/** 23:59:07 */
+export const fmtWait = (ms: number) => {
+  const t = Math.ceil(ms / 1000);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${p(Math.floor(t / 3600))}:${p(Math.floor((t % 3600) / 60))}:${p(t % 60)}`;
+};
+
 // ------------------------------------------------------------------ actions (mirror contract calls)
 
 export const mock = {
@@ -396,9 +411,11 @@ export const mock = {
   /** Vault withdraw: burns DC, returns USDC at the same 100:1 rate. */
   withdraw(dc: number) {
     if (!(dc > 0) || dc > state.dc) throw new Error("Not enough DACITY");
+    const wait = withdrawWaitMs(state);
+    if (wait > 0) throw new Error(`One withdrawal every ${WITHDRAW_COOLDOWN_HOURS}h. Next one in ${fmtWait(wait)}`);
     set(
       withTx(
-        { ...state, dc: state.dc - dc, usdc: state.usdc + dc / DACITY_PER_USDC },
+        { ...state, dc: state.dc - dc, usdc: state.usdc + dc / DACITY_PER_USDC, lastWithdrawAt: Date.now() },
         { type: "withdraw", title: "Withdraw", detail: "Vault: DC → USDC", dc: -dc, usdc: dc / DACITY_PER_USDC },
       ),
     );
@@ -719,6 +736,11 @@ export const mock = {
       ),
     );
     return targets.length;
+  },
+
+  /** Mock only: clear the withdrawal cooldown to test again. */
+  skipWithdrawCooldown() {
+    set({ ...state, lastWithdrawAt: 0 });
   },
 
   reset() {

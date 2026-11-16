@@ -1,6 +1,13 @@
 /** Mirrors the defaults in contracts/DacityGang.sol and DacityVault.sol. Keep both in sync. */
 
 export const DACITY_PER_USDC = 100;
+
+/**
+ * USDC withdrawals: one per wallet every WITHDRAW_COOLDOWN_HOURS, counted from the moment of the last
+ * withdrawal (real hours, not farming days). Protects the Reward Pool from being drained in bursts.
+ */
+export const WITHDRAW_COOLDOWN_HOURS = 24;
+export const WITHDRAW_COOLDOWN_MS = WITHDRAW_COOLDOWN_HOURS * 60 * 60 * 1000;
 /** Regular box price: 300 DC = $3.00. */
 export const BOX_PRICE_DC = 300;
 
@@ -95,7 +102,7 @@ export const CREATOR_REWARDS_LABEL = "pump.fun creator rewards";
  */
 
 /** "Claim all" charges this per gangster claimed (USD, paid in AMMO, burned). Claiming one at a time is free. */
-export const CLAIM_ALL_FEE_USD = 0.5;
+export const CLAIM_ALL_FEE_USD = 0.05;
 
 /** Season start shown in the hero countdown. Override with VITE_SEASON_START (ISO date). */
 export const SEASON_START = new Date(import.meta.env.VITE_SEASON_START || "2026-12-12T20:00:00Z");

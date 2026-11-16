@@ -19,6 +19,7 @@ import {
   STORE_NAME,
   VEST,
   WEAPONS,
+  WITHDRAW_COOLDOWN_HOURS,
   PROTAGONISTS,
   fmt,
 } from "../config/game";
@@ -304,6 +305,10 @@ const SECTIONS: Section[] = [
           </li>
           <li>
             <b>Withdraw:</b> {DACITY_PER_USDC} DC → 1 USDC. The game sends the USDC from the Reward Pool to the wallet you play with.
+          </li>
+          <li>
+            <b>One withdrawal every {WITHDRAW_COOLDOWN_HOURS} hours per wallet.</b> After you withdraw, the Withdraw button locks and shows a
+            countdown; the {WITHDRAW_COOLDOWN_HOURS} hours count from the moment of that withdrawal. Deposits are never limited.
           </li>
           <li>Deposit and withdraw sit in the same card in the HQ (Deposit / Withdraw switch).</li>
           <li>
@@ -604,7 +609,8 @@ const SECTIONS: Section[] = [
         head={["Action", "Cost", "Paid in", "Where it goes"]}
         rows={[
           ["Gangster Box", `${fmt(BOX_PRICE_DC)} DC (${usd(BOX_PRICE_DC)})`, "DC", "Reward Pool (the USDC behind it)"],
-          ["Deposit / withdraw USDC", "1 USDC = 100 DC", "USDC / DC", "Vault"],
+          ["Deposit USDC", "1 USDC = 100 DC, no limit", "USDC", "Vault"],
+          ["Withdraw DC → USDC", `100 DC = 1 USDC, once every ${WITHDRAW_COOLDOWN_HOURS}h per wallet`, "DC", "Your wallet"],
           ["Deposit / withdraw $AMMO", "Free (Solana network fee only)", "$AMMO", "Your in-game balance"],
           ["Solana network fee", "~0.00001 SOL per deposit or withdrawal, paid by you", "SOL", "Solana validators"],
           ["Claim one gangster", "Free", "—", "—"],
@@ -629,7 +635,10 @@ const SECTIONS: Section[] = [
           phrase or private key.
         </li>
         <li>Game logic runs on the game's servers, so nobody can edit their own balance from the browser.</li>
-        <li>Deposits are credited only after the transfer is confirmed on Solana. Withdrawals have daily limits and large ones are reviewed.</li>
+        <li>
+          Deposits are credited only after the transfer is confirmed on Solana. USDC withdrawals are limited to one every{" "}
+          {WITHDRAW_COOLDOWN_HOURS} hours per wallet, and large ones may be reviewed.
+        </li>
         <li>Box rolls are provably fair (see Gangster Boxes), and every $AMMO burn is an on-chain transaction anyone can check.</li>
         <li>The team can pause the game for maintenance. Your gangsters, balances and farming are kept while paused.</li>
       </ul>
@@ -660,6 +669,11 @@ const SECTIONS: Section[] = [
         <dd>No. You can deposit, buy boxes, farm and claim one by one with just USDC and DC. $AMMO is for items, fusion and claim-all.</dd>
         <dt>Is the DC I farm real money?</dt>
         <dd>DC can be withdrawn at {DACITY_PER_USDC} DC = 1 USDC, paid from the Reward Pool.</dd>
+        <dt>How often can I withdraw?</dt>
+        <dd>
+          Once every {WITHDRAW_COOLDOWN_HOURS} hours per wallet, for any amount you have. The countdown starts when you withdraw and is shown
+          in the Vault card. $AMMO withdrawals are not limited.
+        </dd>
         <dt>What happens to $AMMO I spend?</dt>
         <dd>It's burned: removed from the supply forever. Nobody receives it, including the team.</dd>
         <dt>Where do the token's trading fees go?</dt>

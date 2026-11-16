@@ -9,6 +9,7 @@ import GangsterToy from "./art/GangsterToy";
 import AmmoIcon from "./art/AmmoIcon";
 import { BOX_PRICE_DC, BULK_TIERS, CLAIM_ALL_FEE_USD, DACITY_PER_USDC, LAUNCH_SALE, MEDKIT_PRICE_USD, TOKEN, fmtAmmo, PROTAGONISTS, RARITIES, SHOT_CHANCE_PER_DAY, STORE_NAME, WEAPONS, fmt, quoteBoxes } from "../config/game";
 import { usePlatform } from "../mock/platform";
+import { WITHDRAW_COOLDOWN_HOURS } from "../config/game";
 import { ammoFor, fmtUsd, useAmmoPrice } from "../price";
 import { WITHDRAW_FEE_NOTE } from "../solana";
 import {
@@ -16,6 +17,8 @@ import {
   MOCK_DAY_MS,
   archetypeOf,
   claimAllQuote,
+  fmtWait,
+  withdrawWaitMs,
   fusionCandidates,
   farmedOf,
   isFarming,
@@ -123,6 +126,11 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
           <span>Fake data, stored only in this browser. 1 farming day = {MOCK_DAY_MS / 1000}s.</span>
           <button type="button" onClick={() => run(mock.faucet, "+1,000 test USDC")}>+1,000 USDC</button>
           <button type="button" onClick={() => run(mock.ammoFaucet, "$25 of test AMMO in your wallet · deposit it in the Armory")}>+$25 AMMO</button>
+          {withdrawWaitMs(s, now) > 0 && (
+            <button type="button" onClick={() => run(mock.skipWithdrawCooldown, "Withdrawal cooldown cleared (mock only)")}>
+              Skip withdraw wait
+            </button>
+          )}
           <button
             type="button"
             onClick={() => {
@@ -181,6 +189,7 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
           <Vault
             usdc={s.usdc}
             dc={s.dc}
+            waitMs={withdrawWaitMs(s, now)}
             onDeposit={(n) => run(() => mock.deposit(n), `Deposited ${fmt(n)} USDC → ${fmt(n * DACITY_PER_USDC)} DC`)}
             onWithdraw={(n) => run(() => mock.withdraw(n), `Withdrew ${fmt(n)} DC → ${fmtUsdc(n / DACITY_PER_USDC)} USDC`)}
           />
@@ -334,11 +343,14 @@ const VAULT_MODES = {
 function Vault({
   usdc,
   dc,
+  waitMs,
   onDeposit,
   onWithdraw,
 }: {
   usdc: number;
   dc: number;
+  /** time left on the one-withdrawal-per-24h cooldown (0 = can withdraw) */
+  waitMs: number;
   onDeposit: (n: number) => void;
   onWithdraw: (n: number) => void;
 }) {
@@ -348,6 +360,7 @@ function Vault({
   const n = Math.floor(Number(amount) || 0);
   const balance = Math.floor(dep ? usdc : dc);
   const short = n > balance;
+  const locked = !dep && waitMs > 0;
 
   const switchTo = (m: VaultMode) => {
     if (m === mode) return;
@@ -403,14 +416,25 @@ function Vault({
         <p className="quote">
           You get <b>{dep ? `${fmt(n * DACITY_PER_USDC)} DC` : `${fmtUsdc(n / DACITY_PER_USDC)} USDC`}</b>
         </p>
-        <button
-          type="button"
-          className={`btn btn--block ${dep ? "btn--pink" : "btn--cyan"}`}
-          disabled={n < 1 || short}
-          onClick={() => (dep ? onDeposit(n) : onWithdraw(n))}
-        >
-          {short ? `Not enough ${dep ? "USDC" : "DC"}` : dep ? "Approve & deposit" : "Withdraw"}
-        </button>
+        {locked ? (
+          <div className="cooldown" role="timer" aria-live="off">
+            <span>Next withdrawal in</span>
+            <b>{fmtWait(waitMs)}</b>
+            <small>One withdrawal every {WITHDRAW_COOLDOWN_HOURS} hours per wallet</small>
+          </div>
+        ) : (
+          <>
+            <button
+              type="button"
+              className={`btn btn--block ${dep ? "btn--pink" : "btn--cyan"}`}
+              disabled={n < 1 || short}
+              onClick={() => (dep ? onDeposit(n) : onWithdraw(n))}
+            >
+              {short ? `Not enough ${dep ? "USDC" : "DC"}` : dep ? "Approve & deposit" : "Withdraw"}
+            </button>
+            {!dep && <p className="cooldown__note">You can withdraw once every {WITHDRAW_COOLDOWN_HOURS} hours, so pick the amount carefully.</p>}
+          </>
+        )}
       </div>
     </section>
   );
