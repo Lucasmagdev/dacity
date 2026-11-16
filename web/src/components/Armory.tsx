@@ -20,20 +20,9 @@ function useNow(ms = 1000) {
   return now;
 }
 
-/** Simple silhouettes, drawn inline so the shop has no external art yet. */
-function ItemIcon({ id }: { id: ItemId }) {
-  const paths: Record<ItemId, string> = {
-    medkit: "M8 10V7a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3M4 10h16v10H4zM12 13v4M10 15h4",
-    pistol: "M3 8h14l1 2h3v2h-6l-1 1v2l-2 5H8l2-6H6L3 12z",
-    smg: "M2 9h16v-1h2v4h-4l-1 1h-3l-1 6H8l1-6H6v4H4v-4H2z",
-    rifle: "M1 10h15l2-2h4v3h-3l-1 2H11l-1 2H8l-1 4H5l1-5H1z",
-    vest: "M8 3l4 2 4-2 3 3v15H5V6zM9 8h6M9 12h6M9 16h6",
-  };
-  return (
-    <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden>
-      <path d={paths[id]} />
-    </svg>
-  );
+/** Item art, from compressed copies in public/items/. */
+export function ItemIcon({ id, size = 480 }: { id: ItemId; size?: 128 | 480 }) {
+  return <img className="itemart" src={`/items/${id}${size === 128 ? "-128" : ""}.webp`} alt="" loading="lazy" decoding="async" draggable={false} />;
 }
 
 /** `price` is in USD; it's paid in AMMO at the live price. */

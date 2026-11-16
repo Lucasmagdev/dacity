@@ -5,7 +5,7 @@ import BoxReveal from "./BoxReveal";
 import CashBox from "./art/CashBox";
 import GangsterToy from "./art/GangsterToy";
 import AmmoIcon from "./art/AmmoIcon";
-import { LoadoutRow } from "./Armory";
+import { ItemIcon, LoadoutRow } from "./Armory";
 import { RARITIES, SHOT_CHANCE_PER_DAY, STORE_NAME, VEST, WEAPONS, fmt, type WeaponId } from "../config/game";
 import { archetypeOf, isBoxReady, isRetired, isShot, mock, statsOf, useMock, type MockGangster } from "../mock";
 
@@ -213,7 +213,7 @@ export default function Inventory({ onBack, onFound }: { onBack: () => void; onF
                 {ITEMS.map((it) => (
                   <li key={it.id} className={`inv__item${it.count === 0 ? " inv__item--empty" : ""}`} style={{ "--tone": it.tone } as React.CSSProperties}>
                     <span className="inv__item-ico" aria-hidden>
-                      {it.icon}
+                      <ItemIcon id={it.id} size={128} />
                     </span>
                     <div>
                       <b>{it.name}</b>

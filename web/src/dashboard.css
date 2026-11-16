@@ -1456,3 +1456,37 @@ a.gamenav__item:hover::after {
   font-size: 12px;
   font-weight: 700;
 }
+
+/* ------------------------------------------------------------------ item art */
+
+.itemart {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.item .item__icon {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  overflow: hidden;
+  padding: 0;
+  border-radius: 14px;
+  background: #12081f;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tone) 40%, transparent);
+  filter: none;
+}
+
+.item .item__icon .itemart {
+  transition: scale 0.4s ease;
+}
+
+.item:hover .item__icon .itemart {
+  scale: 1.06;
+}
+
+.inv__item-ico {
+  overflow: hidden;
+  padding: 0;
+}
