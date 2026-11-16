@@ -11,6 +11,7 @@ import { ADMIN_WALLETS, isAddress, shortAddr, useAdmin } from "../config/admin";
 import { fmt } from "../config/game";
 import { MOCK } from "../mock";
 import { game } from "../game";
+import { LIVE } from "../backend/live";
 import { isLive, platform, usePlatform, type AnnouncementKind } from "../mock/platform";
 
 const MAX_BOXES_GRANT = 50;
@@ -84,7 +85,7 @@ export default function Admin({ onBack }: { onBack: () => void }) {
           <div className="gate panel">
             <p className="eyebrow">Restricted</p>
             <h2>Admin access</h2>
-            {ADMIN_WALLETS.length === 0 ? (
+            {!LIVE && ADMIN_WALLETS.length === 0 ? (
               <p className="muted">
                 No admin wallets configured. Add your address to <code>VITE_ADMIN_WALLETS</code> in <code>web/.env</code> and
                 restart the dev server.

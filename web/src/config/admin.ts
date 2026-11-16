@@ -1,4 +1,5 @@
 import { useWalletAddress } from "../components/Wallet";
+import { LIVE, useLiveStatus } from "../backend/live";
 import { isSolanaAddress, shortAddr as short } from "../solana";
 
 /**
@@ -18,7 +19,10 @@ export const isAdmin = (address?: string | null) => !!address && ADMIN_WALLETS.i
 
 export function useAdmin() {
   const { address, connected } = useWalletAddress();
-  return { address, isConnected: connected, isAdmin: isAdmin(address) };
+  const live = useLiveStatus();
+  // live mode: the database's admins table decides; mock mode: VITE_ADMIN_WALLETS
+  const admin = LIVE ? live.phase === "ready" && live.isAdmin && live.wallet === address : isAdmin(address);
+  return { address, isConnected: connected, isAdmin: admin };
 }
 
 export const isAddress = isSolanaAddress;

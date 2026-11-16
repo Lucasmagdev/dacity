@@ -17,6 +17,7 @@
  */
 import { useSyncExternalStore } from "react";
 import { TOKEN } from "./config/game";
+import { supabase } from "./backend/supabase";
 
 const POLL_MS = 30_000;
 const TWAP_WINDOW_MS = 10 * 60_000;
@@ -113,7 +114,28 @@ async function poll(mint: string) {
   emit();
 }
 
-if (typeof window !== "undefined") {
+/** Live mode: the price players actually pay is the database's (10-minute average or the launch reference). */
+async function pollDatabase() {
+  if (!supabase) return;
+  const { data } = await supabase.from("token_price").select("price_usd, market_cap_usd, prelaunch, updated_at").maybeSingle();
+  if (!data?.price_usd) return;
+  const usd = Number(data.price_usd);
+  state = {
+    usd,
+    marketCap: Number(data.market_cap_usd),
+    source: data.prelaunch ? "sim" : "live",
+    updatedAt: data.updated_at ? new Date(data.updated_at).getTime() : Date.now(),
+    stale: false,
+  };
+  emit();
+}
+
+const LIVE_DB = import.meta.env.VITE_MOCK === "0" && !!supabase;
+
+if (typeof window !== "undefined" && LIVE_DB) {
+  pollDatabase().catch(() => {});
+  setInterval(() => pollDatabase().catch(() => {}), 30_000);
+} else if (typeof window !== "undefined") {
   if (TOKEN.address) {
     poll(TOKEN.address);
     setInterval(() => poll(TOKEN.address), POLL_MS);

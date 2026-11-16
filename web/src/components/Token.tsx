@@ -2,12 +2,33 @@ import { useEffect, useMemo, useState } from "react";
 import Scene from "./Scene";
 import Nav from "./Nav";
 import AmmoIcon from "./art/AmmoIcon";
+import Coin from "./art/Coin";
+import GangsterToy from "./art/GangsterToy";
 import Socials from "./Socials";
 import { TOKEN, STORE_NAME, fmt } from "../config/game";
 import { MOCK, useMock } from "../mock";
+import { LIVE } from "../backend/live";
+import { rpc } from "../backend/supabase";
 import { fmtCap, fmtTokenPrice, useAmmoPrice } from "../price";
 import { usePlatform } from "../mock/platform";
 import { snapshot, type BurnCategory, type BurnEvent } from "../mock/tokenSim";
+
+/**
+ * Burn categories use the game's own art: item images for med kits, weapons and vests, the DC chip for
+ * claim-all fees, and a fused gangster for fusion fees.
+ */
+function CatIcon({ id, label, size = 30 }: { id: BurnCategory; label?: string; size?: number }) {
+  if (id === "claimAll") return <Coin size={size} />;
+  if (id === "fusion")
+    return (
+      <span className="caticon caticon--toy" style={{ width: size, height: size }}>
+        <GangsterToy gangsterId={11} rarity={3} bare />
+      </span>
+    );
+  // weapons: show the exact weapon when the feed label names it
+  const weapon = id === "weapon" ? (/rifle/i.test(label ?? "") ? "rifle" : /smg/i.test(label ?? "") ? "smg" : /pistol/i.test(label ?? "") ? "pistol" : "rifle") : id;
+  return <img className="caticon" src={`/items/${weapon}-128.webp`} width={size} height={size} alt="" loading="lazy" decoding="async" />;
+}
 
 const CATS: { id: BurnCategory; label: string; color: string; icon: string }[] = [
   { id: "medkit", label: "Med kits", color: "#ff5a6e", icon: "✚" },
@@ -94,8 +115,43 @@ function SupplyChart({ points }: { points: { t: number; supply: number }[] }) {
   );
 }
 
+/** Live mode: real game-wide $AMMO numbers from the database (public totals + anonymous feed). */
+type LiveStats = {
+  spent_total: number;
+  pending_burn: number;
+  burned_onchain: number;
+  spent_24h: number;
+  spent_1h: number;
+  spends: number;
+  by_category: Partial<Record<BurnCategory, { amount: number; count: number }>>;
+  hourly_24h: { hour: string; amount: number }[];
+  recent: { at: string; amount: number; category: BurnCategory; label: string; who: string }[];
+  burns: { amount: number; signature: string; created_at: string }[];
+};
+
+function useLiveStats() {
+  const [stats, setStats] = useState<LiveStats | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    if (!LIVE) return;
+    let alive = true;
+    const load = () =>
+      rpc<LiveStats>("ammo_stats")
+        .then((s) => alive && (setStats(s), setError(null)))
+        .catch((e: Error) => alive && setError(e.message));
+    load();
+    const t = setInterval(load, 15_000);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, []);
+  return { stats, error };
+}
+
 export default function Token({ onBack }: { onBack: () => void }) {
   const now = useNow();
+  const live = useLiveStats();
   const s = useMock();
   const yourBurned = usePlatform((p) => p.ammoBurned);
   const snap = useMemo(() => snapshot(now), [now]);
@@ -117,20 +173,34 @@ export default function Token({ onBack }: { onBack: () => void }) {
     return { events, cats };
   }, [s.txs]);
 
-  const burned = snap.simBurned + yourBurned;
+  // ---- one shape for both modes: simulated network (mock) or real database numbers (live)
+  const ls = live.stats;
+  const n = (v: unknown) => Number(v ?? 0);
+  // every AMMO spent in the game is committed to the burn (burned on-chain in batches)
+  const burned = LIVE ? n(ls?.spent_total) : snap.simBurned + yourBurned;
+  const burned24h = LIVE ? n(ls?.spent_24h) : snap.burned24h;
+  const perHour = LIVE ? n(ls?.spent_1h) : snap.burned1h;
   const supply = TOKEN.totalSupply - burned;
   const pctBurned = (burned / TOKEN.totalSupply) * 100;
-  const perHour = snap.burned1h;
   const circulating = supply; // no locked / non-circulating wallets announced yet
-  const feed = [...yours.events.filter((e) => e.at > now - 10 * 60_000), ...snap.recent].sort((a, b) => b.at - a.at).slice(0, 14);
+  const feed: BurnEvent[] = LIVE
+    ? (ls?.recent ?? []).map((r) => ({ at: new Date(r.at).getTime(), amount: n(r.amount), category: r.category, who: r.who, label: r.label })).slice(0, 14)
+    : [...yours.events.filter((e) => e.at > now - 10 * 60_000), ...snap.recent].sort((a, b) => b.at - a.at).slice(0, 14);
   const cats = CATS.map((c) => {
+    if (LIVE) return { ...c, amount: n(ls?.by_category?.[c.id]?.amount), count: n(ls?.by_category?.[c.id]?.count) };
     const sim = snap.byCategory[c.id];
     const mine = yours.cats[c.id];
     return { ...c, amount: sim.amount + (mine?.amount ?? 0), count: sim.count + (mine?.count ?? 0) };
   });
   const catMax = Math.max(...cats.map((c) => c.amount), 1);
-  const totalSpends = cats.reduce((t, c) => t + c.count, 0);
-  const chart = snap.supply24h.map((p) => ({ t: p.t, supply: TOKEN.totalSupply - p.burnedBefore - yourBurned }));
+  const totalSpends = LIVE ? n(ls?.spends) : cats.reduce((t, c) => t + c.count, 0);
+  const chart = LIVE
+    ? Array.from({ length: 25 }, (_, h) => {
+        const t = now - (24 - h) * 3_600_000;
+        const after = (ls?.hourly_24h ?? []).filter((b) => new Date(b.hour).getTime() + 3_600_000 > t).reduce((s2, b) => s2 + n(b.amount), 0);
+        return { t, supply: TOKEN.totalSupply - (burned - (h === 24 ? 0 : after)) };
+      })
+    : snap.supply24h.map((p) => ({ t: p.t, supply: TOKEN.totalSupply - p.burnedBefore - yourBurned }));
 
   return (
     <div className="page token">
@@ -143,7 +213,7 @@ export default function Token({ onBack }: { onBack: () => void }) {
       </div>
 
       <div className="token__inner">
-        {(MOCK || !TOKEN.address) && (
+        {MOCK ? (
           <div className="mockbar">
             <span className="mockbar__tag">Simulated</span>
             <span>
@@ -151,7 +221,18 @@ export default function Token({ onBack }: { onBack: () => void }) {
               come straight from the chain.
             </span>
           </div>
+        ) : (
+          !TOKEN.address && (
+            <div className="mockbar mockbar--info">
+              <span className="mockbar__tag">Pre-launch</span>
+              <span>
+                Real numbers from the game. ${TOKEN.ticker} isn't trading yet, so the price is the {TOKEN.launchpad} launch reference and trading
+                stats start at launch.
+              </span>
+            </div>
+          )
         )}
+        {LIVE && live.error && <p className="note note--error">Couldn't load live stats: {live.error}</p>}
 
         {/* ------------------------------------------------------------ hero */}
         <section className="thero">
@@ -190,7 +271,7 @@ export default function Token({ onBack }: { onBack: () => void }) {
         {/* ------------------------------------------------------------ stat grid */}
         <dl className="tstats">
           <div className="tstat tstat--gold">
-            <dt>Price{price.source === "sim" ? " (simulated)" : ""}</dt>
+            <dt>Price{price.source === "sim" ? (MOCK ? " (simulated)" : " (launch reference)") : ""}</dt>
             <dd>{fmtTokenPrice(price.usd)}</dd>
             <small>Market cap {fmtCap(price.marketCap)}</small>
           </div>
@@ -207,11 +288,15 @@ export default function Token({ onBack }: { onBack: () => void }) {
           <div className="tstat tstat--fire">
             <dt>Total burned</dt>
             <dd>🔥 {compact(burned)}</dd>
-            <small>{fmt(Math.floor(burned))} AMMO gone</small>
+            <small>
+              {LIVE
+                ? `${fmt(Math.floor(n(ls?.burned_onchain)))} burned on-chain · ${fmt(Math.floor(n(ls?.pending_burn)))} in the next burn`
+                : `${fmt(Math.floor(burned))} AMMO gone`}
+            </small>
           </div>
           <div className="tstat tstat--fire">
             <dt>Burned 24h</dt>
-            <dd>{compact(snap.burned24h)}</dd>
+            <dd>{compact(burned24h)}</dd>
             <small>{compact(perHour)} in the last hour</small>
           </div>
           <div className="tstat">
@@ -221,8 +306,19 @@ export default function Token({ onBack }: { onBack: () => void }) {
           </div>
           <div className="tstat tstat--gold">
             <dt>Creator rewards → Reward Pool</dt>
-            <dd>{compact(snap.taxTotal)}</dd>
-            <small>{compact(snap.tax24h)} in 24h · from {compact(snap.volume24h)} volume</small>
+            {LIVE ? (
+              <>
+                <dd>—</dd>
+                <small>Starts when {TOKEN.ticker} trades on {TOKEN.launchpad}</small>
+              </>
+            ) : (
+              <>
+                <dd>{compact(snap.taxTotal)}</dd>
+                <small>
+                  {compact(snap.tax24h)} in 24h · from {compact(snap.volume24h)} volume
+                </small>
+              </>
+            )}
           </div>
         </dl>
 
@@ -234,7 +330,7 @@ export default function Token({ onBack }: { onBack: () => void }) {
                 <p className="eyebrow">Last 24 hours</p>
                 <h2>Supply only goes down</h2>
               </div>
-              <span className="tchart__delta">−{compact(snap.burned24h)}</span>
+              <span className="tchart__delta">−{compact(burned24h)}</span>
             </div>
             <SupplyChart points={chart} />
             <div className="tchart__axis">
@@ -259,7 +355,9 @@ export default function Token({ onBack }: { onBack: () => void }) {
                   const c = CATS.find((x) => x.id === e.category)!;
                   return (
                     <li key={`${e.at}-${e.who}-${e.amount}`} className={e.who === "You" ? "tfeed__you" : undefined} style={{ "--cc": c.color } as React.CSSProperties}>
-                      <span className="tfeed__ico">{c.icon}</span>
+                      <span className="tfeed__ico">
+                        <CatIcon id={e.category} label={e.label} size={30} />
+                      </span>
                       <div>
                         <b>{e.label}</b>
                         <small>
@@ -293,7 +391,7 @@ export default function Token({ onBack }: { onBack: () => void }) {
               .map((c) => (
                 <li key={c.id} style={{ "--cc": c.color } as React.CSSProperties}>
                   <span className="tcats__name">
-                    <i>{c.icon}</i> {c.label}
+                    <CatIcon id={c.id} size={28} /> {c.label}
                   </span>
                   <span className="tcats__bar">
                     <span style={{ width: `${(c.amount / catMax) * 100}%` }} />

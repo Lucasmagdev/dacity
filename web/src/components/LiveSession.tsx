@@ -8,21 +8,21 @@ import { shortAddr } from "../solana";
  * when it disconnects, and shows a small status pill while signing in or if something went wrong.
  */
 export default function LiveSession() {
-  const { publicKey, signMessage, connected } = useWallet();
+  const { publicKey, signMessage, signIn, connected } = useWallet();
   const status = useLiveStatus();
 
   useEffect(() => {
     if (!LIVE) return;
-    if (connected && publicKey && signMessage) startSession({ publicKey, signMessage });
+    if (connected && publicKey && (signIn || signMessage)) startSession({ publicKey, signMessage, signIn: signIn as never });
     if (!connected) endSession();
-  }, [connected, publicKey, signMessage]);
+  }, [connected, publicKey, signMessage, signIn]);
 
   if (!LIVE) return null;
-  if (connected && publicKey && !signMessage) {
+  if (connected && publicKey && !signMessage && !signIn) {
     return <div className="livepill livepill--error">This wallet can't sign messages. Try Phantom, Solflare or Backpack.</div>;
   }
   if (status.phase === "signing") {
-    return <div className="livepill">Approve the sign-in message in your wallet (free, no transaction)…</div>;
+    return <div className="livepill">Approve the sign-in request in your wallet (free, no transaction)…</div>;
   }
   if (status.phase === "error") {
     return (
@@ -30,7 +30,7 @@ export default function LiveSession() {
         Sign-in failed{status.wallet ? ` for ${shortAddr(status.wallet)}` : ""}: {status.error}{" "}
         <button
           type="button"
-          onClick={() => publicKey && signMessage && startSession({ publicKey, signMessage })}
+          onClick={() => publicKey && (signIn || signMessage) && startSession({ publicKey, signMessage, signIn: signIn as never })}
         >
           Try again
         </button>

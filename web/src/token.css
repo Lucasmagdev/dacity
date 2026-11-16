@@ -615,3 +615,35 @@
     font-size: clamp(20px, 1.9vw, 28px);
   }
 }
+
+/* burn categories / feed: item art instead of glyphs */
+.caticon {
+  display: block;
+  flex: none;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.caticon--toy {
+  overflow: hidden;
+  background: rgba(180, 92, 255, 0.18);
+}
+
+.caticon--toy .toy {
+  width: 100%;
+  height: 100%;
+}
+
+.tfeed__ico {
+  overflow: hidden;
+  padding: 0;
+}
+
+.tcats__name {
+  gap: 10px;
+}
+
+.tcats__name .coin,
+.tfeed__ico .coin {
+  filter: drop-shadow(0 0 6px rgba(255, 211, 107, 0.45));
+}

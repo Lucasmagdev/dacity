@@ -18,10 +18,11 @@ import { TOKEN, type WeaponId } from "../config/game";
 export const LIVE = !MOCK && !!supabase;
 
 export type LivePhase = "off" | "disconnected" | "signing" | "ready" | "error";
-let status: { phase: LivePhase; error: string | null; wallet: string | null } = {
+let status: { phase: LivePhase; error: string | null; wallet: string | null; isAdmin: boolean } = {
   phase: LIVE ? "disconnected" : "off",
   error: null,
   wallet: null,
+  isAdmin: false,
 };
 const listeners = new Set<() => void>();
 const setStatus = (next: Partial<typeof status>) => {
@@ -175,7 +176,19 @@ async function refreshWalletBalances(owner: string) {
 
 // ------------------------------------------------------------------ session
 
-type WalletLike = { publicKey: PublicKey; signMessage: (m: Uint8Array) => Promise<Uint8Array> };
+type WalletLike = {
+  publicKey: PublicKey;
+  signMessage?: (m: Uint8Array) => Promise<Uint8Array>;
+  /** Wallet-native "Sign in with Solana" (Phantom, Solflare, Backpack): the wallet formats the message itself. */
+  signIn?: (input?: Record<string, unknown>) => Promise<unknown>;
+};
+
+/**
+ * The sign-in message must point at the site root: the app routes with "#/…" and wallets like Phantom
+ * reject a sign-in URI with a fragment ("invalid formatting"). Plain statement, no punctuation tricks.
+ */
+const SIGN_IN_URL = () => `${window.location.origin}/`;
+const SIGN_IN_STATEMENT = "Sign in to Audacity Game";
 
 const sessionWallet = async () => {
   const { data } = await supabase!.auth.getSession();
@@ -197,15 +210,22 @@ export async function startSession(wallet: WalletLike) {
     if ((await sessionWallet()) !== address) {
       await supabase.auth.signOut();
       setStatus({ phase: "signing", error: null, wallet: address });
+      // prefer the wallet's own Sign In with Solana; fall back to signing the message ourselves
+      const solanaWallet = wallet.signIn
+        ? { publicKey: wallet.publicKey, signIn: wallet.signIn }
+        : { publicKey: wallet.publicKey, signMessage: wallet.signMessage };
       const { error } = await supabase.auth.signInWithWeb3({
         chain: "solana",
-        statement: "Sign in to Audacity Game. This is free and doesn't send a transaction.",
-        wallet,
+        statement: SIGN_IN_STATEMENT,
+        wallet: solanaWallet as never,
+        options: { url: SIGN_IN_URL() },
       });
       if (error) throw new Error(error.message);
     }
     await rpc("ensure_player"); // creates the player row and links the wallet
-    setStatus({ phase: "ready", error: null, wallet: address });
+    // admin = the signed-in wallet is in the database's admins table (the database enforces it too)
+    const isAdmin = await rpc<boolean>("is_admin").catch(() => false);
+    setStatus({ phase: "ready", error: null, wallet: address, isAdmin: !!isAdmin });
     await Promise.all([refreshWalletBalances(address), refreshPlatform()]);
     await refresh();
     if (pollTimer) clearInterval(pollTimer);
@@ -227,7 +247,7 @@ export async function endSession() {
   pollTimer = null;
   await supabase.auth.signOut();
   setLiveState(emptyState());
-  setStatus({ phase: "disconnected", error: null, wallet: null });
+  setStatus({ phase: "disconnected", error: null, wallet: null, isAdmin: false });
 }
 
 // platform data is public: load it right away, even before a wallet connects

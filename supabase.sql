@@ -1247,6 +1247,50 @@ end $$;
 
 
 -- -----------------------------------------------------------------------------------------------------
+-- 10b. PUBLIC $AMMO STATS (for the token page: totals and an anonymous burn feed, no private data)
+-- -----------------------------------------------------------------------------------------------------
+
+create or replace function public.ammo_stats()
+returns jsonb language sql stable security definer set search_path = public, pg_temp
+as $$
+  with spends as (
+    select t.at, -t.ammo as amount, p.wallet,
+           case
+             when t.type in ('medkit', 'heal') then 'medkit'
+             when t.type = 'shop' and t.title ilike '%vest%' then 'vest'
+             when t.type = 'shop' then 'weapon'
+             when t.type = 'fuse' then 'fusion'
+             when t.type = 'claimAll' then 'claimAll'
+           end as category,
+           t.title
+      from public.player_transactions t
+      join public.players p on p.user_id = t.user_id
+     where t.ammo < 0 and t.type in ('medkit', 'heal', 'shop', 'fuse', 'claimAll')
+  )
+  select jsonb_build_object(
+    'spent_total',    (select ammo_spent_total from public.platform_state where id = 1),
+    'pending_burn',   (select ammo_pending_burn from public.platform_state where id = 1),
+    'burned_onchain', (select ammo_burned_onchain from public.platform_state where id = 1),
+    'spent_24h',      (select coalesce(sum(amount), 0) from spends where at > now() - interval '24 hours'),
+    'spent_1h',       (select coalesce(sum(amount), 0) from spends where at > now() - interval '1 hour'),
+    'spends',         (select count(*) from spends),
+    'by_category',    (select coalesce(jsonb_object_agg(category, jsonb_build_object('amount', amount, 'count', n)), '{}'::jsonb)
+                         from (select category, sum(amount) as amount, count(*) as n from spends group by category) c),
+    'hourly_24h',     (select coalesce(jsonb_agg(jsonb_build_object('hour', h, 'amount', amount) order by h), '[]'::jsonb)
+                         from (select date_trunc('hour', at) as h, sum(amount) as amount
+                                 from spends where at > now() - interval '24 hours' group by 1) x),
+    'recent',         (select coalesce(jsonb_agg(r order by r.at desc), '[]'::jsonb)
+                         from (select at, amount, category, title as label,
+                                      case when wallet is null then 'player'
+                                           else left(wallet, 4) || '…' || right(wallet, 4) end as who
+                                 from spends order by at desc limit 30) r),
+    'burns',          (select coalesce(jsonb_agg(b order by b.created_at desc), '[]'::jsonb)
+                         from (select amount, signature, created_at from public.burn_batches order by created_at desc limit 20) b)
+  )
+$$;
+
+
+-- -----------------------------------------------------------------------------------------------------
 -- 11. NEW USERS → PLAYER ROW
 -- -----------------------------------------------------------------------------------------------------
 
@@ -1300,7 +1344,7 @@ begin
          'create_deposit_intent', 'request_withdrawal_usdc', 'request_withdrawal_ammo', 'assert_admin',
          'admin_set_maintenance', 'admin_announce', 'admin_clear_announcement', 'admin_grant_dc',
          'admin_grant_boxes', 'admin_recent_log', 'link_wallet', 'confirm_deposit', 'mark_withdrawal',
-         'record_price', 'record_burn', 'handle_new_user', 'handle_new_identity', 'wallet_of')
+         'record_price', 'record_burn', 'handle_new_user', 'handle_new_identity', 'wallet_of', 'ammo_stats')
   loop
     execute format('revoke all on function %s from public, anon, authenticated', f.sig);
     execute format('grant execute on function %s to service_role', f.sig);
@@ -1314,6 +1358,7 @@ grant execute on function public.usd_to_ammo(numeric) to anon, authenticated;
 grant execute on function public.quote_boxes(int) to anon, authenticated;
 grant execute on function public.cfg() to anon, authenticated;
 grant execute on function public.is_admin() to authenticated;
+grant execute on function public.ammo_stats() to anon, authenticated;
 
 -- player actions
 grant execute on function public.ensure_player() to authenticated;
