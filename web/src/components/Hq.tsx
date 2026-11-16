@@ -50,10 +50,10 @@ function useNow(ms = 1000) {
 
 /** Ideas for what comes after the core loop. Pure placeholders. */
 const SOON = [
-  { title: "Territory", text: "Send gangsters to hold city districts. Each block boosts farming for its owner.", art: "C3 · city map", color: "#22e4ff" },
-  { title: "Heists", text: "Stake a crew for a few days for a shot at a bigger payout. Risky crews can get busted.", art: "C2 · gang HQ", color: "#ff2e88" },
-  { title: "Leaderboard", text: "Top gangs by total DC farmed each season. Prizes for the top 10.", art: "ranking", color: "#ffb020" },
-  { title: "Black Market", text: "Trade gangsters with other bosses. Retired gangsters keep their collectible value.", art: "marketplace", color: "#b45cff" },
+  { title: "Territory", text: "Send gangsters to hold city districts. Each block boosts farming for its owner.", art: "/soon/territory.webp", color: "#22e4ff" },
+  { title: "Heists", text: "Stake a crew for a few days for a shot at a bigger payout. Risky crews can get busted.", art: "/soon/heists.webp", color: "#ff2e88" },
+  { title: "Leaderboard", text: "Top gangs by total DC farmed each season. Prizes for the top 10.", art: "/soon/leaderboard.webp", color: "#ffb020" },
+  { title: "Black Market", text: "Trade gangsters with other bosses. Retired gangsters keep their collectible value.", art: "/soon/blackmarket.webp", color: "#b45cff" },
 ];
 
 export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: () => void }) {
@@ -313,7 +313,7 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
             {SOON.map((f) => (
               <li key={f.title} className="soon__card" style={{ "--rc": f.color } as React.CSSProperties}>
                 <div className="soon__art">
-                  <span>{f.art}</span>
+                  <img src={f.art} alt="" loading="lazy" decoding="async" />
                 </div>
                 <h3>{f.title}</h3>
                 <p>{f.text}</p>
