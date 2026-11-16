@@ -563,6 +563,22 @@ code {
   background: rgba(7, 4, 15, 0.55);
 }
 
+/* ------------------------------------------------------------------ photo backdrop (key art behind every in-game page) */
+
+.scene--backdrop :is(.stars, .sun-wrap, .city, .horizon-line, .ground, .palm) {
+  display: none;
+}
+
+.scene__backdrop {
+  object-position: 50% 50%;
+  filter: blur(var(--bd-blur, 0px)) saturate(1.1);
+  transform: scale(1.06); /* hides the soft edge the blur leaves */
+}
+
+.scene--backdrop.scene--dim::after {
+  background: linear-gradient(180deg, rgba(7, 4, 15, 0.35) 0%, rgba(7, 4, 15, 0.6) 55%, rgba(7, 4, 15, 0.8) 100%);
+}
+
 /* ------------------------------------------------------------------ hero */
 
 .hero {
@@ -1869,7 +1885,7 @@ code {
 }
 
 /* ------------------------------------------------------------------ landing sky: the page runs through one day in Dacity */
-/* dusk (how it works) -> neon pink (glow-up) -> night with stars (story) -> neon midnight (rarities) -> dawn (final) */
+/* dusk (how it works) -> neon pink -> night with stars (story) -> neon midnight (rarities) -> dawn (final) */
 
 main.magenta {
   position: relative;
