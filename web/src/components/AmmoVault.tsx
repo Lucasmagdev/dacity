@@ -2,6 +2,7 @@ import { useState } from "react";
 import AmmoIcon from "./art/AmmoIcon";
 import { TOKEN, fmt } from "../config/game";
 import { mock } from "../mock";
+import { WITHDRAW_FEE_NOTE } from "../solana";
 
 type Mode = "deposit" | "withdraw";
 
@@ -85,7 +86,7 @@ export default function AmmoVault({ walletAmmo, gameAmmo, onToast }: { walletAmm
       <p className="muted ammovault__note">
         {dep
           ? "One wallet approval per deposit. After that every purchase in the game is instant: no more approvals."
-          : "Unspent AMMO goes back to your wallet. AMMO you spend in the game is burned and can't be withdrawn."}
+          : `Unspent AMMO goes back to your wallet. AMMO you spend in the game is burned and can't be withdrawn. ${WITHDRAW_FEE_NOTE}`}
       </p>
     </section>
   );

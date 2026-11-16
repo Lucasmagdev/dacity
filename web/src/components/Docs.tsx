@@ -197,6 +197,11 @@ const SECTIONS: Section[] = [
             <b>Withdraw:</b> {DACITY_PER_USDC} DC → 1 USDC. The game sends the USDC from the Reward Pool to the wallet you play with.
           </li>
           <li>Deposit and withdraw sit in the same card in the HQ (Deposit / Withdraw switch).</li>
+          <li>
+            <b>Network fees:</b> you pay the Solana fee on both deposits and withdrawals (a fraction of a cent in SOL). On a withdrawal
+            you approve one transaction in your wallet; if your wallet never held the token before, Solana also charges a one-time
+            account rent of about 0.002 SOL.
+          </li>
         </ul>
         <Callout tone="warn" title="Withdrawals depend on the pool">
           Withdrawals are paid from the USDC actually in the Reward Pool, which is filled by box purchases and the $AMMO creator rewards.
@@ -478,6 +483,7 @@ const SECTIONS: Section[] = [
           ["Gangster Box", `${fmt(BOX_PRICE_DC)} DC (${usd(BOX_PRICE_DC)})`, "DC", "Reward Pool (the USDC behind it)"],
           ["Deposit / withdraw USDC", "1 USDC = 100 DC", "USDC / DC", "Vault"],
           ["Deposit / withdraw $AMMO", "Free (Solana network fee only)", "$AMMO", "Your in-game balance"],
+          ["Solana network fee", "~0.00001 SOL per deposit or withdrawal, paid by you", "SOL", "Solana validators"],
           ["Claim one gangster", "Free", "—", "—"],
           ["Claim all", `${fmt(CLAIM_ALL_FEE_AMMO)} per gangster`, "$AMMO", "🔥 Burned"],
           ["Fusion", FUSION_RECIPES.map((f) => fmt(f.fee)).join(" / "), "$AMMO", "🔥 Burned"],

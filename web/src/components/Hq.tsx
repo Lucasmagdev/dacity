@@ -9,6 +9,7 @@ import GangsterToy from "./art/GangsterToy";
 import AmmoIcon from "./art/AmmoIcon";
 import { BOX_PRICE_DC, BULK_TIERS, CLAIM_ALL_FEE_AMMO, DACITY_PER_USDC, LAUNCH_SALE, MEDKIT_PRICE_AMMO, TOKEN, fmtAmmo, PROTAGONISTS, RARITIES, SHOT_CHANCE_PER_DAY, STORE_NAME, WEAPONS, fmt, quoteBoxes } from "../config/game";
 import { usePlatform } from "../mock/platform";
+import { WITHDRAW_FEE_NOTE } from "../solana";
 import {
   MAX_BOXES_PER_TX,
   MOCK_DAY_MS,
@@ -408,7 +409,7 @@ function Vault({
         <p className="muted">
           {dep
             ? `Send USDC on Solana: 1 USDC = ${DACITY_PER_USDC} DC, credited as soon as it confirms.`
-            : `${DACITY_PER_USDC} DC = 1 USDC, sent from the Reward Pool to your wallet.`}
+            : `${DACITY_PER_USDC} DC = 1 USDC, sent from the Reward Pool to your wallet. ${WITHDRAW_FEE_NOTE}`}
         </p>
         <div className="amount">
           <input

@@ -24,8 +24,28 @@ export const USDC_MINT: Record<SolanaNetwork, string> = {
   devnet: "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
 };
 
-/** Game control wallet that receives deposits and pays withdrawals. Set at launch. */
-export const CONTROL_WALLET = import.meta.env.VITE_CONTROL_WALLET || "";
+/**
+ * Game wallets (public addresses only: their private keys live on the server, never in the web app).
+ *  - POOL_WALLET: the Reward Pool. Receives USDC deposits and pays USDC withdrawals.
+ *  - AMMO_WALLET: receives $AMMO deposits, pays $AMMO withdrawals and burns the $AMMO spent in the game.
+ *  - TOKEN_DEPLOYER: the wallet that launches $AMMO on pump.fun (creator rewards arrive there and are
+ *    forwarded to the Reward Pool).
+ */
+export const POOL_WALLET = import.meta.env.VITE_POOL_WALLET || "";
+export const AMMO_WALLET = import.meta.env.VITE_AMMO_WALLET || "";
+export const TOKEN_DEPLOYER = import.meta.env.VITE_TOKEN_DEPLOYER || "";
+
+/**
+ * Who pays the Solana network fee:
+ *  - deposits: the player (they send the transfer from their own wallet).
+ *  - withdrawals: also the player. The server builds the transfer with the PLAYER as fee payer and signs
+ *    only as the sender; the player's wallet then signs and submits it. So withdrawals cost the game
+ *    nothing in SOL, and the player approves one transaction (a fraction of a cent in SOL, plus a one-time
+ *    ~0.002 SOL account rent if their wallet never held that token before).
+ */
+export const WITHDRAW_FEE_PAYER: "player" | "game" = "player";
+/** Shown in the UI next to withdraw buttons. */
+export const WITHDRAW_FEE_NOTE = "Network fee (~0.00001 SOL) is paid by you when you approve the withdrawal.";
 
 export const explorerTx = (sig: string) => `https://solscan.io/tx/${sig}${NETWORK === "devnet" ? "?cluster=devnet" : ""}`;
 export const explorerAccount = (addr: string) => `https://solscan.io/account/${addr}${NETWORK === "devnet" ? "?cluster=devnet" : ""}`;
