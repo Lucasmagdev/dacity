@@ -27,7 +27,7 @@ export const BOX_PRICE_DC = 300;
 export const MAX_BOXES_PER_ORDER = 1_000;
 
 /** Launch sale: the first `boxes` boxes sold game-wide cost `priceDc` each (50% off). */
-export const LAUNCH_SALE = { boxes: 250, priceDc: 150 };
+export const LAUNCH_SALE = { boxes: 500, priceDc: 150 };
 
 /**
  * Bulk discounts by order size, on regular-price boxes only (they don't stack with the launch price).

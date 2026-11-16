@@ -312,7 +312,8 @@ const SECTIONS: Section[] = [
           </li>
           <li>
             <b>One withdrawal every {WITHDRAW_COOLDOWN_HOURS} hours per wallet.</b> After you withdraw, the Withdraw button locks and shows a
-            countdown; the {WITHDRAW_COOLDOWN_HOURS} hours count from the moment of that withdrawal. Deposits are never limited.
+            countdown; the {WITHDRAW_COOLDOWN_HOURS} hours count from the moment of that withdrawal. Deposits are never limited, and
+            neither are claims: you can claim, buy boxes, fuse and gear up as often as you want, only cashing out to USDC waits.
           </li>
           <li>Deposit and withdraw sit in the same card in the HQ (Deposit / Withdraw switch).</li>
           <li>
@@ -679,7 +680,8 @@ const SECTIONS: Section[] = [
         <dt>How often can I withdraw?</dt>
         <dd>
           Once every {WITHDRAW_COOLDOWN_HOURS} hours per wallet, for any amount you have. The countdown starts when you withdraw and is shown
-          in the Vault card. Each USDC withdrawal has a {WITHDRAW_FEE_PCT}% fee that stays in the Reward Pool. $AMMO withdrawals are not
+          in the Vault card. Claiming is never limited: claim any time and spend the DC on boxes, fusion or anything else. Each USDC
+          withdrawal has a {WITHDRAW_FEE_PCT}% fee that stays in the Reward Pool. $AMMO withdrawals are not
           limited and have no fee.
         </dd>
         <dt>What happens to $AMMO I spend?</dt>

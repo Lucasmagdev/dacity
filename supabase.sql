@@ -30,7 +30,7 @@ create table if not exists public.game_config (
   id                       int primary key default 1 check (id = 1),
   dacity_per_usdc          numeric not null default 100,
   box_price_dc             numeric not null default 300,
-  launch_sale_boxes        int     not null default 250,
+  launch_sale_boxes        int     not null default 500,
   launch_sale_price_dc     numeric not null default 150,
   max_boxes_per_order      int     not null default 1000,
   reveal_delay_seconds     int     not null default 3,
@@ -87,6 +87,8 @@ alter table public.game_config add column if not exists withdraw_fee_pct numeric
   check (withdraw_fee_pct >= 0 and withdraw_fee_pct < 100);
 
 insert into public.game_config (id) values (1) on conflict (id) do nothing;
+-- launch sale raised from 250 to 500 boxes (only touches a row still on the old default)
+update public.game_config set launch_sale_boxes = 500 where id = 1 and launch_sale_boxes = 250;
 
 insert into public.rarities (id, name, chance, per_day, cap, shot_chance_pct, color) values
   (0, 'Common',    60, 30, 1350, 4,   '#a7afc2'),
