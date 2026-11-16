@@ -41,11 +41,14 @@ Default rarities (owner-configurable; changes only apply to newly minted gangste
 
 | Rarity | Chance | DACITY/day | Cap |
 |---|---|---|---|
-| Common | 60% | 10 | 1,200 |
-| Uncommon | 25% | 14 | 1,600 |
-| Rare | 10% | 20 | 2,200 |
-| Epic | 4% | 30 | 3,200 |
-| Legendary | 1% | 50 | 5,000 |
+| Common | 60% | 30 | 1,350 |
+| Uncommon | 25% | 33 | 1,584 |
+| Rare | 10% | 38 | 1,976 |
+| Epic | 4% | 50 | 3,000 |
+| Legendary | 1% | 75 | 5,250 |
+
+Current tuning lives in `web/src/config/game.ts` (box 300 DC; ROI ~10/9/8/6/4 days; careers 45/48/52/60/70 days;
+an average box farms ~1,576 DC = 5.3x its price). The Solidity defaults in `contracts/` still have the old numbers.
 
 ```bash
 cd contracts
@@ -119,7 +122,7 @@ Resumo para o próximo dev. Tudo roda local com `npm run dev` em `web/`; os cont
 
 - **Official USDC address** on Robinhood Chain (take it from Robinhood's official token contracts list).
 - **Randomness**: currently commit-reveal on a future `blockhash`. Robinhood operates the Robinhood Chain sequencer, so whoever controls it could influence rolls. Switch to a VRF before launch.
-- **Economy**: an average box farms ~1,518 DACITY in total and costs 1,000. Since there is no DACITY→USDC withdrawal, this can't drain the vault. If cash-out is ever added, emissions must be capped against the treasury.
+- **Economy**: an average box costs 300 DC ($3, $1.50 in the launch sale) and farms ~1,576 DC (~$15.76), and DC is withdrawable as USDC from the Reward Pool. The pool is only funded by box sales and pump.fun creator rewards, so payouts exceed inflows by design: withdrawals depend on new deposits. Decide on withdrawal limits / pool protections before real money.
 - **Legal**: paid loot boxes and a USDC-pegged currency may be regulated (in Brazil, the ECA Digital law restricts loot boxes for minors). Check with a lawyer.
 - **Audit** the contracts.
 - Put contract ownership in a multisig (Safe).

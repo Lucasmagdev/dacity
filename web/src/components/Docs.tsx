@@ -237,16 +237,24 @@ const SECTIONS: Section[] = [
         />
         <h4>Rarities</h4>
         <Table
-          head={["Rarity", "Chance", "Farm / day", "Career cap", "Career length", "Shot risk / day"]}
+          head={["Rarity", "Chance", "Farm / day", "ROI", "Career", "Lifetime return", "Shot risk / day"]}
           rows={RARITIES.map((r, i) => [
             <Rarity id={r.id} />,
             `${r.chance}%`,
             `${r.perDay} DC`,
-            `${fmt(r.cap)} DC`,
+            `~${Math.round(BOX_PRICE_DC / r.perDay)} days`,
             `~${days(r.cap, r.perDay)} days`,
+            <>
+              {fmt(r.cap)} DC <b className="doc-green">({(r.cap / BOX_PRICE_DC).toFixed(1)}× the box)</b>
+            </>,
             `${SHOT_CHANCE_PER_DAY[i]}%`,
           ])}
         />
+        <p>
+          <b>ROI</b> is how many farming days it takes to earn back the regular box price ({fmt(BOX_PRICE_DC)} DC). <b>Lifetime return</b> is
+          everything the gangster farms over its whole career (its career cap). Rarer gangsters pay back faster and farm for longer. Days
+          spent shot don't count, and weapons add extra DC on top.
+        </p>
         <h4>How the roll works</h4>
         <p>
           Rolls are <b>provably fair</b>: before you open a box the server publishes a hash of its secret seed; the roll combines that

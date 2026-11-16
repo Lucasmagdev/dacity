@@ -147,12 +147,21 @@ export type Rarity = {
   color: string;
 };
 
+/**
+ * Farm tuning, for a 300 DC box. ROI = days of farming to earn the box price back; career = cap / perDay.
+ *   Common     30/day · ROI ~10d · 45d career · 4.5× the box
+ *   Uncommon   33/day · ROI ~9d  · 48d career · 5.3×
+ *   Rare       38/day · ROI ~8d  · 52d career · 6.6×
+ *   Epic       50/day · ROI ~6d  · 60d career · 10×
+ *   Legendary  75/day · ROI ~4d  · 70d career · 17.5×
+ * Average box (by drop chance) farms ~1,576 DC = 5.3× its price.
+ */
 export const RARITIES: Rarity[] = [
-  { id: 0, name: "Common", chance: 60, perDay: 10, cap: 1_200, color: "#a7afc2" },
-  { id: 1, name: "Uncommon", chance: 25, perDay: 14, cap: 1_600, color: "#3ddc84" },
-  { id: 2, name: "Rare", chance: 10, perDay: 20, cap: 2_200, color: "#2fb4ff" },
-  { id: 3, name: "Epic", chance: 4, perDay: 30, cap: 3_200, color: "#b45cff" },
-  { id: 4, name: "Legendary", chance: 1, perDay: 50, cap: 5_000, color: "#ffb020" },
+  { id: 0, name: "Common", chance: 60, perDay: 30, cap: 1_350, color: "#a7afc2" },
+  { id: 1, name: "Uncommon", chance: 25, perDay: 33, cap: 1_584, color: "#3ddc84" },
+  { id: 2, name: "Rare", chance: 10, perDay: 38, cap: 1_976, color: "#2fb4ff" },
+  { id: 3, name: "Epic", chance: 4, perDay: 50, cap: 3_000, color: "#b45cff" },
+  { id: 4, name: "Legendary", chance: 1, perDay: 75, cap: 5_250, color: "#ffb020" },
 ];
 
 export const fmt = (n: number) => n.toLocaleString("en-US");
@@ -169,16 +178,16 @@ export type FarmStats = { perDay: number; cap: number };
  *  - perDay = both parents combined, so fusing never lowers your daily income
  *    (and a fused gangster always beats a regular one of the same rarity).
  *  - cap    = both parents' caps combined + 20% / 25% / 30% / 35%, rounded to 100.
- *  - fee    = doubles each tier. It is ~3–5% of the extra DC the fusion unlocks.
+ *  - fee    = doubles each tier (AMMO, placeholder until the token price is known).
  */
 /** `fee` is in AMMO and burned. */
 export type FusionRecipe = FarmStats & { from: number; to: number; fee: number };
 
 export const FUSION_RECIPES: FusionRecipe[] = [
-  { from: 0, to: 1, fee: 200, perDay: 20, cap: 2_900 }, //  2 × Common    (2,400 cap) → Uncommon
-  { from: 1, to: 2, fee: 400, perDay: 28, cap: 4_000 }, //  2 × Uncommon  (3,200 cap) → Rare
-  { from: 2, to: 3, fee: 800, perDay: 40, cap: 5_700 }, //  2 × Rare      (4,400 cap) → Epic
-  { from: 3, to: 4, fee: 1_600, perDay: 60, cap: 8_600 }, // 2 × Epic      (6,400 cap) → Legendary
+  { from: 0, to: 1, fee: 200, perDay: 60, cap: 3_200 }, //  2 × Common    (2,700 cap) → Uncommon
+  { from: 1, to: 2, fee: 400, perDay: 66, cap: 4_000 }, //  2 × Uncommon  (3,168 cap) → Rare
+  { from: 2, to: 3, fee: 800, perDay: 76, cap: 5_100 }, //  2 × Rare      (3,952 cap) → Epic
+  { from: 3, to: 4, fee: 1_600, perDay: 100, cap: 8_100 }, // 2 × Epic      (6,000 cap) → Legendary
 ];
 
 /** Recipe that consumes two gangsters of this rarity (undefined for Legendary). */
