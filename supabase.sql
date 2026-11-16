@@ -106,18 +106,23 @@ insert into public.fusion_recipes (from_rarity, to_rarity, fee_usd, per_day, cap
 on conflict (from_rarity) do nothing;
 
 insert into public.weapons (id, name, boost_pct, days) values
-  ('pistol', 'Pistol', 15, 30),
-  ('smg',    'SMG',    30, 30),
-  ('rifle',  'Rifle',  50, 30)
+  ('pistol', 'Pistol', 15, 7),
+  ('smg',    'SMG',    30, 7),
+  ('rifle',  'Rifle',  50, 7)
 on conflict (id) do nothing;
 
 insert into public.item_prices (item, name, price_usd) values
   ('medkit', 'Med kit',     0.50),
   ('vest',   'Kevlar vest', 0.35),
-  ('pistol', 'Pistol',      1.20),
-  ('smg',    'SMG',         2.80),
-  ('rifle',  'Rifle',       5.00)
+  ('pistol', 'Pistol',      0.50),
+  ('smg',    'SMG',         1.00),
+  ('rifle',  'Rifle',       1.60)
 on conflict (item) do nothing;
+
+-- weapons became weekly (7 days, $0.50 / $1.00 / $1.60): update rows still on the old 30-day values
+update public.weapons set days = 7 where id in ('pistol', 'smg', 'rifle') and days = 30;
+update public.item_prices set price_usd = case item when 'pistol' then 0.50 when 'smg' then 1.00 when 'rifle' then 1.60 end
+ where (item, price_usd) in (('pistol', 1.20), ('smg', 2.80), ('rifle', 5.00));
 
 insert into public.bulk_tiers (min_count, pct) values (50, 15), (100, 25), (1000, 40)
 on conflict (min_count) do nothing;

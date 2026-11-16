@@ -243,9 +243,9 @@ export type WeaponId = "pistol" | "smg" | "rifle";
  */
 /** Prices in USD, paid in AMMO, burned. Tuned so cheap weapons break even on a Common and the Rifle pays off from Rare up. */
 export const WEAPONS: Record<WeaponId, { id: WeaponId; name: string; boostPct: number; days: number; priceUsd: number; blurb: string }> = {
-  pistol: { id: "pistol", name: "Pistol", boostPct: 15, days: 30, priceUsd: 1.2, blurb: "Cheap and reliable. Keeps the street honest." },
-  smg: { id: "smg", name: "SMG", boostPct: 30, days: 30, priceUsd: 2.8, blurb: "Spray and collect. Debtors pay faster." },
-  rifle: { id: "rifle", name: "Rifle", boostPct: 50, days: 30, priceUsd: 5, blurb: "Heavy hardware for your top earners." },
+  pistol: { id: "pistol", name: "Pistol", boostPct: 15, days: 7, priceUsd: 0.5, blurb: "Cheap and reliable. Keeps the street honest." },
+  smg: { id: "smg", name: "SMG", boostPct: 30, days: 7, priceUsd: 1, blurb: "Spray and collect. Debtors pay faster." },
+  rifle: { id: "rifle", name: "Rifle", boostPct: 50, days: 7, priceUsd: 1.6, blurb: "Heavy hardware for your top earners." },
 };
 
 /** Absorbs the next bullet, then it's gone. One per gangster. */
