@@ -7,8 +7,9 @@ import Coin from "./art/Coin";
 import UsdcCoin from "./art/UsdcCoin";
 import GangsterToy from "./art/GangsterToy";
 import AmmoIcon from "./art/AmmoIcon";
-import { BOX_PRICE_DC, BULK_TIERS, CLAIM_ALL_FEE_AMMO, DACITY_PER_USDC, LAUNCH_SALE, MEDKIT_PRICE_AMMO, TOKEN, fmtAmmo, PROTAGONISTS, RARITIES, SHOT_CHANCE_PER_DAY, STORE_NAME, WEAPONS, fmt, quoteBoxes } from "../config/game";
+import { BOX_PRICE_DC, BULK_TIERS, CLAIM_ALL_FEE_USD, DACITY_PER_USDC, LAUNCH_SALE, MEDKIT_PRICE_USD, TOKEN, fmtAmmo, PROTAGONISTS, RARITIES, SHOT_CHANCE_PER_DAY, STORE_NAME, WEAPONS, fmt, quoteBoxes } from "../config/game";
 import { usePlatform } from "../mock/platform";
+import { ammoFor, fmtUsd, useAmmoPrice } from "../price";
 import { WITHDRAW_FEE_NOTE } from "../solana";
 import {
   MAX_BOXES_PER_TX,
@@ -121,7 +122,7 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
           <span className="mockbar__tag">Mock mode</span>
           <span>Fake data, stored only in this browser. 1 farming day = {MOCK_DAY_MS / 1000}s.</span>
           <button type="button" onClick={() => run(mock.faucet, "+1,000 test USDC")}>+1,000 USDC</button>
-          <button type="button" onClick={() => run(mock.ammoFaucet, "+10,000 test AMMO in your wallet · deposit it in the Armory")}>+10,000 AMMO</button>
+          <button type="button" onClick={() => run(mock.ammoFaucet, "$25 of test AMMO in your wallet · deposit it in the Armory")}>+$25 AMMO</button>
           <button
             type="button"
             onClick={() => {
@@ -233,8 +234,8 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
                 </button>
                 <span className="claimall__fee">
                   {q.ids.length > 0
-                    ? `🔥 Fee ${fmtAmmo(q.fee)} (${q.ids.length} × ${CLAIM_ALL_FEE_AMMO}, burned) · claim one by one for free`
-                    : `${CLAIM_ALL_FEE_AMMO} AMMO fee per gangster, burned · claim one by one for free`}
+                    ? `Fee ${fmtUsd(q.feeUsd)} (${q.ids.length} × ${fmtUsd(CLAIM_ALL_FEE_USD)}) ≈ ${fmtAmmo(q.fee)}, burned · claim one by one for free`
+                    : `${fmtUsd(CLAIM_ALL_FEE_USD)} fee per gangster, paid in AMMO and burned · claim one by one for free`}
                 </span>
               </div>
           </div>
@@ -539,7 +540,9 @@ function Shop({ dc, onBuy }: { dc: number; onBuy: (n: number) => void }) {
 
 function MedBar({ kits, ammo, shotIds, onToast }: { kits: number; ammo: number; shotIds: number[]; onToast: (m: string) => void }) {
   const missing = Math.max(0, shotIds.length - kits);
-  const healCost = missing * MEDKIT_PRICE_AMMO;
+  useAmmoPrice(); // re-render when the token price moves
+  const kitAmmo = ammoFor(MEDKIT_PRICE_USD);
+  const healCost = missing * kitAmmo;
   const act = (fn: () => string) => {
     try {
       onToast(fn());
@@ -558,7 +561,7 @@ function MedBar({ kits, ammo, shotIds, onToast }: { kits: number; ammo: number; 
           {shotIds.length > 0 && <span className="medbar__shot"> · {shotIds.length} shot</span>}
         </strong>
         <small>
-          {fmtAmmo(MEDKIT_PRICE_AMMO)} each (burned) · heals one shot gangster · <a href="#/armory">{STORE_NAME} →</a> Shot risk per day: {RARITIES.map((r, i) => `${r.name} ${SHOT_CHANCE_PER_DAY[i]}%`).join(" · ")}
+          {fmtUsd(MEDKIT_PRICE_USD)} each (≈ {fmtAmmo(kitAmmo)}, burned) · heals one shot gangster · <a href="#/armory">{STORE_NAME} →</a> Shot risk per day: {RARITIES.map((r, i) => `${r.name} ${SHOT_CHANCE_PER_DAY[i]}%`).join(" · ")}
         </small>
       </div>
       <div className="medbar__actions">
@@ -567,7 +570,7 @@ function MedBar({ kits, ammo, shotIds, onToast }: { kits: number; ammo: number; 
             key={n}
             type="button"
             className="btn"
-            disabled={n * MEDKIT_PRICE_AMMO > ammo}
+            disabled={n * kitAmmo > ammo}
             onClick={() => act(() => (mock.buyMedkits(n), `Bought ${n} med kit${n > 1 ? "s" : ""}`))}
           >
             +{n}
@@ -585,7 +588,7 @@ function MedBar({ kits, ammo, shotIds, onToast }: { kits: number; ammo: number; 
               })
             }
           >
-            Heal all ({shotIds.length}){healCost > 0 ? ` · ${fmt(healCost)} AMMO` : ""}
+            Heal all ({shotIds.length}){healCost > 0 ? ` · ${fmtUsd(missing * MEDKIT_PRICE_USD)}` : ""}
           </button>
         )}
       </div>
@@ -680,7 +683,7 @@ function GangsterCard({
         </dl>
         {shot && (
           <button type="button" className="btn btn--heal gcard__claim" onClick={onHeal}>
-            ✚ {kits > 0 ? "Heal · use 1 kit" : `Heal · ${fmt(MEDKIT_PRICE_AMMO)} AMMO`}
+            ✚ {kits > 0 ? "Heal · use 1 kit" : `Heal · ${fmtUsd(MEDKIT_PRICE_USD)}`}
           </button>
         )}
         <button type="button" className="btn btn--gold gcard__claim" disabled={pending < 0.1} onClick={onClaim}>

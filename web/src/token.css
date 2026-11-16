@@ -600,3 +600,18 @@
     scale: 1.04;
   }
 }
+
+/* 7 stat tiles now (price + the six supply stats) */
+@media (min-width: 1101px) {
+  .tstats {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+
+  .tstat {
+    padding: 14px 12px;
+  }
+
+  .tstat dd {
+    font-size: clamp(20px, 1.9vw, 28px);
+  }
+}

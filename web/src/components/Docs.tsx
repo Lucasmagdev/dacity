@@ -6,12 +6,12 @@ import Coin from "./art/Coin";
 import {
   BOX_PRICE_DC,
   BULK_TIERS,
-  CLAIM_ALL_FEE_AMMO,
+  CLAIM_ALL_FEE_USD,
   DACITY_PER_USDC,
   FUSION_RECIPES,
   LAUNCH_SALE,
   MAX_BOXES_PER_ORDER,
-  MEDKIT_PRICE_AMMO,
+  MEDKIT_PRICE_USD,
   RARITIES,
   TOKEN,
   SHOT_CHANCE_PER_DAY,
@@ -22,6 +22,7 @@ import {
   fmt,
 } from "../config/game";
 import { CHAIN_NAME } from "../solana";
+import { LAUNCH_MARKET_CAP, ammoFor, fmtCap, fmtTokenPrice, fmtUsd, useAmmoPrice } from "../price";
 
 const usd = (dc: number) => `$${(dc / DACITY_PER_USDC).toFixed(2)}`;
 const days = (cap: number, perDay: number) => Math.round(cap / perDay);
@@ -116,6 +117,57 @@ function Flywheel() {
       {node("f", 6, "usdc", "More players join", "A deeper pool and a scarcer token pull in new bosses.")}
       {arrow("up", "↑")}
     </div>
+  );
+}
+
+/** Prices are in USD and paid in AMMO: this shows what that means at different market caps, live. */
+function Pricing() {
+  const price = useAmmoPrice();
+  const caps = [LAUNCH_MARKET_CAP, 100_000, 1_000_000, 10_000_000];
+  const at = (usd: number, cap: number) => fmt(Math.ceil(usd / (cap / TOKEN.totalSupply)));
+  const examples: [string, number][] = [
+    ["Med kit", MEDKIT_PRICE_USD],
+    [WEAPONS.rifle.name, WEAPONS.rifle.priceUsd],
+    ["Claim all (per gangster)", CLAIM_ALL_FEE_USD],
+  ];
+  return (
+    <>
+      <p>
+        A token's price moves a lot, so nothing in the game has a fixed price in $AMMO. <b>Every item and fee is priced in US dollars</b> and
+        you pay the equivalent in $AMMO at the moment you buy. A med kit costs {fmtUsd(MEDKIT_PRICE_USD)} whether $AMMO is at a{" "}
+        {fmtCap(LAUNCH_MARKET_CAP)} or a $10M market cap; only the number of tokens changes.
+      </p>
+      <Table
+        head={["", ...caps.map((c) => `At ${fmtCap(c)} market cap`)]}
+        rows={examples.map(([name, usd]) => [
+          <>
+            {name} <b>{fmtUsd(usd)}</b>
+          </>,
+          ...caps.map((c) => `${at(usd, c)} AMMO`),
+        ])}
+      />
+      <Callout title={price.source === "live" ? "Live price" : "Price right now (simulated until launch)"}>
+        1 $AMMO = <b>{fmtTokenPrice(price.usd)}</b> · market cap <b>{fmtCap(price.marketCap)}</b> · a med kit costs{" "}
+        <b>{fmt(ammoFor(MEDKIT_PRICE_USD))} AMMO</b> right now.
+      </Callout>
+      <h4>Where the price comes from</h4>
+      <ul>
+        <li>
+          The $AMMO / {TOKEN.pairTicker} market on {TOKEN.launchpad}, read through public price feeds (DexScreener, with Jupiter as a backup) and
+          converted to US dollars.
+        </li>
+        <li>
+          The game uses the <b>average price of the last 10 minutes</b>, not the last trade, so a sudden spike or dip doesn't change what
+          you pay.
+        </li>
+        <li>The amount of $AMMO is shown before you buy and is locked for a moment while you confirm.</li>
+        <li>If the price feed is unavailable, purchases pause until it's back. Your balances are not affected.</li>
+      </ul>
+      <p>
+        Because prices are in dollars, the same purchase burns more tokens when $AMMO is cheap and fewer when it's expensive. Gangster Boxes
+        are not affected: they're priced in DC.
+      </p>
+    </>
   );
 }
 
@@ -279,7 +331,7 @@ const SECTIONS: Section[] = [
             <b>Claim (one gangster):</b> free. Each card in the HQ has its own Claim button.
           </li>
           <li>
-            <b>Claim all:</b> one click for the whole crew, with a fee of <b>{fmt(CLAIM_ALL_FEE_AMMO)} $AMMO per gangster</b>, burned. You
+            <b>Claim all:</b> one click for the whole crew, with a fee of <b>{fmtUsd(CLAIM_ALL_FEE_USD)} per gangster</b>, paid in $AMMO and burned. You
             receive the full DC.
           </li>
           <li>Farming keeps counting while you're offline, and if a gangster is transferred, its unclaimed DC goes to the previous owner.</li>
@@ -303,7 +355,7 @@ const SECTIONS: Section[] = [
             <>
               <Rarity id={f.from} /> × 2 → <Rarity id={f.to} />
             </>,
-            `${fmt(f.fee)} AMMO 🔥`,
+            `${fmtUsd(f.feeUsd)} in AMMO`,
             `${f.perDay} DC (regular ${RARITIES[f.to].name}: ${RARITIES[f.to].perDay})`,
             `${fmt(f.cap)} DC (parents ${fmt(RARITIES[f.from].cap * 2)})`,
             <b className="doc-green">+{fmt(f.cap - RARITIES[f.from].cap * 2)}</b>,
@@ -327,7 +379,7 @@ const SECTIONS: Section[] = [
       <>
         <p>
           The streets are dangerous. Every farming day a gangster has a chance to <b>take a bullet</b>, lower for higher rarities. A shot
-          gangster <b>stops farming</b> until it's healed with a <b>med kit</b> ({fmt(MEDKIT_PRICE_AMMO)} $AMMO, burned).
+          gangster <b>stops farming</b> until it's healed with a <b>med kit</b> ({fmtUsd(MEDKIT_PRICE_USD)}, paid in $AMMO and burned).
         </p>
         <Table head={RARITIES.map((r) => <Rarity id={r.id} />)} rows={[SHOT_CHANCE_PER_DAY.map((c) => `${c}% / day`)]} />
         <ul>
@@ -346,15 +398,15 @@ const SECTIONS: Section[] = [
     body: () => (
       <>
         <p>
-          The item shop. Everything is paid in <b>$AMMO</b> and <b>100% burned</b>. Items go to your stock and you equip them in the
-          Loadout.
+          The item shop. Prices are set <b>in dollars</b>, paid in <b>$AMMO</b> at the live price and <b>100% burned</b> (see{" "}
+          <a href="#/docs/pricing">How prices work</a>). Items go to your Inventory and you equip them on gangsters that are at work.
         </p>
         <Table
           head={["Item", "Price", "Effect"]}
           rows={[
-            ["Med kit", `${fmt(MEDKIT_PRICE_AMMO)} AMMO`, "Heals one shot gangster, any rarity"],
-            ...Object.values(WEAPONS).map((w) => [w.name, `${fmt(w.priceAmmo)} AMMO`, `+${w.boostPct}% farm for ${w.days} farming days`]),
-            [VEST.name, `${fmt(VEST.priceAmmo)} AMMO`, "Stops the next bullet, then it's gone"],
+            ["Med kit", fmtUsd(MEDKIT_PRICE_USD), "Heals one shot gangster, any rarity"],
+            ...Object.values(WEAPONS).map((w) => [w.name, fmtUsd(w.priceUsd), `+${w.boostPct}% farm for ${w.days} farming days`]),
+            [VEST.name, fmtUsd(VEST.priceUsd), "Stops the next bullet, then it's gone"],
           ]}
         />
         <ul>
@@ -447,6 +499,12 @@ const SECTIONS: Section[] = [
     ),
   },
   {
+    id: "pricing",
+    group: "$AMMO",
+    title: "How prices work",
+    body: () => <Pricing />,
+  },
+  {
     id: "flywheel",
     group: "$AMMO",
     title: "The flywheel",
@@ -493,11 +551,11 @@ const SECTIONS: Section[] = [
           ["Deposit / withdraw $AMMO", "Free (Solana network fee only)", "$AMMO", "Your in-game balance"],
           ["Solana network fee", "~0.00001 SOL per deposit or withdrawal, paid by you", "SOL", "Solana validators"],
           ["Claim one gangster", "Free", "—", "—"],
-          ["Claim all", `${fmt(CLAIM_ALL_FEE_AMMO)} per gangster`, "$AMMO", "🔥 Burned"],
-          ["Fusion", FUSION_RECIPES.map((f) => fmt(f.fee)).join(" / "), "$AMMO", "🔥 Burned"],
-          ["Med kit", fmt(MEDKIT_PRICE_AMMO), "$AMMO", "🔥 Burned"],
-          ["Weapons", Object.values(WEAPONS).map((w) => fmt(w.priceAmmo)).join(" / "), "$AMMO", "🔥 Burned"],
-          [VEST.name, fmt(VEST.priceAmmo), "$AMMO", "🔥 Burned"],
+          ["Claim all", `${fmtUsd(CLAIM_ALL_FEE_USD)} per gangster`, "$AMMO", "Burned"],
+          ["Fusion", FUSION_RECIPES.map((f) => fmtUsd(f.feeUsd)).join(" / "), "$AMMO", "Burned"],
+          ["Med kit", fmtUsd(MEDKIT_PRICE_USD), "$AMMO", "Burned"],
+          ["Weapons", Object.values(WEAPONS).map((w) => fmtUsd(w.priceUsd)).join(" / "), "$AMMO", "Burned"],
+          [VEST.name, fmtUsd(VEST.priceUsd), "$AMMO", "Burned"],
           ["$AMMO buy / sell", `${TOKEN.launchpad} creator rewards`, "$AMMO trade", "Reward Pool"],
         ]}
       />

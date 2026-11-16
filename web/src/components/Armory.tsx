@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import Scene from "./Scene";
 import Nav from "./Nav";
 import GangsterToy from "./art/GangsterToy";
-import { MEDKIT_PRICE_AMMO, RARITIES, TOKEN, STORE_NAME, VEST, WEAPONS, fmt, type WeaponId } from "../config/game";
+import { ammoFor, fmtTokenPrice, fmtUsd, useAmmoPrice } from "../price";
+import { MEDKIT_PRICE_USD, RARITIES, TOKEN, STORE_NAME, VEST, WEAPONS, fmt, type WeaponId } from "../config/game";
 import AmmoIcon from "./art/AmmoIcon";
 import AmmoVault from "./AmmoVault";
 import { usePlatform } from "../mock/platform";
@@ -35,22 +36,24 @@ function ItemIcon({ id }: { id: ItemId }) {
   );
 }
 
+/** `price` is in USD; it's paid in AMMO at the live price. */
 const ITEMS: { id: ItemId; name: string; price: number; stat: string; blurb: string; tone: string }[] = [
-  { id: "medkit", name: "Med kit", price: MEDKIT_PRICE_AMMO, stat: "Heals 1 shot gangster", blurb: "Patch them up and get them back on the street.", tone: "#ff5a6e" },
+  { id: "medkit", name: "Med kit", price: MEDKIT_PRICE_USD, stat: "Heals 1 shot gangster", blurb: "Patch them up and get them back on the street.", tone: "#ff5a6e" },
   ...(Object.values(WEAPONS).map((w) => ({
     id: w.id,
     name: w.name,
-    price: w.priceAmmo,
+    price: w.priceUsd,
     stat: `+${w.boostPct}% farm · ${w.days} days`,
     blurb: w.blurb,
     tone: w.id === "pistol" ? "#22e4ff" : w.id === "smg" ? "#b45cff" : "#ffb020",
   })) as { id: ItemId; name: string; price: number; stat: string; blurb: string; tone: string }[]),
-  { id: "vest", name: VEST.name, price: VEST.priceAmmo, stat: "Stops the next bullet", blurb: "One shot it doesn't have to take.", tone: "#3ddc84" },
+  { id: "vest", name: VEST.name, price: VEST.priceUsd, stat: "Stops the next bullet", blurb: "One shot it doesn't have to take.", tone: "#3ddc84" },
 ];
 
 export default function Armory({ onBack, onFound }: { onBack: () => void; onFound: () => void }) {
   const s = useMock();
   const burned = usePlatform((p) => p.ammoBurned);
+  const price = useAmmoPrice(); // re-render when the token price moves
   const now = useNow();
   const [toast, setToast] = useState<string | null>(null);
 
@@ -105,7 +108,9 @@ export default function Armory({ onBack, onFound }: { onBack: () => void; onFoun
             <h1>{STORE_NAME}</h1>
             <p className="muted">Gear up your crew: weapons boost the farm, vests stop bullets, med kits get the wounded back to work.</p>
             <p className="burnline">
-              Everything here is paid in <b>${TOKEN.ticker}</b> and <b>100% burned</b>.{" "}
+              Prices are in dollars, paid in <b>${TOKEN.ticker}</b> at the live price and <b>100% burned</b>. 1 {TOKEN.ticker} ={" "}
+              {fmtTokenPrice(price.usd)}
+              {price.source === "sim" ? " (simulated)" : ""}.{" "}
               <span className="burnline__total">🔥 {fmt(Math.floor(burned))} burned so far</span>
               {TOKEN.buyUrl && (
                 <>
@@ -162,7 +167,10 @@ export default function Armory({ onBack, onFound }: { onBack: () => void; onFoun
                 )}
                 <div className="item__foot">
                   <span className="item__price">
-                    <AmmoIcon size={16} /> {fmt(it.price)} <small>AMMO</small>
+                    {fmtUsd(it.price)}
+                    <small className="item__ammo">
+                      <AmmoIcon size={13} /> ≈ {fmt(ammoFor(it.price))}
+                    </small>
                   </span>
                   <span className="item__stock">In stock: {stock(it.id)}</span>
                 </div>
@@ -172,10 +180,10 @@ export default function Armory({ onBack, onFound }: { onBack: () => void; onFoun
                       key={n}
                       type="button"
                       className={`btn${n === 1 ? " btn--pink" : ""}`}
-                      disabled={n * it.price > s.ammo}
+                      disabled={n * ammoFor(it.price) > s.ammo}
                       onClick={() => run(() => mock.buyItem(it.id, n), `Bought ${n} × ${it.name}`)}
                     >
-                      {n === 1 ? `Buy · ${fmt(it.price)}` : `×${n}`}
+                      {n === 1 ? `Buy · ${fmtUsd(it.price)}` : `×${n}`}
                     </button>
                   ))}
                 </div>
@@ -260,7 +268,7 @@ export function LoadoutRow({
       <div className="lo__actions">
         {shot ? (
           <button type="button" className="btn btn--heal" onClick={() => run(() => mock.heal([g.id]), `#${g.id} healed`)}>
-            ✚ Heal {kits > 0 ? "· use kit" : `· ${fmt(MEDKIT_PRICE_AMMO)} AMMO`}
+            ✚ Heal {kits > 0 ? "· use kit" : `· ${fmtUsd(MEDKIT_PRICE_USD)}`}
           </button>
         ) : (
           <>

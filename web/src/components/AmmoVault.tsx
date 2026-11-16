@@ -2,6 +2,7 @@ import { useState } from "react";
 import AmmoIcon from "./art/AmmoIcon";
 import { TOKEN, fmt } from "../config/game";
 import { mock } from "../mock";
+import { fmtUsd, useAmmoPrice } from "../price";
 import { WITHDRAW_FEE_NOTE } from "../solana";
 
 type Mode = "deposit" | "withdraw";
@@ -13,11 +14,12 @@ type Mode = "deposit" | "withdraw";
  */
 export default function AmmoVault({ walletAmmo, gameAmmo, onToast }: { walletAmmo: number; gameAmmo: number; onToast: (m: string) => void }) {
   const [mode, setMode] = useState<Mode>("deposit");
-  const [amount, setAmount] = useState("1000");
+  const [amount, setAmount] = useState(() => String(Math.floor(walletAmmo / 2)));
   const dep = mode === "deposit";
   const n = Math.floor(Number(amount) || 0);
   const from = Math.floor(dep ? walletAmmo : gameAmmo);
   const short = n > from;
+  const price = useAmmoPrice();
 
   const go = () => {
     try {
@@ -66,12 +68,14 @@ export default function AmmoVault({ walletAmmo, gameAmmo, onToast }: { walletAmm
       <div className="ammovault__form">
         <div className="amount">
           <input inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^0-9]/g, ""))} aria-label={`${TOKEN.ticker} amount`} />
-          <span>{TOKEN.ticker}</span>
+          <span>
+            {TOKEN.ticker} <small className="ammovault__usd">≈ {fmtUsd(n * price.usd)}</small>
+          </span>
         </div>
         <div className="chips">
-          {[500, 1_000, 5_000].map((v) => (
-            <button key={v} type="button" onClick={() => setAmount(String(v))}>
-              {fmt(v)}
+          {[25, 50, 75].map((pct) => (
+            <button key={pct} type="button" onClick={() => setAmount(String(Math.floor((from * pct) / 100)))}>
+              {pct}%
             </button>
           ))}
           <button type="button" onClick={() => setAmount(String(from))}>

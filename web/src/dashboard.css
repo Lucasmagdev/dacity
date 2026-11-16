@@ -1429,3 +1429,30 @@ a.gamenav__item:hover::after {
     display: none;
   }
 }
+
+/* ------------------------------------------------------------------ USD prices paid in AMMO */
+
+.item__price {
+  flex-wrap: wrap;
+  font-size: 18px;
+}
+
+.item__ammo,
+.fusion__row small .ammoicon {
+  vertical-align: middle;
+}
+
+.item__ammo {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.ammovault__usd {
+  color: #3ddc84;
+  font-size: 12px;
+  font-weight: 700;
+}

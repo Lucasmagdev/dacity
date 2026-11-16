@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavWallet } from "./Wallet";
+import { SIM_MARKET_CAPS, ammoFor, fmtCap, fmtTokenPrice, fmtUsd, setSimMarketCap, useAmmoPrice } from "../price";
+import { MEDKIT_PRICE_USD, TOKEN, WEAPONS } from "../config/game";
 import Scene from "./Scene";
 import Nav from "./Nav";
 import Coin from "./art/Coin";
@@ -167,6 +169,7 @@ function AdminConsole({ me, onBack }: { me: string; onBack: () => void }) {
           <SendCoins me={me} run={run} />
           <SendBoxes me={me} run={run} />
           <MaintenanceCard me={me} run={run} />
+          <TokenPriceCard me={me} run={run} />
           <AnnouncementForm me={me} run={run} />
         </div>
 
@@ -359,6 +362,68 @@ function MaintenanceCard({ me, run }: CardProps) {
           confirmLabel="Confirm: lock the game for everyone"
           onConfirm={() => run(() => platform.setMaintenance(true, msg, me), "Maintenance is ON")}
         />
+      )}
+    </section>
+  );
+}
+
+/** Test how prices behave at different market caps (only while there's no live token price). */
+function TokenPriceCard({ me, run }: CardProps) {
+  const price = useAmmoPrice();
+  const live = price.source === "live";
+  return (
+    <section className="panel admin__card admin__card--wide">
+      <div className="admin__card-head">
+        <span className="admin__icon admin__icon--mega" aria-hidden>
+          $
+        </span>
+        <div>
+          <p className="eyebrow">${TOKEN.ticker} price</p>
+          <h2>{live ? "Live token price" : "Simulated token price"}</h2>
+        </div>
+      </div>
+      <p className="muted">
+        Items and fees are priced in dollars and paid in {TOKEN.ticker} at this price.{" "}
+        {live
+          ? "The price is live (10-minute average), so it can't be changed here."
+          : "The token isn't live yet: pick a market cap to see how many tokens each item costs."}
+      </p>
+      <dl className="tiles admin__tiles">
+        <div className={`tile${price.stale ? " tile--alert" : ""}`}>
+          <dt>1 {TOKEN.ticker}</dt>
+          <dd>{fmtTokenPrice(price.usd)}</dd>
+        </div>
+        <div className="tile">
+          <dt>Market cap</dt>
+          <dd>{fmtCap(price.marketCap)}</dd>
+        </div>
+        <div className="tile">
+          <dt>Med kit {fmtUsd(MEDKIT_PRICE_USD)}</dt>
+          <dd>{ammoFor(MEDKIT_PRICE_USD).toLocaleString("en-US")}</dd>
+        </div>
+        <div className="tile">
+          <dt>Rifle {fmtUsd(WEAPONS.rifle.priceUsd)}</dt>
+          <dd>{ammoFor(WEAPONS.rifle.priceUsd).toLocaleString("en-US")}</dd>
+        </div>
+      </dl>
+      {!live && (
+        <div className="chips chips--select">
+          {SIM_MARKET_CAPS.map((c) => (
+            <button
+              key={c}
+              type="button"
+              aria-pressed={Math.round(price.marketCap) === c}
+              onClick={() =>
+                run(() => {
+                  setSimMarketCap(c);
+                  platform.log(me, "Simulated token price", `Market cap ${fmtCap(c)}`);
+                }, `Simulating a ${fmtCap(c)} market cap`)
+              }
+            >
+              {fmtCap(c)}
+            </button>
+          ))}
+        </div>
       )}
     </section>
   );

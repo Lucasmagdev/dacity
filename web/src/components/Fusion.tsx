@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import GangsterToy from "./art/GangsterToy";
 import { FUSION_RECIPES, RARITIES, fmt } from "../config/game";
+import { ammoFor, fmtUsd, useAmmoPrice } from "../price";
 import AmmoIcon from "./art/AmmoIcon";
 import { archetypeOf, farmedOf, fusionCandidates, mock, statsOf, type MockGangster } from "../mock";
 
@@ -11,7 +12,7 @@ const TOP = RARITIES[RARITIES.length - 1];
 const RULES = [
   "Fusing 2 gangsters of the same rarity gives 1 fused gangster of the next rarity up.",
   "It farms both parents' daily DC combined and its career cap is bigger than the two parents' together.",
-  `The fee is paid in AMMO and burned, and grows with the tier. ${TOP.name} is the top rarity and can't be fused.`,
+  `The fee is set in dollars, paid in AMMO at the live price and burned, and grows with the tier. ${TOP.name} is the top rarity and can't be fused.`,
   "Both gangsters must be idle or farming: not shot, not retired and never fused before. Heal shot gangsters first.",
   "The two gangsters closest to retirement are consumed. Their pending DC is paid out to you first, free.",
   "Fused gangsters start a brand-new career and cannot be fused again.",
@@ -30,6 +31,7 @@ export default function Fusion({
   onToast: (msg: string) => void;
 }) {
   const [result, setResult] = useState<FuseResult | null>(null);
+  useAmmoPrice(); // re-render when the token price moves
 
   const fuse = (rarity: number) => {
     try {
@@ -67,7 +69,8 @@ export default function Fusion({
           const pair = pool.slice(0, 2);
           const ready = pair.length === 2;
           // mirrors mock.fuse: the parents' pending DC is paid out before the fee is charged
-          const canPay = ammo >= f.fee;
+          const fee = ammoFor(f.feeUsd);
+          const canPay = ammo >= fee;
           return (
             <div
               key={f.from}
@@ -84,7 +87,10 @@ export default function Fusion({
                 <b>{to.name}</b>
               </span>
               <span role="cell" data-label="Cost">
-                <AmmoIcon size={14} /> {fmt(f.fee)} <small>AMMO</small>
+                <b>{fmtUsd(f.feeUsd)}</b>
+                <small>
+                  <AmmoIcon size={12} /> ≈ {fmt(fee)}
+                </small>
               </span>
               <span role="cell" data-label="Farm">
                 <b className="gold">{fmt(f.perDay)}/day</b> <small>regular {to.name} {fmt(to.perDay)}</small>
@@ -97,7 +103,7 @@ export default function Fusion({
               </span>
               <span role="cell" className="fusion__act">
                 <button type="button" className="btn btn--fuse" disabled={!ready || !canPay} onClick={() => fuse(f.from)}>
-                  {ready && !canPay ? `Need ${fmt(f.fee)} AMMO` : "Fuse"}
+                  {ready && !canPay ? `Need ${fmtUsd(f.feeUsd)} in AMMO` : "Fuse"}
                 </button>
                 <small
                   className={ready ? "fusion__ready" : undefined}

@@ -66,8 +66,7 @@ export function quoteBoxes(count: number, soldSoFar: number): BoxQuote {
  * credits their in-game balance, spending is a database debit, and the AMMO spent is burned on-chain
  * from the control wallet in periodic batches (SPL burn). Unspent AMMO can be withdrawn back.
  *
- * PLACEHOLDER AMOUNTS: the token price is only known after launch, so every AMMO price below
- * must be re-set then.
+ * Prices are in USD and converted to AMMO at the live token price (src/price.ts).
  */
 export const TOKEN = {
   ticker: "AMMO",
@@ -90,8 +89,13 @@ export const TOKEN = {
  */
 export const CREATOR_REWARDS_LABEL = "pump.fun creator rewards";
 
-/** "Claim all" charges this per gangster claimed (in AMMO, burned). Claiming one gangster at a time is free. */
-export const CLAIM_ALL_FEE_AMMO = 100;
+/**
+ * PRICING: every item and fee below is set in US DOLLARS and paid in $AMMO at the live token price
+ * (see src/price.ts), then burned. So a med kit always costs $0.50, whatever the token's market cap.
+ */
+
+/** "Claim all" charges this per gangster claimed (USD, paid in AMMO, burned). Claiming one at a time is free. */
+export const CLAIM_ALL_FEE_USD = 0.5;
 
 /** Season start shown in the hero countdown. Override with VITE_SEASON_START (ISO date). */
 export const SEASON_START = new Date(import.meta.env.VITE_SEASON_START || "2026-12-12T20:00:00Z");
@@ -178,16 +182,16 @@ export type FarmStats = { perDay: number; cap: number };
  *  - perDay = both parents combined, so fusing never lowers your daily income
  *    (and a fused gangster always beats a regular one of the same rarity).
  *  - cap    = both parents' caps combined + 20% / 25% / 30% / 35%, rounded to 100.
- *  - fee    = doubles each tier (AMMO, placeholder until the token price is known).
+ *  - feeUsd = about 12% of the extra DC the fusion unlocks.
  */
-/** `fee` is in AMMO and burned. */
-export type FusionRecipe = FarmStats & { from: number; to: number; fee: number };
+/** `feeUsd` is in dollars, paid in AMMO and burned. */
+export type FusionRecipe = FarmStats & { from: number; to: number; feeUsd: number };
 
 export const FUSION_RECIPES: FusionRecipe[] = [
-  { from: 0, to: 1, fee: 200, perDay: 60, cap: 3_200 }, //  2 × Common    (2,700 cap) → Uncommon
-  { from: 1, to: 2, fee: 400, perDay: 66, cap: 4_000 }, //  2 × Uncommon  (3,168 cap) → Rare
-  { from: 2, to: 3, fee: 800, perDay: 76, cap: 5_100 }, //  2 × Rare      (3,952 cap) → Epic
-  { from: 3, to: 4, fee: 1_600, perDay: 100, cap: 8_100 }, // 2 × Epic      (6,000 cap) → Legendary
+  { from: 0, to: 1, feeUsd: 0.6, perDay: 60, cap: 3_200 }, //  2 × Common    (2,700 cap) → Uncommon
+  { from: 1, to: 2, feeUsd: 1, perDay: 66, cap: 4_000 }, //  2 × Uncommon  (3,168 cap) → Rare
+  { from: 2, to: 3, feeUsd: 1.5, perDay: 76, cap: 5_100 }, //  2 × Rare      (3,952 cap) → Epic
+  { from: 3, to: 4, feeUsd: 2.5, perDay: 100, cap: 8_100 }, // 2 × Epic      (6,000 cap) → Legendary
 ];
 
 /** Recipe that consumes two gangsters of this rarity (undefined for Legendary). */
@@ -204,8 +208,8 @@ export const fusedStats = (rarity: number): FarmStats | undefined => FUSION_RECI
  */
 export const SHOT_CHANCE_PER_DAY = [4, 3, 2, 1.5, 1];
 
-/** One med kit heals one shot gangster, any rarity. Price in AMMO (burned). */
-export const MEDKIT_PRICE_AMMO = 500;
+/** One med kit heals one shot gangster, any rarity. USD, paid in AMMO, burned. */
+export const MEDKIT_PRICE_USD = 0.5;
 
 // ------------------------------------------------------------------ the armory (item shop)
 
@@ -219,14 +223,14 @@ export type WeaponId = "pistol" | "smg" | "rifle";
  * The bonus is extra DC on top of the career cap. One weapon per gangster; equipping another replaces it.
  * Worth more on high-rarity and fused gangsters, since the boost is a % of their rate.
  */
-/** Prices in AMMO (burned). */
-export const WEAPONS: Record<WeaponId, { id: WeaponId; name: string; boostPct: number; days: number; priceAmmo: number; blurb: string }> = {
-  pistol: { id: "pistol", name: "Pistol", boostPct: 15, days: 30, priceAmmo: 400, blurb: "Cheap and reliable. Keeps the street honest." },
-  smg: { id: "smg", name: "SMG", boostPct: 30, days: 30, priceAmmo: 900, blurb: "Spray and collect. Debtors pay faster." },
-  rifle: { id: "rifle", name: "Rifle", boostPct: 50, days: 30, priceAmmo: 1_600, blurb: "Heavy hardware for your top earners." },
+/** Prices in USD, paid in AMMO, burned. Tuned so cheap weapons break even on a Common and the Rifle pays off from Rare up. */
+export const WEAPONS: Record<WeaponId, { id: WeaponId; name: string; boostPct: number; days: number; priceUsd: number; blurb: string }> = {
+  pistol: { id: "pistol", name: "Pistol", boostPct: 15, days: 30, priceUsd: 1.2, blurb: "Cheap and reliable. Keeps the street honest." },
+  smg: { id: "smg", name: "SMG", boostPct: 30, days: 30, priceUsd: 2.8, blurb: "Spray and collect. Debtors pay faster." },
+  rifle: { id: "rifle", name: "Rifle", boostPct: 50, days: 30, priceUsd: 5, blurb: "Heavy hardware for your top earners." },
 };
 
 /** Absorbs the next bullet, then it's gone. One per gangster. */
-export const VEST = { name: "Kevlar vest", priceAmmo: 350 };
+export const VEST = { name: "Kevlar vest", priceUsd: 0.35 };
 
 export const fmtAmmo = (n: number) => `${Math.round(n).toLocaleString("en-US")} AMMO`;

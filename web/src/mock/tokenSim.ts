@@ -12,13 +12,19 @@
  * In production, replace with on-chain reads: totalSupply(), Transfer(to = 0x0 / dead) events for burns,
  * the game contract's ItemBought / Fused / ClaimedAll events for categories, and the pool balance.
  */
-import { CLAIM_ALL_FEE_AMMO, FUSION_RECIPES, MEDKIT_PRICE_AMMO, VEST, WEAPONS } from "../config/game";
+import { CLAIM_ALL_FEE_USD, FUSION_RECIPES, MEDKIT_PRICE_USD, VEST, WEAPONS } from "../config/game";
 
 export type BurnCategory = "medkit" | "weapon" | "vest" | "fusion" | "claimAll";
 
 export type BurnEvent = { at: number; amount: number; category: BurnCategory; who: string; label: string };
 
 const MIN = 60_000;
+/**
+ * Simulation only: token price used to turn the dollar prices into AMMO amounts for the fake history.
+ * Fixed (a ~$500k market cap) so the simulated totals don't jump when the admin changes the test price.
+ */
+const SIM_HISTORY_PRICE = 0.0005;
+const simAmmo = (usd: number) => Math.ceil(usd / SIM_HISTORY_PRICE);
 /** Simulation only: share of trading volume paid as pump.fun creator rewards. The real rate varies. */
 const SIM_CREATOR_RATE = 0.005;
 const KEY = "dacity.tokensim.start";
@@ -69,18 +75,18 @@ function bucket(start: number, i: number): Bucket {
     const who = `0x${hex(r, 4)}…${hex(r, 4)}`;
     const at = t0 + Math.floor(r() * MIN);
     const x = r();
-    if (x < 0.34) burns.push({ at, who, category: "medkit", amount: MEDKIT_PRICE_AMMO, label: "Med kit" });
+    if (x < 0.34) burns.push({ at, who, category: "medkit", amount: simAmmo(MEDKIT_PRICE_USD), label: "Med kit" });
     else if (x < 0.58) {
       const g = 1 + Math.floor(r() * 9);
-      burns.push({ at, who, category: "claimAll", amount: CLAIM_ALL_FEE_AMMO * g, label: `Claim all · ${g} gangsters` });
+      burns.push({ at, who, category: "claimAll", amount: simAmmo(CLAIM_ALL_FEE_USD) * g, label: `Claim all · ${g} gangsters` });
     } else if (x < 0.8) {
       const ws = Object.values(WEAPONS);
       const w = ws[Math.min(ws.length - 1, Math.floor(r() ** 1.6 * ws.length))];
-      burns.push({ at, who, category: "weapon", amount: w.priceAmmo, label: w.name });
-    } else if (x < 0.9) burns.push({ at, who, category: "vest", amount: VEST.priceAmmo, label: VEST.name });
+      burns.push({ at, who, category: "weapon", amount: simAmmo(w.priceUsd), label: w.name });
+    } else if (x < 0.9) burns.push({ at, who, category: "vest", amount: simAmmo(VEST.priceUsd), label: VEST.name });
     else {
       const f = FUSION_RECIPES[Math.min(FUSION_RECIPES.length - 1, Math.floor(r() ** 2 * FUSION_RECIPES.length))];
-      burns.push({ at, who, category: "fusion", amount: f.fee, label: "Fusion" });
+      burns.push({ at, who, category: "fusion", amount: simAmmo(f.feeUsd), label: "Fusion" });
     }
   }
   const b: Bucket = { burns, volume: Math.round((2_000 + r() * 38_000) * busy), volumeAt: t0 + Math.floor(r() * MIN) };

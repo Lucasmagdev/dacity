@@ -5,6 +5,7 @@ import AmmoIcon from "./art/AmmoIcon";
 import Socials from "./Socials";
 import { TOKEN, STORE_NAME, fmt } from "../config/game";
 import { MOCK, useMock } from "../mock";
+import { fmtCap, fmtTokenPrice, useAmmoPrice } from "../price";
 import { usePlatform } from "../mock/platform";
 import { snapshot, type BurnCategory, type BurnEvent } from "../mock/tokenSim";
 
@@ -98,6 +99,7 @@ export default function Token({ onBack }: { onBack: () => void }) {
   const s = useMock();
   const yourBurned = usePlatform((p) => p.ammoBurned);
   const snap = useMemo(() => snapshot(now), [now]);
+  const price = useAmmoPrice();
 
   // your own burns (from the local tx history) join the feed and the categories
   const yours = useMemo(() => {
@@ -187,6 +189,11 @@ export default function Token({ onBack }: { onBack: () => void }) {
 
         {/* ------------------------------------------------------------ stat grid */}
         <dl className="tstats">
+          <div className="tstat tstat--gold">
+            <dt>Price{price.source === "sim" ? " (simulated)" : ""}</dt>
+            <dd>{fmtTokenPrice(price.usd)}</dd>
+            <small>Market cap {fmtCap(price.marketCap)}</small>
+          </div>
           <div className="tstat">
             <dt>Initial supply</dt>
             <dd>{compact(TOKEN.totalSupply)}</dd>
