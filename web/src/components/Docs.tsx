@@ -3,6 +3,7 @@ import Scene from "./Scene";
 import Nav from "./Nav";
 import AmmoIcon from "./art/AmmoIcon";
 import Coin from "./art/Coin";
+import GangsterToy from "./art/GangsterToy";
 import {
   BOX_PRICE_DC,
   BULK_TIERS,
@@ -83,11 +84,14 @@ function Rarity({ id }: { id: number }) {
  *   6 Players  ←←←←←   5 Burn
  */
 function Flywheel() {
-  const node = (area: string, n: number, tone: string, title: string, text: string) => (
+  const node = (area: string, n: number, tone: string, icon: ReactNode, title: string, text: string) => (
     <div className={`fly__node fly__node--${tone}`} style={{ gridArea: area, order: n }}>
       <span className="fly__n">{n}</span>
-      <b>{title}</b>
-      <small>{text}</small>
+      <span className="fly__ico">{icon}</span>
+      <div className="fly__txt">
+        <b>{title}</b>
+        <small>{text}</small>
+      </div>
     </div>
   );
   const arrow = (area: string, glyph: string) => (
@@ -95,26 +99,79 @@ function Flywheel() {
       {glyph}
     </div>
   );
+  const usdc = (size: number) => <img className="fly__usdc" src="/token/usdc-256.webp" width={size} height={size} alt="" />;
   return (
     <div className="fly" role="img" aria-label="Audacity Game flywheel">
-      {node("a", 1, "usdc", "Players buy boxes", "USDC goes into the Vault and becomes DC to open Gangster Boxes.")}
+      {node("a", 1, "usdc", <img src="/token/box-192.webp" width={52} height={52} alt="" />, "Players buy boxes", "USDC goes into the Vault and becomes DC to open Gangster Boxes.")}
       {arrow("ap", "→")}
       <div className="fly__pool" style={{ gridArea: "p", order: 0 }}>
-        <Coin size={44} />
+        <span className="fly__poolico">{usdc(56)}</span>
         <b>Reward Pool</b>
         <small>The Vault's USDC. Every player withdrawal is paid from here.</small>
       </div>
       {arrow("rp", "←")}
-      {node("r", 4, "ammo", "Creator rewards", `Every $AMMO trade on ${TOKEN.launchpad} pays creator rewards, and 100% of them go into the Reward Pool.`)}
+      {node(
+        "r",
+        4,
+        "ammo",
+        <span className="fly__pair">
+          <AmmoIcon size={38} />
+          {usdc(22)}
+        </span>,
+        "Creator rewards",
+        `Every $AMMO trade on ${TOKEN.launchpad} pays creator rewards, and 100% of them go into the Reward Pool.`,
+      )}
       {arrow("pw", "↓")}
-      {node("w", 2, "dc", "Gangsters farm DC", "Players claim DC and withdraw it as USDC from the pool.")}
+      {node(
+        "w",
+        2,
+        "dc",
+        <span className="fly__pair">
+          <span className="fly__toy">
+            <GangsterToy gangsterId={11} rarity={4} bare />
+          </span>
+          <Coin size={22} />
+        </span>,
+        "Gangsters farm DC",
+        "Players claim DC and withdraw it as USDC from the pool.",
+      )}
       {arrow("wb", "→")}
-      {node("b", 3, "ammo", "Players buy $AMMO", "For med kits, weapons, vests, fusion and claim-all.")}
+      {node("b", 3, "ammo", <AmmoIcon size={46} />, "Players buy $AMMO", "For med kits, weapons, vests, fusion and claim-all.")}
       {arrow("rb", "↑")}
       {arrow("bs", "↓")}
-      {node("s", 5, "fire", "Spent $AMMO is burned", "100% of it, forever. Supply goes down while demand keeps coming.")}
+      {node(
+        "s",
+        5,
+        "fire",
+        <span className="fly__burn">
+          <AmmoIcon size={42} />
+          <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden>
+            <path fill="#ff5a1f" d="M12 2c1 4 6 6 6 12a6 6 0 0 1-12 0c0-3 2-5 3-6 0 2 1 3 2 3 0-4-1-6 1-9z" />
+            <path fill="#ffd36b" d="M12 11c.6 2 3 3 3 6a3 3 0 0 1-6 0c0-1.6 1-2.5 1.5-3 .1 1 .6 1.5 1 1.5 0-2-.4-3 .5-4.5z" />
+          </svg>
+        </span>,
+        "Spent $AMMO is burned",
+        "100% of it, forever. Supply goes down while demand keeps coming.",
+      )}
       {arrow("fs", "←")}
-      {node("f", 6, "usdc", "More players join", "A deeper pool and a scarcer token pull in new bosses.")}
+      {node(
+        "f",
+        6,
+        "usdc",
+        <span className="fly__crew">
+          <span className="fly__toy">
+            <GangsterToy gangsterId={5} rarity={1} bare />
+          </span>
+          <span className="fly__toy">
+            <GangsterToy gangsterId={2} rarity={2} bare />
+          </span>
+          <span className="fly__toy">
+            <GangsterToy gangsterId={8} rarity={0} bare />
+          </span>
+        </span>,
+        "More players join",
+        "A deeper pool and a scarcer token pull in new bosses.",
+      )}
       {arrow("up", "↑")}
     </div>
   );

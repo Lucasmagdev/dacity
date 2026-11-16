@@ -518,3 +518,126 @@
 .docs__main {
   grid-template-columns: minmax(0, 1fr);
 }
+
+/* ------------------------------------------------------------------ flywheel icons */
+
+.fly__node {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+
+.fly__txt {
+  display: grid;
+  gap: 3px;
+}
+
+.fly__ico {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 14px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--nc) 30%, transparent), rgba(7, 4, 15, 0.55) 75%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--nc) 40%, transparent);
+}
+
+.fly__ico img {
+  display: block;
+  object-fit: contain;
+}
+
+.fly__usdc {
+  border-radius: 50%;
+}
+
+.fly__poolico {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(255, 211, 107, 0.5), 0 0 30px rgba(255, 211, 107, 0.45);
+  animation: fly-pulse 2.6s ease-in-out infinite;
+}
+
+@keyframes fly-pulse {
+  50% {
+    box-shadow: 0 0 0 3px rgba(255, 211, 107, 0.8), 0 0 46px rgba(255, 211, 107, 0.7);
+  }
+}
+
+/* main icon with a small one tucked at its corner */
+.fly__pair {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+}
+
+.fly__pair > :last-child {
+  position: absolute;
+  right: -8px;
+  bottom: -8px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(16, 7, 30, 0.95);
+}
+
+.fly__toy {
+  display: block;
+  width: 46px;
+  height: 50px;
+}
+
+.fly__toy .toy {
+  width: 100%;
+  height: 100%;
+}
+
+.fly__crew {
+  display: flex;
+  align-items: flex-end;
+}
+
+.fly__crew .fly__toy {
+  width: 24px;
+  height: 40px;
+  margin: 0 -3px;
+}
+
+.fly__crew .fly__toy:nth-child(2) {
+  width: 30px;
+  height: 46px;
+  z-index: 1;
+}
+
+.fly__burn {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.fly__burn .ammoicon {
+  filter: saturate(0.5) brightness(0.8);
+}
+
+.fly__burn svg {
+  position: absolute;
+  right: -10px;
+  bottom: -8px;
+  filter: drop-shadow(0 0 8px #ff5a1f);
+  transform-origin: 50% 100%;
+  animation: fly-flame 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes fly-flame {
+  to {
+    transform: scale(1.18) rotate(-4deg);
+  }
+}
+
+@media (max-width: 1100px) and (min-width: 901px) {
+  .fly__node {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: start;
+  }
+}
