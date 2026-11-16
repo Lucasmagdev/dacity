@@ -104,7 +104,7 @@ export default function Token({ onBack }: { onBack: () => void }) {
     const events: BurnEvent[] = [];
     const cats: Partial<Record<BurnCategory, { amount: number; count: number }>> = {};
     for (const t of s.txs) {
-      if (!t.ammo || t.ammo >= 0) continue;
+      if (!t.ammo || t.ammo >= 0 || t.type === "ammoWithdraw") continue;
       const cat = t.type === "shop" && /vest/i.test(t.title) ? "vest" : TX_TO_CAT[t.type] ?? "weapon";
       const amount = -t.ammo;
       events.push({ at: t.at, amount, category: cat, who: "You", label: t.title });
@@ -213,7 +213,7 @@ export default function Token({ onBack }: { onBack: () => void }) {
             <small>Items & fees paid in AMMO</small>
           </div>
           <div className="tstat tstat--gold">
-            <dt>{TOKEN.taxPct}% tax → Reward Pool</dt>
+            <dt>Creator rewards → Reward Pool</dt>
             <dd>{compact(snap.taxTotal)}</dd>
             <small>{compact(snap.tax24h)} in 24h · from {compact(snap.volume24h)} volume</small>
           </div>
@@ -303,7 +303,7 @@ export default function Token({ onBack }: { onBack: () => void }) {
         <section className="tfly">
           {[
             ["Players buy boxes", "USDC fills the Reward Pool"],
-            [`${TOKEN.taxPct}% tax on every trade`, "Goes into the Reward Pool"],
+            [`${TOKEN.launchpad} creator rewards`, "100% go into the Reward Pool"],
             ["Items & fees in AMMO", "Med kits, weapons, vests, fusion, claim-all"],
             ["100% burned", "Supply only goes down"],
           ].map(([t, d], i) => (
@@ -323,7 +323,7 @@ export default function Token({ onBack }: { onBack: () => void }) {
           <dl>
             <div>
               <dt>Chain</dt>
-              <dd>Robinhood Chain</dd>
+              <dd>{TOKEN.chain}</dd>
             </div>
             <div>
               <dt>Launchpad</dt>
@@ -334,11 +334,15 @@ export default function Token({ onBack }: { onBack: () => void }) {
               <dd>{fmt(TOKEN.totalSupply)} fixed</dd>
             </div>
             <div>
-              <dt>Tax</dt>
-              <dd>{TOKEN.taxPct}% → Reward Pool</dd>
+              <dt>Paired with</dt>
+              <dd>{TOKEN.pair}</dd>
             </div>
             <div>
-              <dt>Contract</dt>
+              <dt>Trading fees</dt>
+              <dd>Creator rewards → Reward Pool</dd>
+            </div>
+            <div>
+              <dt>Mint address</dt>
               <dd>{TOKEN.address ? <code>{TOKEN.address}</code> : "Announced at launch"}</dd>
             </div>
           </dl>

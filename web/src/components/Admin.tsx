@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { NavWallet } from "./Wallet";
 import Scene from "./Scene";
 import Nav from "./Nav";
 import Coin from "./art/Coin";
@@ -93,7 +93,7 @@ export default function Admin({ onBack }: { onBack: () => void }) {
                 <b>{shortAddr(address!)}</b> is not on the admin list.
               </p>
             )}
-            <ConnectButton chainStatus="none" showBalance={false} />
+            <NavWallet />
           </div>
         </div>
       </div>
@@ -212,7 +212,7 @@ function Recipient({ value, onChange, me }: { value: string; onChange: (v: strin
       <label className="field">
         <span>Recipient wallet</span>
         <div className={`amount${bad ? " amount--bad" : ""}`}>
-          <input value={value} onChange={(e) => onChange(e.target.value.trim())} placeholder="0x…" spellCheck={false} />
+          <input value={value} onChange={(e) => onChange(e.target.value.trim())} placeholder="Solana address" spellCheck={false} />
           <button type="button" className="field__fill" onClick={() => onChange(me)}>
             Me
           </button>

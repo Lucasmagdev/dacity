@@ -22,7 +22,7 @@ const TX_FILTERS: { label: string; types: TxType[] | null }[] = [
   { label: "Fusion", types: ["fuse"] },
   { label: "Medical", types: ["medkit", "heal"] },
   { label: "Armory", types: ["shop", "equip"] },
-  { label: "AMMO", types: ["ammo"] },
+  { label: "AMMO", types: ["ammo", "ammoDeposit", "ammoWithdraw"] },
   { label: "Other", types: ["gang", "gift"] },
 ];
 
@@ -42,6 +42,8 @@ const TX_ICON: Record<TxType, string> = {
   shop: "⌖",
   equip: "⚔",
   ammo: "🔥",
+  ammoDeposit: "↓",
+  ammoWithdraw: "↑",
 };
 
 const PAGE = 25;
@@ -256,7 +258,7 @@ export default function Dashboard({ onBack, onFound }: { onBack: () => void; onF
             </div>
             <div>
               <dt>You burned</dt>
-              <dd>{fmt(Math.floor(s.txs.reduce((t, x) => t + (x.ammo && x.ammo < 0 ? -x.ammo : 0), 0)))}</dd>
+              <dd>{fmt(Math.floor(s.txs.reduce((t, x) => t + (x.ammo && x.ammo < 0 && x.type !== "ammoWithdraw" ? -x.ammo : 0), 0)))}</dd>
             </div>
             <div>
               <dt>Burned game-wide</dt>
@@ -385,8 +387,8 @@ function TxRow({ t, now }: { t: MockTx; now: number }) {
       <div className="tx__amounts">
         {t.dc !== undefined && t.dc !== 0 && <span className={t.dc > 0 ? "up" : "down"}>{signed(t.dc, fmtDc)} DC</span>}
         {t.ammo !== undefined && t.ammo !== 0 && (
-          <span className={t.ammo > 0 ? "up" : "burn"}>
-            {t.ammo < 0 ? "🔥 " : ""}
+          <span className={t.ammo > 0 ? "up" : t.type === "ammoWithdraw" ? "down" : "burn"}>
+            {t.ammo < 0 && t.type !== "ammoWithdraw" ? "🔥 " : ""}
             {signed(t.ammo, (x) => x.toLocaleString("en-US", { maximumFractionDigits: 0 }))} AMMO
           </span>
         )}

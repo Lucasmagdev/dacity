@@ -1,23 +1,25 @@
-import { useAccount } from "wagmi";
+import { useWalletAddress } from "../components/Wallet";
+import { isSolanaAddress, shortAddr as short } from "../solana";
 
 /**
- * Wallets allowed into #/admin, from VITE_ADMIN_WALLETS (comma or space separated, case-insensitive).
+ * Wallets allowed into #/admin, from VITE_ADMIN_WALLETS (comma or space separated Solana addresses).
  *
  * This only gates the UI. Anything in the front-end bundle is public and can be bypassed, so the real
- * permission check must live where the action happens: an admin/minter role in the contracts for
- * coins and boxes, and a signature check on the server for maintenance and announcements.
+ * permission check must live on the server: admin actions are Supabase functions that verify a message
+ * signed by an admin wallet.
  */
 export const ADMIN_WALLETS: string[] = (import.meta.env.VITE_ADMIN_WALLETS ?? "")
   .split(/[\s,;]+/)
-  .map((a) => a.trim().toLowerCase())
-  .filter((a) => /^0x[0-9a-f]{40}$/.test(a));
+  .map((a) => a.trim())
+  .filter(isSolanaAddress);
 
-export const isAdmin = (address?: string | null) => !!address && ADMIN_WALLETS.includes(address.toLowerCase());
+// base58 is case-sensitive: compare exactly
+export const isAdmin = (address?: string | null) => !!address && ADMIN_WALLETS.includes(address);
 
 export function useAdmin() {
-  const { address, isConnected } = useAccount();
-  return { address, isConnected, isAdmin: isAdmin(address) };
+  const { address, connected } = useWalletAddress();
+  return { address, isConnected: connected, isAdmin: isAdmin(address) };
 }
 
-export const isAddress = (v: string) => /^0x[0-9a-fA-F]{40}$/.test(v.trim());
-export const shortAddr = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
+export const isAddress = isSolanaAddress;
+export const shortAddr = short;

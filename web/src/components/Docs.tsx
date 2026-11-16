@@ -18,9 +18,10 @@ import {
   STORE_NAME,
   VEST,
   WEAPONS,
+  PROTAGONISTS,
   fmt,
 } from "../config/game";
-import { TARGET_CHAIN } from "../chains";
+import { CHAIN_NAME } from "../solana";
 
 const usd = (dc: number) => `$${(dc / DACITY_PER_USDC).toFixed(2)}`;
 const days = (cap: number, perDay: number) => Math.round(cap / perDay);
@@ -103,7 +104,7 @@ function Flywheel() {
         <small>The Vault's USDC. Every player withdrawal is paid from here.</small>
       </div>
       {arrow("rp", "←")}
-      {node("r", 4, "ammo", `${TOKEN.taxPct}% $AMMO tax`, `Every buy and sell of $AMMO sends ${TOKEN.taxPct}% into the Reward Pool.`)}
+      {node("r", 4, "ammo", "Creator rewards", `Every $AMMO trade on ${TOKEN.launchpad} pays creator rewards, and 100% of them go into the Reward Pool.`)}
       {arrow("pw", "↓")}
       {node("w", 2, "dc", "Gangsters farm DC", "Players claim DC and withdraw it as USDC from the pool.")}
       {arrow("wb", "→")}
@@ -128,17 +129,17 @@ const SECTIONS: Section[] = [
     body: () => (
       <>
         <p>
-          <b>Audacity Game</b> is an on-chain crime-empire game on <b>Robinhood Chain</b> (an Arbitrum Orbit L2, gas paid in
-          ETH). You pick a boss, found a gang, recruit gangsters from Gangster Boxes and put them to work. Every gangster farms{" "}
-          <b>Dacity Coin (DC)</b> every day until the end of its career.
+          <b>Audacity Game</b> is a crime-empire game on <b>Solana</b>. You connect your wallet, pick a boss, found a gang, recruit
+          gangsters from Gangster Boxes and put them to work. Every gangster farms <b>Dacity Coin (DC)</b> every day until the end of its
+          career.
         </p>
         <p>The game runs on three currencies, each with one job:</p>
         <Table
           head={["Currency", "What it is", "Used for"]}
           rows={[
-            [<b>USDC</b>, "Stablecoin in your wallet", "Depositing into the Vault (becomes DC) and withdrawing your earnings"],
-            [<b>DC · Dacity Coin</b>, `In-game coin. 1 USDC = ${DACITY_PER_USDC} DC`, "Buying Gangster Boxes. It's also what your gangsters farm"],
-            [<b>$AMMO</b>, `On-chain token on ${TOKEN.launchpad}, ${fmt(TOKEN.totalSupply)} fixed supply`, "Every item and fee in the game, and 100% of it is burned"],
+            [<b>USDC</b>, "USDC on Solana, in your wallet", "Depositing into the game (becomes DC) and withdrawing your earnings"],
+            [<b>DC · Dacity Coin</b>, `In-game balance. 1 USDC = ${DACITY_PER_USDC} DC`, "Buying Gangster Boxes. It's also what your gangsters farm"],
+            [<b>$AMMO</b>, `Solana token on ${TOKEN.launchpad}, ${fmt(TOKEN.totalSupply)} fixed supply`, "Every item and fee in the game, and 100% of it is burned"],
           ]}
         />
         <p>The core loop: deposit → open boxes → farm DC → claim → gear up with $AMMO → farm more → withdraw.</p>
@@ -152,21 +153,27 @@ const SECTIONS: Section[] = [
     body: () => (
       <ol className="doc-steps">
         <li>
-          <b>Get a wallet</b> (MetaMask, Rabby or any WalletConnect wallet) and add <b>{TARGET_CHAIN.name}</b>. The site offers to
-          switch network for you.
+          <b>Get a Solana wallet</b>: Phantom, Solflare or Backpack.
         </li>
         <li>
-          <b>Get a little ETH</b> on Robinhood Chain for gas, and <b>USDC</b> to deposit.
+          <b>Get a little SOL</b> for network fees (a few cents covers many transactions) and <b>USDC on Solana</b> to deposit.
         </li>
         <li>
-          <b>Connect</b> and pick your boss: <b>Lucia Caminos</b> (Born Fighter) or <b>Jason Duval</b> (Ex-Army). Name your gang;
-          it's registered on-chain.
+          <b>Connect</b> and pick your boss:{" "}
+          {PROTAGONISTS.map((p, i) => (
+            <span key={p.id}>
+              {i > 0 && " or "}
+              <b>{p.name}</b> ({p.alias})
+            </span>
+          ))}
+          . Name your gang; it's tied to your wallet.
         </li>
         <li>
           <b>Deposit USDC</b> in the Vault to get DC, then <b>buy and open Gangster Boxes</b>.
         </li>
         <li>
-          <b>Claim</b> what your gangsters farm. Buy <b>$AMMO</b> when you want items: med kits, weapons, vests, fusion.
+          <b>Claim</b> what your gangsters farm. When you want items (med kits, weapons, vests, fusion), buy <b>$AMMO</b> on{" "}
+          {TOKEN.launchpad} and <b>deposit it in {STORE_NAME}</b>.
         </li>
       </ol>
     ),
@@ -178,20 +185,22 @@ const SECTIONS: Section[] = [
     body: () => (
       <>
         <p>
-          The <b>Vault</b> is the contract that holds every player's USDC. It's the game's <b>Reward Pool</b>.
+          The <b>Vault</b> is the game's wallet on Solana that holds the players' USDC. It's the game's <b>Reward Pool</b>. DC is an
+          in-game balance kept by the game's servers, not a token.
         </p>
         <ul>
           <li>
-            <b>Deposit:</b> 1 USDC → {DACITY_PER_USDC} DC, minted straight to your wallet.
+            <b>Deposit:</b> you send USDC from your wallet to the Vault (one approval in your wallet). As soon as the transfer confirms,
+            the game credits 1 USDC → {DACITY_PER_USDC} DC to your account.
           </li>
           <li>
-            <b>Withdraw:</b> {DACITY_PER_USDC} DC → 1 USDC. The DC is burned and the USDC is paid from the Reward Pool.
+            <b>Withdraw:</b> {DACITY_PER_USDC} DC → 1 USDC. The game sends the USDC from the Reward Pool to the wallet you play with.
           </li>
           <li>Deposit and withdraw sit in the same card in the HQ (Deposit / Withdraw switch).</li>
         </ul>
         <Callout tone="warn" title="Withdrawals depend on the pool">
-          Withdrawals are paid from the USDC actually in the Reward Pool, which is filled by box purchases and the $AMMO tax. See{" "}
-          <a href="#/docs/flywheel">The flywheel</a>.
+          Withdrawals are paid from the USDC actually in the Reward Pool, which is filled by box purchases and the $AMMO creator rewards.
+          Large withdrawals may be reviewed before they're sent. See <a href="#/docs/flywheel">The flywheel</a>.
         </Callout>
       </>
     ),
@@ -235,9 +244,9 @@ const SECTIONS: Section[] = [
         />
         <h4>How the roll works</h4>
         <p>
-          Opening is a two-step commit-reveal: buying commits the box to a future block, and opening uses that block's hash to roll the
-          rarity, so nobody (including you) knows the result in advance. A VRF (verifiable randomness) will replace it before real-money
-          launch.
+          Rolls are <b>provably fair</b>: before you open a box the server publishes a hash of its secret seed; the roll combines that
+          seed with your own seed, and after opening the server reveals its seed so anyone can recompute the result and check it wasn't
+          changed.
         </p>
       </>
     ),
@@ -383,12 +392,13 @@ const SECTIONS: Section[] = [
           className="doc-table--kv"
           rows={[
             ["Ticker", <b>${TOKEN.ticker}</b>],
-            ["Chain", "Robinhood Chain"],
-            ["Launch", `${TOKEN.launchpad} launchpad`],
+            ["Chain", TOKEN.chain],
+            ["Launch", TOKEN.launchpad],
+            ["Paired with", TOKEN.pair],
             ["Total supply", <b>{fmt(TOKEN.totalSupply)} (fixed, no minting)</b>],
-            ["Tax", `${TOKEN.taxPct}% on every buy and sell, 100% to the game's Reward Pool`],
-            ["Burn", "Every $AMMO spent in the game is burned"],
-            ["Contract", TOKEN.address ? <code>{TOKEN.address}</code> : "Announced at launch"],
+            ["Fees", `${TOKEN.launchpad} creator rewards on every trade, 100% to the game's Reward Pool`],
+            ["Burn", "Every $AMMO spent in the game is burned on-chain"],
+            ["Mint address", TOKEN.address ? <code>{TOKEN.address}</code> : "Announced at launch"],
           ]}
         />
         <h4>What it's used for</h4>
@@ -398,9 +408,27 @@ const SECTIONS: Section[] = [
           <li>The Claim-all fee</li>
         </ul>
         <p>Gangster Boxes stay in DC. Farming, claiming and the Vault don't use $AMMO.</p>
-        <Callout tone="warn" title="Only use the official contract">
-          The contract address is published here and on the official channels at launch. Anything else claiming to be $AMMO is a
-          scam.
+        <h4>Using $AMMO in the game</h4>
+        <ol className="doc-steps">
+          <li>
+            Buy $AMMO on {TOKEN.launchpad}. It's priced against {TOKEN.pairTicker}.
+          </li>
+          <li>
+            In {STORE_NAME}, <b>deposit</b> the amount you want: one approval in your wallet sends it to the game's wallet, and it shows up
+            in your in-game balance.
+          </li>
+          <li>Spend it on items and fees with one click: no more wallet approvals.</li>
+          <li>
+            <b>Withdraw</b> any $AMMO you haven't spent back to your wallet whenever you want.
+          </li>
+        </ol>
+        <h4>How the burn works</h4>
+        <p>
+          Spending $AMMO in the game moves it out of your balance instantly. The game then burns everything spent from its wallet on-chain,
+          in regular batches, and every burn transaction is listed on the $AMMO page so anyone can verify it on Solana.
+        </p>
+        <Callout tone="warn" title="Only use the official mint">
+          The mint address is published here and on the official channels at launch. Anything else claiming to be $AMMO is a scam.
         </Callout>
       </>
     ),
@@ -425,7 +453,8 @@ const SECTIONS: Section[] = [
             it.
           </li>
           <li>
-            <b>Every trade tops up the pool.</b> The {TOKEN.taxPct}% tax on each $AMMO buy and sell goes straight into the Reward Pool.
+            <b>Every trade tops up the pool.</b> {TOKEN.launchpad} pays creator rewards on every $AMMO buy and sell, and 100% of them go
+            into the Reward Pool. The rate is set by {TOKEN.launchpad}, so it isn't fixed.
           </li>
           <li>
             <b>Every token spent is burned.</b> Supply only goes down from {fmt(TOKEN.totalSupply)}, while new players keep creating
@@ -447,14 +476,15 @@ const SECTIONS: Section[] = [
         head={["Action", "Cost", "Paid in", "Where it goes"]}
         rows={[
           ["Gangster Box", `${fmt(BOX_PRICE_DC)} DC (${usd(BOX_PRICE_DC)})`, "DC", "Reward Pool (the USDC behind it)"],
-          ["Deposit / withdraw", "1 USDC = 100 DC", "USDC / DC", "Vault"],
+          ["Deposit / withdraw USDC", "1 USDC = 100 DC", "USDC / DC", "Vault"],
+          ["Deposit / withdraw $AMMO", "Free (Solana network fee only)", "$AMMO", "Your in-game balance"],
           ["Claim one gangster", "Free", "—", "—"],
           ["Claim all", `${fmt(CLAIM_ALL_FEE_AMMO)} per gangster`, "$AMMO", "🔥 Burned"],
           ["Fusion", FUSION_RECIPES.map((f) => fmt(f.fee)).join(" / "), "$AMMO", "🔥 Burned"],
           ["Med kit", fmt(MEDKIT_PRICE_AMMO), "$AMMO", "🔥 Burned"],
           ["Weapons", Object.values(WEAPONS).map((w) => fmt(w.priceAmmo)).join(" / "), "$AMMO", "🔥 Burned"],
           [VEST.name, fmt(VEST.priceAmmo), "$AMMO", "🔥 Burned"],
-          ["$AMMO buy / sell", `${TOKEN.taxPct}% tax`, "$AMMO trade", "Reward Pool"],
+          ["$AMMO buy / sell", `${TOKEN.launchpad} creator rewards`, "$AMMO trade", "Reward Pool"],
         ]}
       />
     ),
@@ -465,10 +495,14 @@ const SECTIONS: Section[] = [
     title: "Security & fairness",
     body: () => (
       <ul>
-        <li>All game logic lives in smart contracts on Robinhood Chain: balances, boxes, farming, fusion and burns are public and verifiable.</li>
-        <li>Box rolls use commit-reveal today, moving to a VRF before real-money launch so the sequencer can't influence results.</li>
-        <li>Before real-money launch, contract admin keys move to a multisig (Safe) and the contracts get an external audit.</li>
-        <li>The team can pause the game for maintenance. Your gangsters, coins and farming are kept while paused.</li>
+        <li>
+          You log in by signing a message with your wallet: it proves you own the wallet and costs nothing. The game never asks for your seed
+          phrase or private key.
+        </li>
+        <li>Game logic runs on the game's servers, so nobody can edit their own balance from the browser.</li>
+        <li>Deposits are credited only after the transfer is confirmed on Solana. Withdrawals have daily limits and large ones are reviewed.</li>
+        <li>Box rolls are provably fair (see Gangster Boxes), and every $AMMO burn is an on-chain transaction anyone can check.</li>
+        <li>The team can pause the game for maintenance. Your gangsters, balances and farming are kept while paused.</li>
       </ul>
     ),
   },
@@ -480,7 +514,8 @@ const SECTIONS: Section[] = [
       <Callout tone="warn" title="Read before you play">
         <p>
           Digital assets are volatile and you can lose what you put in. Withdrawals depend on the USDC in the Reward Pool. $AMMO's price
-          is set by the market and can go to zero. Box contents are random. Smart contracts can have bugs. Only play with money you can
+          is set by the market and can go to zero. Box contents are random. Your in-game balances are held by the game until you
+          withdraw them. Only play with money you can
           afford to lose. 18+ only, and check that this kind of game is legal where you live.
         </p>
       </Callout>
@@ -498,8 +533,17 @@ const SECTIONS: Section[] = [
         <dd>DC can be withdrawn at {DACITY_PER_USDC} DC = 1 USDC, paid from the Reward Pool.</dd>
         <dt>What happens to $AMMO I spend?</dt>
         <dd>It's burned: removed from the supply forever. Nobody receives it, including the team.</dd>
-        <dt>Where does the {TOKEN.taxPct}% tax go?</dt>
-        <dd>100% into the game's Reward Pool, which pays player withdrawals.</dd>
+        <dt>Where do the token's trading fees go?</dt>
+        <dd>
+          {TOKEN.launchpad} pays creator rewards on every $AMMO trade, and 100% of them go into the game's Reward Pool, which pays player
+          withdrawals.
+        </dd>
+        <dt>Can I get my $AMMO back?</dt>
+        <dd>Yes, any $AMMO you deposited and haven't spent can be withdrawn to your wallet. $AMMO you spend is burned.</dd>
+        <dt>Which network is it on?</dt>
+        <dd>
+          {CHAIN_NAME}. You need a Solana wallet, a little SOL for network fees, and USDC on Solana.
+        </dd>
         <dt>Can I lose a gangster?</dt>
         <dd>No. Shot gangsters stop farming until healed, and retired gangsters stop farming, but you keep them all. Fusion consumes two to create one.</dd>
         <dt>When does the Black Market open?</dt>

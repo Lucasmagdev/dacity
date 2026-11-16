@@ -1,6 +1,5 @@
-import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { TARGET_CHAIN } from "../chains";
 import { MOCK } from "../mock";
+import { WalletChip, useConnectWallet, useWalletAddress } from "./Wallet";
 
 function WalletIcon() {
   return (
@@ -13,10 +12,9 @@ function WalletIcon() {
 }
 
 /**
- * The page's main action. Three states:
- *   disconnected  -> "Connect wallet" (opens RainbowKit modal)
- *   wrong network -> "Switch to Robinhood Chain"
- *   connected     -> "Enter the city" + wallet chip
+ * The page's main action:
+ *   disconnected -> "Connect wallet" (opens the Solana wallet picker)
+ *   connected    -> "Enter the city" + wallet chip
  */
 export default function ConnectCTA({
   onEnter,
@@ -27,46 +25,34 @@ export default function ConnectCTA({
   enterLabel?: string;
   demoLink?: boolean;
 }) {
+  const { connected, connecting } = useWalletAddress();
+  const open = useConnectWallet();
+
   return (
-    <ConnectButton.Custom>
-      {({ account, chain, openConnectModal, openChainModal, openAccountModal, mounted }) => {
-        const connected = mounted && account && chain;
-        return (
-          <div className="cta-wrap" style={mounted ? undefined : { visibility: "hidden" }}>
-            {!connected ? (
-              <>
-                <button type="button" className="cta" onClick={openConnectModal}>
-                  <WalletIcon />
-                  <span>Connect wallet</span>
-                </button>
-                {MOCK && demoLink && onEnter && (
-                  <button type="button" className="demo-link" onClick={onEnter}>
-                    Skip wallet · try the mock demo →
-                  </button>
-                )}
-              </>
-            ) : chain.unsupported ? (
-              <button type="button" className="cta cta--warn" onClick={openChainModal}>
-                Switch to {TARGET_CHAIN.name}
-              </button>
-            ) : (
-              <>
-                {onEnter && (
-                  <button type="button" className="cta" onClick={onEnter}>
-                    <span>{enterLabel}</span>
-                    <span aria-hidden>→</span>
-                  </button>
-                )}
-                <button type="button" className="wallet-chip" onClick={openAccountModal}>
-                  <span className="wallet-chip__dot" />
-                  {account.displayName}
-                  <span className="wallet-chip__net">{chain.name}</span>
-                </button>
-              </>
-            )}
-          </div>
-        );
-      }}
-    </ConnectButton.Custom>
+    <div className="cta-wrap">
+      {!connected ? (
+        <>
+          <button type="button" className="cta" onClick={open} disabled={connecting}>
+            <WalletIcon />
+            <span>{connecting ? "Connecting…" : "Connect wallet"}</span>
+          </button>
+          {MOCK && demoLink && onEnter && (
+            <button type="button" className="demo-link" onClick={onEnter}>
+              Skip wallet · try the mock demo →
+            </button>
+          )}
+        </>
+      ) : (
+        <>
+          {onEnter && (
+            <button type="button" className="cta" onClick={onEnter}>
+              <span>{enterLabel}</span>
+              <span aria-hidden>→</span>
+            </button>
+          )}
+          <WalletChip showNetwork />
+        </>
+      )}
+    </div>
   );
 }

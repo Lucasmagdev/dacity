@@ -12,7 +12,7 @@ import DropBox from "./art/DropBox";
 import CompareSlider from "./CompareSlider";
 import { archetypeOf } from "../mock";
 import { BOX_PRICE_DC, DACITY_PER_USDC, PROTAGONISTS, RARITIES, SHOT_CHANCE_PER_DAY, fmt, type Protagonist } from "../config/game";
-import { TARGET_CHAIN } from "../chains";
+import { CHAIN_NAME } from "../solana";
 import { useScrollFx } from "./useScrollFx";
 import "../landing-fx.css";
 import "../how.css";
@@ -25,14 +25,14 @@ const STEPS: { kind: StepKind; title: string; text: string; chips: string[]; hot
   {
     kind: "deposit",
     title: "Deposit USDC",
-    text: `The vault contract converts instantly: 1 USDC becomes ${DACITY_PER_USDC} Dacity Coin, straight to your wallet.`,
+    text: `Send USDC on Solana to the Vault: 1 USDC becomes ${DACITY_PER_USDC} Dacity Coin in your account as soon as it confirms.`,
     chips: [`1 USDC = ${DACITY_PER_USDC} DC`, "Instant"],
   },
   {
     kind: "gang",
     title: "Found your gang",
-    text: "Pick Lucia or Jason as your boss and register your gang's name on-chain.",
-    chips: ["2 bosses", "Name on-chain"],
+    text: `Pick ${PROTAGONISTS.map((p) => p.name.split(" ")[0]).join(" or ")} as your boss and name your gang. It's tied to your wallet.`,
+    chips: ["2 bosses", "Wallet login"],
   },
   {
     kind: "boxes",
@@ -221,7 +221,7 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
               <ul className="pills">
                 <li>Crime</li>
                 <li>Strategy</li>
-                <li>On-chain</li>
+                <li>Solana</li>
               </ul>
             </div>
           </div>
@@ -272,8 +272,8 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
             <p className="eyebrow">Gangster Box</p>
             <h2>Who's in the box?</h2>
             <p className="section__lede">
-              A box costs <b>{fmt(BOX_PRICE_DC)} DC</b> ({fmt(BOX_PRICE_DC / DACITY_PER_USDC)} USDC). The roll happens in
-              the contract, and every gangster farms up to their career cap.
+              A box costs <b>{fmt(BOX_PRICE_DC)} DC</b> ({fmt(BOX_PRICE_DC / DACITY_PER_USDC)} USDC). Every roll is
+              provably fair, and every gangster farms up to their career cap.
             </p>
           </header>
           <div className="drop" data-fx="drop">
@@ -354,11 +354,11 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
             <ConnectCTA onEnter={onEnter} />
             <Countdown />
             <ul className="final__facts">
-              <li>Roll happens on-chain</li>
+              <li>Provably fair rolls</li>
               <li>
                 1 USDC = {DACITY_PER_USDC} DC
               </li>
-              <li>{TARGET_CHAIN.name}</li>
+              <li>{CHAIN_NAME}</li>
             </ul>
           </div>
         </section>
@@ -373,7 +373,7 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
         <a className="footer__docs" href="#/docs">
           Read the Docs →
         </a>
-        <p className="footer__legal">Independent game on {TARGET_CHAIN.name}. Digital assets involve risk. 18+ only.</p>
+        <p className="footer__legal">Independent game on {CHAIN_NAME}. Digital assets involve risk. 18+ only.</p>
       </footer>
     </div>
   );

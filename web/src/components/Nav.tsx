@@ -1,36 +1,6 @@
-import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { TARGET_CHAIN } from "../chains";
+import { CHAIN_NAME } from "../solana";
 import Socials from "./Socials";
-
-/** Compact amber wallet button for the top bar. */
-function NavWallet() {
-  return (
-    <ConnectButton.Custom>
-      {({ account, chain, openConnectModal, openChainModal, openAccountModal, mounted }) => {
-        if (!mounted) return <span className="nav__wallet" style={{ visibility: "hidden" }}>Connect</span>;
-        if (!account || !chain) {
-          return (
-            <button type="button" className="nav__wallet" onClick={openConnectModal}>
-              Connect
-            </button>
-          );
-        }
-        if (chain.unsupported) {
-          return (
-            <button type="button" className="nav__wallet nav__wallet--warn" onClick={openChainModal}>
-              Wrong network
-            </button>
-          );
-        }
-        return (
-          <button type="button" className="nav__wallet" onClick={openAccountModal}>
-            {account.displayName}
-          </button>
-        );
-      }}
-    </ConnectButton.Custom>
-  );
-}
+import { NavWallet } from "./Wallet";
 
 /** In-game sections. Black Market is announced but not open yet. */
 function GameNav() {
@@ -107,7 +77,7 @@ export default function Nav({
         {showChain && (
           <span className="chain-pill">
             <span className="chain-pill__dot" />
-            {TARGET_CHAIN.name}
+            {CHAIN_NAME}
           </span>
         )}
         <NavWallet />

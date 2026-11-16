@@ -4,16 +4,15 @@
  * Fake, browser-only game state so the whole flow (found gang → deposit → buy/open boxes → farm → claim)
  * can be clicked through before the contracts are deployed. Nothing here touches a wallet or chain.
  *
- * On by default while `contracts/deployments.json` is empty. Force with VITE_MOCK=1 / VITE_MOCK=0.
+ * On by default until the Supabase backend is wired in. Turn it off with VITE_MOCK=0.
  * State lives in localStorage under STORAGE_KEY; "Reset" in the HQ banner wipes it.
  */
 import { useSyncExternalStore } from "react";
 import { platform } from "./platform";
-import deployments from "../contracts/deployments.json";
 import { CLAIM_ALL_FEE_AMMO, MAX_BOXES_PER_ORDER, MEDKIT_PRICE_AMMO, fmtAmmo, SHOT_CHANCE_PER_DAY, STORE_NAME, VEST, WEAPONS, quoteBoxes, type WeaponId, DACITY_PER_USDC, RARITIES, fusedStats, recipeFrom, type FarmStats } from "../config/game";
 
 const envMock = import.meta.env.VITE_MOCK as string | undefined;
-export const MOCK = envMock === "1" || (envMock !== "0" && Object.keys(deployments).length === 0);
+export const MOCK = envMock !== "0";
 
 /** One in-game farming "day" lasts this long in mock mode, so numbers visibly move. */
 export const MOCK_DAY_MS = 60_000;
@@ -99,7 +98,9 @@ export type MockGang = { protagonist: 1 | 2; name: string; createdAt: number };
 
 export type MockState = {
   gang: MockGang | null;
-  usdc: number; // fake wallet USDC
+  usdc: number; // fake wallet USDC (in the player's Solana wallet)
+  /** fake $AMMO sitting in the player's Solana wallet, not yet deposited into the game */
+  walletAmmo: number;
   dc: number; // DACITY balance
   boxes: MockBox[];
   gangsters: MockGangster[];
@@ -111,12 +112,13 @@ export type MockState = {
   /** med kits in stock */
   medkits: number;
   /** $AMMO in the wallet (spent on items and fees, and burned) */
+  /** $AMMO deposited into the game (off-chain balance): what items and fees are paid with */
   ammo: number;
   /** unequipped items in stock */
   inventory: { pistol: number; smg: number; rifle: number; vest: number };
 };
 
-export type TxType = "gang" | "deposit" | "withdraw" | "faucet" | "buy" | "open" | "claim" | "claimAll" | "fuse" | "gift" | "medkit" | "heal" | "shop" | "equip" | "ammo";
+export type TxType = "gang" | "deposit" | "withdraw" | "faucet" | "buy" | "open" | "claim" | "claimAll" | "fuse" | "gift" | "medkit" | "heal" | "shop" | "equip" | "ammo" | "ammoDeposit" | "ammoWithdraw";
 
 export type MockTx = {
   id: string;
@@ -150,6 +152,7 @@ const initial = (): MockState => ({
   txs: [],
   medkits: 0,
   ammo: 0,
+  walletAmmo: 20_000,
   inventory: { pistol: 0, smg: 0, rifle: 0, vest: 0 },
 });
 
@@ -409,9 +412,36 @@ export const mock = {
     );
   },
 
-  /** Test AMMO (mock only; in production players buy it on the Poons launchpad). */
+  /** Test AMMO into the wallet (mock only; in production players buy it on pump.fun). */
   ammoFaucet() {
-    set(withTx({ ...state, ammo: state.ammo + 10_000 }, { type: "ammo", title: "Test AMMO", detail: "Faucet (mock only)", ammo: 10_000 }));
+    set(withTx({ ...state, walletAmmo: state.walletAmmo + 10_000 }, { type: "ammo", title: "Test AMMO", detail: "Faucet to your wallet (mock only)" }));
+  },
+
+  /**
+   * Deposit AMMO: in production the player sends AMMO to the game's control wallet (one wallet approval,
+   * with a unique reference), the backend sees the transfer and credits the in-game balance.
+   */
+  depositAmmo(amount: number) {
+    if (!(amount > 0)) throw new Error("Amount must be positive");
+    if (amount > state.walletAmmo) throw new Error("Not enough AMMO in your wallet");
+    set(
+      withTx(
+        { ...state, walletAmmo: state.walletAmmo - amount, ammo: state.ammo + amount },
+        { type: "ammoDeposit", title: "Deposit AMMO", detail: "Wallet → game", ammo: amount },
+      ),
+    );
+  },
+
+  /** Withdraw unspent AMMO back to the wallet (in production the control wallet sends it). */
+  withdrawAmmo(amount: number) {
+    if (!(amount > 0)) throw new Error("Amount must be positive");
+    if (amount > state.ammo) throw new Error("Not enough AMMO in the game");
+    set(
+      withTx(
+        { ...state, ammo: state.ammo - amount, walletAmmo: state.walletAmmo + amount },
+        { type: "ammoWithdraw", title: "Withdraw AMMO", detail: "Game → wallet", ammo: -amount },
+      ),
+    );
   },
 
   /** MockUSDC.faucet */

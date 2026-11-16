@@ -1,66 +1,35 @@
-import { useEffect, useState } from "react";
-import type { BaseError } from "viem";
-import { useAccount, useReadContract, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
+import { useState } from "react";
 import Scene from "./Scene";
 import Nav from "./Nav";
 import ConnectCTA from "./ConnectCTA";
 import Portrait from "./Portrait";
 import { PROTAGONISTS } from "../config/game";
-import { gangAbi, getDeployment } from "../contracts";
-import { TARGET_CHAIN } from "../chains";
 import { MOCK, mock, useMock } from "../mock";
+import { useWalletAddress } from "./Wallet";
 
 const MIN_NAME = 3;
 const MAX_NAME = 24;
 const byteLength = (s: string) => new TextEncoder().encode(s).length;
 
 export default function CharacterSelect({ onBack, onEnterHq }: { onBack: () => void; onEnterHq: () => void }) {
-  const { address, isConnected, chainId } = useAccount();
-  const onTargetChain = chainId === TARGET_CHAIN.id;
-  const gang = getDeployment(chainId)?.gang;
-
+  const { connected } = useWalletAddress();
   const [picked, setPicked] = useState<1 | 2 | null>(null);
   const [name, setName] = useState("");
 
-  const boss = useReadContract({
-    address: gang,
-    abi: gangAbi,
-    functionName: "bossOf",
-    args: address ? [address] : undefined,
-    query: { enabled: Boolean(gang && address) },
-  });
-
-  const { writeContract, data: hash, isPending, error: writeError } = useWriteContract();
-  const receipt = useWaitForTransactionReceipt({ hash });
-
-  useEffect(() => {
-    if (receipt.isSuccess) boss.refetch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [receipt.isSuccess]);
-
+  // Until the Supabase backend exists the gang lives in the browser mock.
+  // With the backend: the player signs a message with their wallet and the server stores the gang.
   const mockGang = useMock((s) => s.gang);
-  const existing = MOCK
-    ? mockGang && { protagonist: mockGang.protagonist, gangName: mockGang.name }
-    : boss.data && boss.data.createdAt > 0n
-      ? boss.data
-      : null;
+  const existing = mockGang && { protagonist: mockGang.protagonist, gangName: mockGang.name };
   const trimmed = name.trim();
   const nameLen = byteLength(trimmed);
   const nameOk = nameLen >= MIN_NAME && nameLen <= MAX_NAME;
-  const busy = isPending || receipt.isLoading;
-  const canSubmit = MOCK ? Boolean(picked && nameOk) : Boolean(isConnected && onTargetChain && gang && picked && nameOk && !busy);
-  const error = writeError ?? receipt.error;
+  const canSubmit = Boolean(picked && nameOk && (MOCK || connected));
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (MOCK) {
-      if (!canSubmit || !picked) return;
-      mock.createGang(picked, trimmed);
-      onEnterHq();
-      return;
-    }
-    if (!canSubmit || !gang || !picked) return;
-    writeContract({ address: gang, abi: gangAbi, functionName: "createGang", args: [picked, trimmed] });
+    if (!canSubmit || !picked) return;
+    mock.createGang(picked, trimmed);
+    onEnterHq();
   }
 
   if (existing) {
@@ -100,7 +69,7 @@ export default function CharacterSelect({ onBack, onEnterHq }: { onBack: () => v
         <header className="section__head">
           <p className="eyebrow">Step 1 of 3</p>
           <h2>Choose your boss</h2>
-          <p className="section__lede">Your choice is written to the contract and can't be changed later.</p>
+          <p className="section__lede">Your choice is tied to your wallet and can't be changed later.</p>
         </header>
 
         <div className="select__grid" role="radiogroup" aria-label="Protagonist">
@@ -141,24 +110,17 @@ export default function CharacterSelect({ onBack, onEnterHq }: { onBack: () => v
             {MIN_NAME} to {MAX_NAME} characters · {nameLen}/{MAX_NAME}
           </p>
 
-          {MOCK ? (
+          {MOCK || connected ? (
             <button type="submit" className="cta cta--block" disabled={!canSubmit}>
-              Found gang (mock)
+              {MOCK ? "Found gang (mock)" : "Found gang"}
             </button>
-          ) : !isConnected || !onTargetChain ? (
-            <ConnectCTA />
-          ) : !gang ? (
-            <p className="note note--warn">
-              Contracts not deployed on {TARGET_CHAIN.name} yet. Run the deploy in <code>contracts/</code>.
-            </p>
           ) : (
-            <button type="submit" className="cta cta--block" disabled={!canSubmit}>
-              {isPending ? "Confirm in your wallet…" : receipt.isLoading ? "Founding gang…" : "Found gang"}
-            </button>
+            <ConnectCTA />
           )}
 
-          {!picked && (isConnected || MOCK) && <p className="hint">Select Lucia or Jason above.</p>}
-          {error && <p className="note note--error">{(error as BaseError).shortMessage ?? error.message}</p>}
+          {!picked && (connected || MOCK) && (
+            <p className="hint">Select {PROTAGONISTS.map((p) => p.name).join(" or ")} above.</p>
+          )}
         </form>
       </div>
     </div>

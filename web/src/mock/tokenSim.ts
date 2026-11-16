@@ -12,13 +12,15 @@
  * In production, replace with on-chain reads: totalSupply(), Transfer(to = 0x0 / dead) events for burns,
  * the game contract's ItemBought / Fused / ClaimedAll events for categories, and the pool balance.
  */
-import { CLAIM_ALL_FEE_AMMO, FUSION_RECIPES, MEDKIT_PRICE_AMMO, TOKEN, VEST, WEAPONS } from "../config/game";
+import { CLAIM_ALL_FEE_AMMO, FUSION_RECIPES, MEDKIT_PRICE_AMMO, VEST, WEAPONS } from "../config/game";
 
 export type BurnCategory = "medkit" | "weapon" | "vest" | "fusion" | "claimAll";
 
 export type BurnEvent = { at: number; amount: number; category: BurnCategory; who: string; label: string };
 
 const MIN = 60_000;
+/** Simulation only: share of trading volume paid as pump.fun creator rewards. The real rate varies. */
+const SIM_CREATOR_RATE = 0.005;
 const KEY = "dacity.tokensim.start";
 /** history shown when the simulator first runs */
 const HISTORY_MS = 3 * 24 * 60 * MIN;
@@ -139,7 +141,8 @@ export function snapshot(now = Date.now()): TokenSnapshot {
     }
   }
   recent.sort((a, b) => b.at - a.at);
-  const tax = TOKEN.taxPct / 100;
+  // pump.fun's creator reward rate isn't fixed: the simulator just uses a plausible one
+  const tax = SIM_CREATOR_RATE;
   return {
     simBurned,
     burned24h,

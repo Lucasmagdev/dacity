@@ -4,6 +4,7 @@ import Nav from "./Nav";
 import GangsterToy from "./art/GangsterToy";
 import { MEDKIT_PRICE_AMMO, RARITIES, TOKEN, STORE_NAME, VEST, WEAPONS, fmt, type WeaponId } from "../config/game";
 import AmmoIcon from "./art/AmmoIcon";
+import AmmoVault from "./AmmoVault";
 import { usePlatform } from "../mock/platform";
 import { archetypeOf, hasVest, isRetired, isShot, mock, rateOf, statsOf, useMock, weaponDaysLeft, type MockGangster } from "../mock";
 
@@ -137,6 +138,9 @@ export default function Armory({ onBack, onFound }: { onBack: () => void; onFoun
             </div>
           </dl>
         </header>
+
+        {/* ------------------------------------------------------------ deposit / withdraw AMMO */}
+        <AmmoVault walletAmmo={s.walletAmmo} gameAmmo={s.ammo} onToast={setToast} />
 
         {/* ------------------------------------------------------------ catalog */}
         <ul className="shelf">

@@ -1,0 +1,206 @@
+/* ------------------------------------------------------------------ Solana wallet modal, themed to the game */
+
+.wallet-adapter-modal-wrapper {
+  border: 1px solid rgba(255, 46, 136, 0.35);
+  border-radius: 22px;
+  background: radial-gradient(90% 60% at 50% 0%, rgba(255, 46, 136, 0.18), transparent 70%), #12081f;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6), 0 0 60px rgba(255, 46, 136, 0.18);
+  font-family: var(--font-body);
+}
+
+.wallet-adapter-modal-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.wallet-adapter-modal-button-close {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.wallet-adapter-modal-list .wallet-adapter-button {
+  border-radius: 12px;
+  font-family: var(--font-body);
+}
+
+.wallet-adapter-modal-list .wallet-adapter-button:not([disabled]):hover {
+  background: rgba(255, 46, 136, 0.16);
+}
+
+.wallet-adapter-modal-list-more {
+  color: var(--muted);
+}
+
+.wallet-adapter-modal-middle-button {
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--pink), var(--orange));
+  font-family: var(--font-body);
+}
+
+/* ------------------------------------------------------------------ connected wallet chip + menu */
+
+.wmenu {
+  position: relative;
+  display: inline-flex;
+}
+
+.wmenu > button img {
+  border-radius: 4px;
+}
+
+.nav__wallet {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wmenu__pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 60;
+  display: grid;
+  min-width: 180px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(16, 7, 30, 0.97);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(10px);
+}
+
+.cta-wrap .wmenu__pop {
+  right: auto;
+  left: 50%;
+  translate: -50% 0;
+}
+
+.wmenu__pop button {
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.wmenu__pop button:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.wmenu__danger {
+  color: #ff8a9a !important;
+}
+
+/* ------------------------------------------------------------------ $AMMO deposit / withdraw (Armory) */
+
+.ammovault {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  grid-template-areas:
+    "head head"
+    "bal form"
+    "note form";
+  gap: 14px 24px;
+  border-color: rgba(255, 138, 61, 0.45);
+  background: radial-gradient(70% 140% at 0% 0%, rgba(255, 90, 40, 0.16), transparent 60%), rgba(16, 7, 30, 0.82);
+}
+
+.ammovault__head {
+  grid-area: head;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ammovault__title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ammovault__title h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 28px;
+  text-transform: uppercase;
+}
+
+.ammovault__title .eyebrow {
+  margin: 0;
+}
+
+.ammovault__balances {
+  grid-area: bal;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.ammovault__balances > div {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(7, 4, 15, 0.55);
+}
+
+.ammovault__balances span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.ammovault__balances b {
+  color: #ffb36b;
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.ammovault__arrow {
+  flex: none;
+  color: var(--sun) !important;
+  font-size: 22px !important;
+}
+
+.ammovault__form {
+  grid-area: form;
+  display: grid;
+  gap: 10px;
+}
+
+.ammovault__form .chips {
+  margin: 0;
+}
+
+.ammovault__note {
+  grid-area: note;
+  margin: 0;
+  font-size: 13px;
+}
+
+.ammovault--withdraw .amount:focus-within {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 4px rgba(34, 228, 255, 0.22);
+}
+
+@media (max-width: 860px) {
+  .ammovault {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "head" "bal" "form" "note";
+  }
+}

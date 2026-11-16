@@ -124,7 +124,7 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
           <span className="mockbar__tag">Mock mode</span>
           <span>Fake data, stored only in this browser. 1 farming day = {MOCK_DAY_MS / 1000}s.</span>
           <button type="button" onClick={() => run(mock.faucet, "+1,000 test USDC")}>+1,000 USDC</button>
-          <button type="button" onClick={() => run(mock.ammoFaucet, "+10,000 test AMMO")}>+10,000 AMMO</button>
+          <button type="button" onClick={() => run(mock.ammoFaucet, "+10,000 test AMMO in your wallet · deposit it in the Armory")}>+10,000 AMMO</button>
           <button
             type="button"
             onClick={() => {
@@ -407,8 +407,8 @@ function Vault({
         <h2>{dep ? "Deposit USDC" : "Withdraw USDC"}</h2>
         <p className="muted">
           {dep
-            ? `1 USDC = ${DACITY_PER_USDC} DC, minted straight to your wallet.`
-            : `${DACITY_PER_USDC} DC = 1 USDC. DC is burned, USDC goes back to your wallet.`}
+            ? `Send USDC on Solana: 1 USDC = ${DACITY_PER_USDC} DC, credited as soon as it confirms.`
+            : `${DACITY_PER_USDC} DC = 1 USDC, sent from the Reward Pool to your wallet.`}
         </p>
         <div className="amount">
           <input

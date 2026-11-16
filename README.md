@@ -1,5 +1,12 @@
 # Audacity Game
 
+> **The game moved to Solana (no smart contracts).** Players connect a Solana wallet (Phantom, Solflare, Backpack) and sign a message to log in.
+> USDC and $AMMO deposits are plain transfers to the game's control wallet; the backend (Supabase, not built yet) credits an off-chain balance:
+> DC (1 USDC = 100 DC) and in-game $AMMO. Withdrawals are sent from the control wallet. $AMMO launches on pump.fun paired with TTWO;
+> 100% of pump.fun creator rewards go to the Reward Pool, and every $AMMO spent in the game is burned on-chain in batches.
+> Until the backend exists the web app runs fully in mock mode (`VITE_MOCK`, on by default). Wallet/network config lives in `web/src/solana.ts`.
+> The Robinhood Chain sections and `contracts/` below are the previous EVM version, kept for reference only.
+
 On-chain game on **Robinhood Chain** (Arbitrum Orbit L2, ETH for gas).
 
 - Players connect a wallet, pick a boss (Nina Solano or Rico Tavares) and found their gang.

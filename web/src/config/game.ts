@@ -58,25 +58,37 @@ export function quoteBoxes(count: number, soldSoFar: number): BoxQuote {
 // ------------------------------------------------------------------ $AMMO (burn token)
 
 /**
- * $AMMO: the game's on-chain token, launched on the Poons launchpad on Robinhood Chain.
+ * $AMMO: the game's token on Solana, launched on pump.fun and paired with Take-Two Interactive (TTWO).
  * Every item and fee in the game is paid in AMMO and 100% of it is BURNED (supply only goes down).
  * Boxes stay in DC. Farming, claims and the Vault stay in DC.
  *
+ * No smart contracts: players deposit AMMO by sending it to the game's control wallet, the backend
+ * credits their in-game balance, spending is a database debit, and the AMMO spent is burned on-chain
+ * from the control wallet in periodic batches (SPL burn). Unspent AMMO can be withdrawn back.
+ *
  * PLACEHOLDER AMOUNTS: the token price is only known after launch, so every AMMO price below
- * must be re-set then (aim for the same dollar value the old DC prices had).
+ * must be re-set then.
  */
 export const TOKEN = {
   ticker: "AMMO",
-  /** Fixed supply: no mint function, it can only go down through burns. */
+  chain: "Solana",
+  launchpad: "pump.fun",
+  /** Liquidity pair asset chosen on pump.fun. */
+  pair: "Take-Two Interactive (TTWO)",
+  pairTicker: "TTWO",
+  /** pump.fun's standard fixed supply: no minting after launch, it only goes down through burns. */
   totalSupply: 1_000_000_000,
-  /** Tax on every buy/sell. 100% of it goes to the game's reward pool. */
-  taxPct: 2,
-  launchpad: "Poons",
-  /** Poons launchpad page, set once the token is live. Empty = link hidden. */
+  /** pump.fun token page, set once the token is live. Empty = link hidden. */
   buyUrl: "",
-  /** Token contract, set once deployed. Empty = shown as "announced at launch". */
+  /** Token mint address, set once launched. Empty = shown as "announced at launch". */
   address: "",
 };
+
+/**
+ * Where the token's trading fees go: pump.fun pays creator rewards on every trade (the rate is set by
+ * pump.fun and changes over time, so there's no fixed %). 100% of them go to the game's Reward Pool.
+ */
+export const CREATOR_REWARDS_LABEL = "pump.fun creator rewards";
 
 /** "Claim all" charges this per gangster claimed (in AMMO, burned). Claiming one gangster at a time is free. */
 export const CLAIM_ALL_FEE_AMMO = 100;
