@@ -9,11 +9,13 @@ import GangsterToy from "./art/GangsterToy";
 import AmmoIcon from "./art/AmmoIcon";
 import { BOX_PRICE_DC, BULK_TIERS, CLAIM_ALL_FEE_USD, DACITY_PER_USDC, LAUNCH_SALE, MEDKIT_PRICE_USD, TOKEN, fmtAmmo, PROTAGONISTS, RARITIES, SHOT_CHANCE_PER_DAY, STORE_NAME, WEAPONS, fmt, quoteBoxes } from "../config/game";
 import { usePlatform } from "../mock/platform";
+import { game } from "../game";
 import { WITHDRAW_COOLDOWN_HOURS } from "../config/game";
 import { ammoFor, fmtUsd, useAmmoPrice } from "../price";
 import { WITHDRAW_FEE_NOTE } from "../solana";
 import {
   MAX_BOXES_PER_TX,
+  MOCK,
   MOCK_DAY_MS,
   archetypeOf,
   claimAllQuote,
@@ -106,9 +108,10 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
   const idleCount = s.gangsters.length - crew.length;
   const shown = crew.filter((g) => filter === "all" || g.rarity === filter);
 
-  const run = (fn: () => void, msg: string) => {
+  // actions are async (database calls in live mode): show the error the database sends back
+  const run = async (fn: () => unknown, msg: string) => {
     try {
-      fn();
+      await fn();
       setToast(msg);
     } catch (e) {
       setToast((e as Error).message);
@@ -121,6 +124,7 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
       <Nav links={false} game onBack={onBack} />
 
       <div className="hq__inner">
+        {MOCK && (
         <div className="mockbar">
           <span className="mockbar__tag">Mock mode</span>
           <span>Fake data, stored only in this browser. 1 farming day = {MOCK_DAY_MS / 1000}s.</span>
@@ -141,6 +145,7 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
             Reset
           </button>
         </div>
+        )}
 
         {/* ------------------------------------------------------------ boss header */}
         <header className="hq__head">
@@ -190,14 +195,14 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
             usdc={s.usdc}
             dc={s.dc}
             waitMs={withdrawWaitMs(s, now)}
-            onDeposit={(n) => run(() => mock.deposit(n), `Deposited ${fmt(n)} USDC → ${fmt(n * DACITY_PER_USDC)} DC`)}
-            onWithdraw={(n) => run(() => mock.withdraw(n), `Withdrew ${fmt(n)} DC → ${fmtUsdc(n / DACITY_PER_USDC)} USDC`)}
+            onDeposit={(n) => run(() => game.deposit(n), `Deposited ${fmt(n)} USDC → ${fmt(n * DACITY_PER_USDC)} DC`)}
+            onWithdraw={(n) => run(() => game.withdraw(n), `Withdrew ${fmt(n)} DC → ${fmtUsdc(n / DACITY_PER_USDC)} USDC`)}
           />
           <Shop
             dc={s.dc}
-            onBuy={(n) => {
+            onBuy={async (n) => {
               try {
-                const q = mock.buyBoxes(n);
+                const q = await game.buyBoxes(n);
                 setToast(`Bought ${fmt(n)} box${n > 1 ? "es" : ""} for ${fmt(q.totalDc)} DC${q.savedDc > 0 ? ` · saved ${fmt(q.savedDc)} DC` : ""} · in your Inventory`);
               } catch (e) {
                 setToast((e as Error).message);
@@ -230,9 +235,9 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
                   type="button"
                   className="btn btn--gold"
                   disabled={q.ids.length === 0 || q.fee > s.ammo}
-                  onClick={() => {
+                  onClick={async () => {
                     try {
-                      const r = mock.claimAll(q.ids);
+                      const r = await game.claimAll(q.ids);
                       setToast(`Claimed ${fmt1(r.net)} DC · burned ${fmtAmmo(r.fee)}`);
                     } catch (e) {
                       setToast((e as Error).message);
@@ -286,17 +291,21 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
                       g={g}
                       now={now}
                       kits={s.medkits}
-                      onHeal={() => {
+                      onHeal={async () => {
                         try {
-                          const r = mock.heal([g.id]);
+                          const r = await game.heal([g.id]);
                           setToast(`“${archetypeOf(g.id).nick}” is back to work${r.cost ? ` · burned ${fmtAmmo(r.cost)} for a kit` : " · used 1 kit"}`);
                         } catch (e) {
                           setToast((e as Error).message);
                         }
                       }}
-                      onClaim={() => {
-                        const got = mock.claim(g.id);
-                        setToast(`Claimed ${fmt1(got)} DC from “${archetypeOf(g.id).nick}”`);
+                      onClaim={async () => {
+                        try {
+                          const got = await game.claim(g.id);
+                          setToast(`Claimed ${fmt1(got)} DC from “${archetypeOf(g.id).nick}”`);
+                        } catch (e) {
+                          setToast((e as Error).message);
+                        }
                       }}
                     />
                   ))}
@@ -567,9 +576,9 @@ function MedBar({ kits, ammo, shotIds, onToast }: { kits: number; ammo: number; 
   useAmmoPrice(); // re-render when the token price moves
   const kitAmmo = ammoFor(MEDKIT_PRICE_USD);
   const healCost = missing * kitAmmo;
-  const act = (fn: () => string) => {
+  const act = async (fn: () => string | Promise<string>) => {
     try {
-      onToast(fn());
+      onToast(await fn());
     } catch (e) {
       onToast((e as Error).message);
     }
@@ -595,7 +604,7 @@ function MedBar({ kits, ammo, shotIds, onToast }: { kits: number; ammo: number; 
             type="button"
             className="btn"
             disabled={n * kitAmmo > ammo}
-            onClick={() => act(() => (mock.buyMedkits(n), `Bought ${n} med kit${n > 1 ? "s" : ""}`))}
+            onClick={() => act(async () => (await game.buyItem("medkit", n), `Bought ${n} med kit${n > 1 ? "s" : ""}`))}
           >
             +{n}
           </button>
@@ -606,8 +615,8 @@ function MedBar({ kits, ammo, shotIds, onToast }: { kits: number; ammo: number; 
             className="btn btn--heal"
             disabled={healCost > ammo}
             onClick={() =>
-              act(() => {
-                const r = mock.heal(shotIds);
+              act(async () => {
+                const r = await game.heal(shotIds);
                 return `Healed ${r.healed} gangster${r.healed > 1 ? "s" : ""}${r.cost ? ` · bought ${r.bought} kit${r.bought > 1 ? "s" : ""}` : ""}`;
               })
             }

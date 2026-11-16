@@ -6,8 +6,9 @@ import CashBox from "./art/CashBox";
 import GangsterToy from "./art/GangsterToy";
 import AmmoIcon from "./art/AmmoIcon";
 import { ItemIcon, LoadoutRow } from "./Armory";
+import { game } from "../game";
 import { RARITIES, SHOT_CHANCE_PER_DAY, STORE_NAME, VEST, WEAPONS, fmt, type WeaponId } from "../config/game";
-import { archetypeOf, isBoxReady, isRetired, isShot, mock, statsOf, useMock, type MockGangster } from "../mock";
+import { archetypeOf, isBoxReady, isRetired, isShot, statsOf, useMock, type MockGangster } from "../mock";
 
 type Tab = "gangsters" | "boxes" | "items";
 
@@ -42,9 +43,10 @@ export default function Inventory({ onBack, onFound }: { onBack: () => void; onF
     return () => clearTimeout(t);
   }, [toast]);
 
-  const run = (fn: () => void, msg: string) => {
+  // actions are async (database calls in live mode): show the error the database sends back
+  const run = async (fn: () => unknown, msg: string) => {
     try {
-      fn();
+      await fn();
       setToast(msg);
     } catch (e) {
       setToast((e as Error).message);
@@ -129,7 +131,7 @@ export default function Inventory({ onBack, onFound }: { onBack: () => void; onF
                 type="button"
                 className="btn btn--pink"
                 disabled={idle.length === 0}
-                onClick={() => run(() => mock.deploy(idle.map((g) => g.id)), `${idle.length} gangster${idle.length > 1 ? "s" : ""} put to work`)}
+                onClick={() => run(() => game.deploy(idle.map((g) => g.id)), `${idle.length} gangster${idle.length > 1 ? "s" : ""} put to work`)}
               >
                 Put all to work ({idle.length})
               </button>
@@ -145,7 +147,7 @@ export default function Inventory({ onBack, onFound }: { onBack: () => void; onF
             ) : (
               <ul className="roster">
                 {idle.map((g) => (
-                  <IdleCard key={g.id} g={g} onDeploy={() => run(() => mock.deploy([g.id]), `“${archetypeOf(g.id).nick}” is on the job`)} />
+                  <IdleCard key={g.id} g={g} onDeploy={() => run(() => game.deploy([g.id]), `“${archetypeOf(g.id).nick}” is on the job`)} />
                 ))}
               </ul>
             )}
@@ -227,7 +229,7 @@ export default function Inventory({ onBack, onFound }: { onBack: () => void; onF
                 <button
                   type="button"
                   className="btn btn--heal inv__heal"
-                  onClick={() => run(() => mock.heal(shotIds), `Healed ${shotIds.length} gangster${shotIds.length > 1 ? "s" : ""}`)}
+                  onClick={() => run(() => game.heal(shotIds), `Healed ${shotIds.length} gangster${shotIds.length > 1 ? "s" : ""}`)}
                 >
                   ✚ Heal all shot gangsters ({shotIds.length})
                 </button>
@@ -257,12 +259,12 @@ export default function Inventory({ onBack, onFound }: { onBack: () => void; onF
 
       {opening && (
         <BoxReveal
-          open={() => opening.map((id) => mock.openBox(id))}
+          open={() => game.openBoxes(opening)}
           onClose={() => {
             setOpening(null);
             setTab("gangsters");
           }}
-          onDeploy={(ids) => run(() => mock.deploy(ids), `${ids.length} gangster${ids.length > 1 ? "s" : ""} put to work`)}
+          onDeploy={(ids) => run(() => game.deploy(ids), `${ids.length} gangster${ids.length > 1 ? "s" : ""} put to work`)}
         />
       )}
       {toast && (

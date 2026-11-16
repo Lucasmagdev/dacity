@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import GangsterToy from "./art/GangsterToy";
 import { FUSION_RECIPES, RARITIES, fmt } from "../config/game";
+import { game } from "../game";
 import { ammoFor, fmtUsd, useAmmoPrice } from "../price";
 import AmmoIcon from "./art/AmmoIcon";
-import { archetypeOf, farmedOf, fusionCandidates, mock, statsOf, type MockGangster } from "../mock";
+import { archetypeOf, farmedOf, fusionCandidates, statsOf, type MockGangster } from "../mock";
 
-type FuseResult = ReturnType<typeof mock.fuse>;
+type FuseResult = Awaited<ReturnType<typeof game.fuse>>;
 
 const TOP = RARITIES[RARITIES.length - 1];
 
@@ -33,9 +34,9 @@ export default function Fusion({
   const [result, setResult] = useState<FuseResult | null>(null);
   useAmmoPrice(); // re-render when the token price moves
 
-  const fuse = (rarity: number) => {
+  const fuse = async (rarity: number) => {
     try {
-      setResult(mock.fuse(rarity));
+      setResult(await game.fuse(rarity));
     } catch (e) {
       onToast((e as Error).message);
     }

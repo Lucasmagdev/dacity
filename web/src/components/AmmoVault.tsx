@@ -1,8 +1,8 @@
 import { useState } from "react";
 import AmmoIcon from "./art/AmmoIcon";
 import { TOKEN, fmt } from "../config/game";
-import { mock } from "../mock";
 import { fmtUsd, useAmmoPrice } from "../price";
+import { game } from "../game";
 import { WITHDRAW_FEE_NOTE } from "../solana";
 
 type Mode = "deposit" | "withdraw";
@@ -21,10 +21,10 @@ export default function AmmoVault({ walletAmmo, gameAmmo, onToast }: { walletAmm
   const short = n > from;
   const price = useAmmoPrice();
 
-  const go = () => {
+  const go = async () => {
     try {
-      if (dep) mock.depositAmmo(n);
-      else mock.withdrawAmmo(n);
+      if (dep) await game.depositAmmo(n);
+      else await game.withdrawAmmo(n);
       onToast(dep ? `Deposited ${fmt(n)} ${TOKEN.ticker} into the game` : `Withdrew ${fmt(n)} ${TOKEN.ticker} to your wallet`);
     } catch (e) {
       onToast((e as Error).message);

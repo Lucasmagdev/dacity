@@ -59,7 +59,10 @@ function read(): PlatformState {
   return initial();
 }
 
-let state = read();
+/** Against Supabase the platform state comes from the database, never from this browser's storage. */
+const LIVE = import.meta.env.VITE_MOCK === "0";
+
+let state = LIVE ? initial() : read();
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
@@ -76,7 +79,7 @@ function set(next: PlatformState) {
 // another tab (e.g. the admin panel) changed it
 if (typeof window !== "undefined") {
   window.addEventListener("storage", (e) => {
-    if (e.key === KEY) {
+    if (e.key === KEY && !LIVE) {
       state = read();
       emit();
     } else if (e.key === DISMISSED_KEY) {
@@ -84,6 +87,12 @@ if (typeof window !== "undefined") {
       emit();
     }
   });
+}
+
+/** Live mode: maintenance, announcement and counters loaded from Supabase. */
+export function setPlatformLive(next: Partial<PlatformState>) {
+  state = { ...state, ...next };
+  emit();
 }
 
 export function usePlatform<T = PlatformState>(select: (s: PlatformState) => T = (s) => s as unknown as T): T {

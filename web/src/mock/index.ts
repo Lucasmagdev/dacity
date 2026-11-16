@@ -16,8 +16,14 @@ import { CLAIM_ALL_FEE_USD, MAX_BOXES_PER_ORDER, MEDKIT_PRICE_USD, fmtAmmo, SHOT
 const envMock = import.meta.env.VITE_MOCK as string | undefined;
 export const MOCK = envMock !== "0";
 
-/** One in-game farming "day" lasts this long in mock mode, so numbers visibly move. */
-export const MOCK_DAY_MS = 60_000;
+/**
+ * One farming day. Mock mode speeds it up so numbers visibly move; against Supabase it's a real day
+ * (game_config.day_seconds), set by the live session once the config is loaded.
+ */
+export let MOCK_DAY_MS = MOCK ? 60_000 : 86_400_000;
+export function setDayMs(ms: number) {
+  if (ms > 0) MOCK_DAY_MS = ms;
+}
 /** Simulates the contract's commit-reveal wait (REVEAL_DELAY blocks). */
 export const MOCK_REVEAL_MS = 2_500;
 export const MAX_BOXES_PER_TX = MAX_BOXES_PER_ORDER;
@@ -207,13 +213,21 @@ function load(): MockState {
   return initial();
 }
 
-let state: MockState = load();
+let state: MockState = MOCK ? load() : { ...initial(), usdc: 0, walletAmmo: 0 };
+
+/** Live mode: the Supabase session pushes the player's real state here (same shape the UI already reads). */
+export function setLiveState(next: MockState) {
+  state = next;
+  listeners.forEach((l) => l());
+}
+
+export const getState = () => state;
 const listeners = new Set<() => void>();
 
 // keep tabs in sync (admin gifts sent from #/admin in another tab land here without a reload)
 if (typeof window !== "undefined") {
   window.addEventListener("storage", (e) => {
-    if (e.key !== STORAGE_KEY) return;
+    if (!MOCK || e.key !== STORAGE_KEY) return;
     state = load();
     listeners.forEach((l) => l());
   });

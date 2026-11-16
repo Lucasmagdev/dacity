@@ -4,7 +4,8 @@ import Nav from "./Nav";
 import ConnectCTA from "./ConnectCTA";
 import Portrait from "./Portrait";
 import { PROTAGONISTS } from "../config/game";
-import { MOCK, mock, useMock } from "../mock";
+import { MOCK, useMock } from "../mock";
+import { game } from "../game";
 import { useWalletAddress } from "./Wallet";
 
 const MIN_NAME = 3;
@@ -25,11 +26,22 @@ export default function CharacterSelect({ onBack, onEnterHq }: { onBack: () => v
   const nameOk = nameLen >= MIN_NAME && nameLen <= MAX_NAME;
   const canSubmit = Boolean(picked && nameOk && (MOCK || connected));
 
-  function submit(e: React.FormEvent) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!canSubmit || !picked) return;
-    mock.createGang(picked, trimmed);
-    onEnterHq();
+    if (!canSubmit || !picked || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await game.createGang(picked, trimmed);
+      onEnterHq();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
   }
 
   if (existing) {
@@ -112,7 +124,7 @@ export default function CharacterSelect({ onBack, onEnterHq }: { onBack: () => v
 
           {MOCK || connected ? (
             <button type="submit" className="cta cta--block" disabled={!canSubmit}>
-              {MOCK ? "Found gang (mock)" : "Found gang"}
+              {busy ? "Founding gang…" : MOCK ? "Found gang (mock)" : "Found gang"}
             </button>
           ) : (
             <ConnectCTA />
@@ -121,6 +133,7 @@ export default function CharacterSelect({ onBack, onEnterHq }: { onBack: () => v
           {!picked && (connected || MOCK) && (
             <p className="hint">Select {PROTAGONISTS.map((p) => p.name).join(" or ")} above.</p>
           )}
+          {error && <p className="note note--error">{error}</p>}
         </form>
       </div>
     </div>

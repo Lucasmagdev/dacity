@@ -143,7 +143,7 @@ export default function Token({ onBack }: { onBack: () => void }) {
       </div>
 
       <div className="token__inner">
-        {MOCK && (
+        {(MOCK || !TOKEN.address) && (
           <div className="mockbar">
             <span className="mockbar__tag">Simulated</span>
             <span>

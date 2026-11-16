@@ -7,7 +7,8 @@ import { MEDKIT_PRICE_USD, RARITIES, TOKEN, STORE_NAME, VEST, WEAPONS, fmt, type
 import AmmoIcon from "./art/AmmoIcon";
 import AmmoVault from "./AmmoVault";
 import { usePlatform } from "../mock/platform";
-import { archetypeOf, hasVest, isRetired, isShot, mock, rateOf, statsOf, useMock, weaponDaysLeft, type MockGangster } from "../mock";
+import { game } from "../game";
+import { archetypeOf, hasVest, isRetired, isShot, rateOf, statsOf, useMock, weaponDaysLeft, type MockGangster } from "../mock";
 
 type ItemId = WeaponId | "vest" | "medkit";
 
@@ -52,9 +53,10 @@ export default function Armory({ onBack, onFound }: { onBack: () => void; onFoun
     return () => clearTimeout(t);
   }, [toast]);
 
-  const run = (fn: () => void, msg: string) => {
+  // actions are async (database calls in live mode): show the error the database sends back
+  const run = async (fn: () => unknown, msg: string) => {
     try {
-      fn();
+      await fn();
       setToast(msg);
     } catch (e) {
       setToast((e as Error).message);
@@ -170,7 +172,7 @@ export default function Armory({ onBack, onFound }: { onBack: () => void; onFoun
                       type="button"
                       className={`btn${n === 1 ? " btn--pink" : ""}`}
                       disabled={n * ammoFor(it.price) > s.ammo}
-                      onClick={() => run(() => mock.buyItem(it.id, n), `Bought ${n} × ${it.name}`)}
+                      onClick={() => run(() => game.buyItem(it.id, n), `Bought ${n} × ${it.name}`)}
                     >
                       {n === 1 ? `Buy · ${fmtUsd(it.price)}` : `×${n}`}
                     </button>
@@ -226,7 +228,7 @@ export function LoadoutRow({
   now: number;
   inv: { pistol: number; smg: number; rifle: number; vest: number };
   kits: number;
-  run: (fn: () => void, msg: string) => void;
+  run: (fn: () => unknown, msg: string) => unknown;
 }) {
   const r = RARITIES[g.rarity];
   const a = archetypeOf(g.id);
@@ -256,7 +258,7 @@ export function LoadoutRow({
       </div>
       <div className="lo__actions">
         {shot ? (
-          <button type="button" className="btn btn--heal" onClick={() => run(() => mock.heal([g.id]), `#${g.id} healed`)}>
+          <button type="button" className="btn btn--heal" onClick={() => run(() => game.heal([g.id]), `#${g.id} healed`)}>
             ✚ Heal {kits > 0 ? "· use kit" : `· ${fmtUsd(MEDKIT_PRICE_USD)}`}
           </button>
         ) : (
@@ -274,7 +276,7 @@ export function LoadoutRow({
                       ? `Buy a ${WEAPONS[w].name} first`
                       : `Equip ${WEAPONS[w].name} (+${WEAPONS[w].boostPct}%)`
                 }
-                onClick={() => run(() => mock.equipWeapon(g.id, w), `${WEAPONS[w].name} equipped on #${g.id}`)}
+                onClick={() => run(() => game.equipWeapon(g.id, w), `${WEAPONS[w].name} equipped on #${g.id}`)}
               >
                 {WEAPONS[w].name} <small>({inv[w]})</small>
               </button>
@@ -283,7 +285,7 @@ export function LoadoutRow({
               type="button"
               className="btn"
               disabled={inv.vest < 1 || vest}
-              onClick={() => run(() => mock.equipVest(g.id), `Vest on #${g.id}`)}
+              onClick={() => run(() => game.equipVest(g.id), `Vest on #${g.id}`)}
             >
               Vest <small>({inv.vest})</small>
             </button>

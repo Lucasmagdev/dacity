@@ -9,7 +9,8 @@ import CashBox from "./art/CashBox";
 import { AnnouncementCard } from "./GlobalNotices";
 import { ADMIN_WALLETS, isAddress, shortAddr, useAdmin } from "../config/admin";
 import { fmt } from "../config/game";
-import { MOCK, mock } from "../mock";
+import { MOCK } from "../mock";
+import { game } from "../game";
 import { isLive, platform, usePlatform, type AnnouncementKind } from "../mock/platform";
 
 const MAX_BOXES_GRANT = 50;
@@ -116,9 +117,10 @@ function AdminConsole({ me, onBack }: { me: string; onBack: () => void }) {
     return () => clearTimeout(t);
   }, [toast]);
 
-  const run = (fn: () => void, msg: string) => {
+  // actions are async (database calls in live mode): show the error the database sends back
+  const run = async (fn: () => unknown, msg: string) => {
     try {
-      fn();
+      await fn();
       setToast(msg);
     } catch (e) {
       setToast((e as Error).message);
@@ -262,8 +264,8 @@ function SendCoins({ me, run }: CardProps) {
         label={`Send ${fmt(n)} DC`}
         confirmLabel={`Confirm: ${fmt(n)} DC → ${ok ? shortAddr(to) : ""}`}
         onConfirm={() =>
-          run(() => {
-            mock.grantDc(n);
+          run(async () => {
+            await game.grantDc(to, n);
             platform.log(me, "Sent coins", `${fmt(n)} DC → ${shortAddr(to)}`);
           }, `Sent ${fmt(n)} DC to ${shortAddr(to)}`)
         }
@@ -312,8 +314,8 @@ function SendBoxes({ me, run }: CardProps) {
         label={`Send ${count} box${count > 1 ? "es" : ""}`}
         confirmLabel={`Confirm: ${count} → ${ok ? shortAddr(to) : ""}`}
         onConfirm={() =>
-          run(() => {
-            mock.grantBoxes(count);
+          run(async () => {
+            await game.grantBoxes(to, count);
             platform.log(me, "Sent boxes", `${count} box${count > 1 ? "es" : ""} → ${shortAddr(to)}`);
           }, `Sent ${count} box${count > 1 ? "es" : ""} to ${shortAddr(to)}`)
         }
@@ -345,14 +347,14 @@ function MaintenanceCard({ me, run }: CardProps) {
       </label>
       {m.on ? (
         <div className="admin__row">
-          <button type="button" className="btn" onClick={() => run(() => platform.setMaintenance(true, msg, me), "Message updated")}>
+          <button type="button" className="btn" onClick={() => run(() => game.setMaintenance(true, msg, me), "Message updated")}>
             Update message
           </button>
           <ConfirmButton
             className="btn btn--cyan"
             label="Reopen the game"
             confirmLabel="Confirm reopen"
-            onConfirm={() => run(() => platform.setMaintenance(false, msg, me), "Game is back online")}
+            onConfirm={() => run(() => game.setMaintenance(false, msg, me), "Game is back online")}
           />
         </div>
       ) : (
@@ -360,7 +362,7 @@ function MaintenanceCard({ me, run }: CardProps) {
           className="btn btn--danger btn--block"
           label="Turn on maintenance"
           confirmLabel="Confirm: lock the game for everyone"
-          onConfirm={() => run(() => platform.setMaintenance(true, msg, me), "Maintenance is ON")}
+          onConfirm={() => run(() => game.setMaintenance(true, msg, me), "Maintenance is ON")}
         />
       )}
     </section>
@@ -483,9 +485,9 @@ function AnnouncementForm({ me, run }: CardProps) {
             label={live ? "Replace current announcement" : "Publish to all players"}
             confirmLabel="Confirm publish"
             onConfirm={() =>
-              run(() => {
+              run(async () => {
                 const ms = DURATIONS[dur].ms;
-                platform.announce({ kind, title, message, expiresAt: ms === null ? null : Date.now() + ms }, me);
+                await game.announce({ kind, title, message, expiresAt: ms === null ? null : Date.now() + ms }, me);
                 setTitle("");
                 setMessage("");
               }, "Announcement published")
@@ -504,7 +506,7 @@ function AnnouncementForm({ me, run }: CardProps) {
                 Published {timeAgo(current.createdAt)} ·{" "}
                 {current.expiresAt ? `ends ${new Date(current.expiresAt).toLocaleString("en-US", { dateStyle: "short", timeStyle: "short" })}` : "until removed"}
               </p>
-              <button type="button" className="btn" onClick={() => run(() => platform.clearAnnouncement(me), "Announcement removed")}>
+              <button type="button" className="btn" onClick={() => run(() => game.clearAnnouncement(me), "Announcement removed")}>
                 Remove announcement
               </button>
             </>

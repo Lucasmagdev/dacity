@@ -13,13 +13,14 @@ export default function BoxReveal({
   onClose,
   onDeploy,
 }: {
-  open: () => MockGangster[];
+  open: () => MockGangster[] | Promise<MockGangster[]>;
   onClose: () => void;
   /** Put the revealed gangsters to work right away. */
   onDeploy?: (ids: number[]) => void;
 }) {
   const [phase, setPhase] = useState<"shake" | "burst" | "cards">("shake");
   const [result, setResult] = useState<MockGangster[]>([]);
+  const [failure, setFailure] = useState<string | null>(null);
 
   const rolled = useRef(false);
 
@@ -27,7 +28,10 @@ export default function BoxReveal({
     // guard: StrictMode runs effects twice in dev, the roll must happen once
     if (!rolled.current) {
       rolled.current = true;
-      setResult(open());
+      Promise.resolve()
+        .then(open)
+        .then(setResult)
+        .catch((e: Error) => setFailure(e.message));
     }
     const t1 = setTimeout(() => setPhase("burst"), 1400);
     const t2 = setTimeout(() => setPhase("cards"), 2100);
@@ -49,7 +53,15 @@ export default function BoxReveal({
 
   return (
     <div className="reveal" role="dialog" aria-modal="true" aria-label="Opening box" style={{ "--rc": light } as React.CSSProperties}>
-      {phase !== "cards" ? (
+      {failure ? (
+        <div className="reveal__cards">
+          <p className="eyebrow">Couldn't open the box</p>
+          <p className="note note--error">{failure}</p>
+          <button type="button" className="cta" onClick={onClose} autoFocus>
+            Close
+          </button>
+        </div>
+      ) : phase !== "cards" || result.length === 0 ? (
         <div className={`reveal__stage reveal__stage--${phase}`}>
           <CashBox state={phase === "shake" ? "shake" : "open"} light={phase === "shake" ? "#ff2e88" : light} />
           <p className="reveal__hint">{phase === "shake" ? "Cracking the lock…" : ""}</p>

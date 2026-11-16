@@ -11,6 +11,7 @@ import Docs from "./components/Docs";
 import Token from "./components/Token";
 import Admin from "./components/Admin";
 import GlobalNotices, { MaintenanceScreen } from "./components/GlobalNotices";
+import LiveSession from "./components/LiveSession";
 import { useAdmin } from "./config/admin";
 import { usePlatform } from "./mock/platform";
 import "./admin.css";
@@ -61,6 +62,7 @@ export default function App() {
     <>
       {page}
       {route !== "/admin" && <GlobalNotices adminBypass={isAdmin} maintenanceNotice={!isAdmin && !blocked} />}
+      <LiveSession />
       {loading && <Loader onDone={finishLoading} />}
     </>
   );

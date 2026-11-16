@@ -14,8 +14,11 @@ interface ImportMetaEnv {
   readonly VITE_SEASON_START?: string;
   /** Comma-separated wallet addresses allowed into #/admin (UI gate only). */
   readonly VITE_ADMIN_WALLETS?: string;
-  /** "0" turns the browser-only mock off (once the Supabase backend exists). */
+  /** "0" turns the browser-only mock off and plays against Supabase. */
   readonly VITE_MOCK?: string;
+  readonly VITE_SUPABASE_URL?: string;
+  /** Publishable (public) key. RLS protects the data; the secret key never goes in the web app. */
+  readonly VITE_SUPABASE_PUBLISHABLE_KEY?: string;
 }
 
 interface ImportMeta {
