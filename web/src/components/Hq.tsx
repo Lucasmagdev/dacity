@@ -357,7 +357,7 @@ function Vault({
   return (
     <section className={`panel panel--vault vault--${mode}`}>
       <div className="panel__art">
-        <UsdcCoin size={120} spin />
+        {dep ? <UsdcCoin size={120} spin /> : <Coin size={120} spin />}
       </div>
       <div className="panel__body">
         <div className="vault__top">
@@ -371,7 +371,7 @@ function Vault({
             </button>
           </div>
         </div>
-        <h2>{dep ? "Deposit USDC" : "Withdraw USDC"}</h2>
+        <h2>{dep ? "Deposit USDC" : "Withdraw DC"}</h2>
         <p className="muted">
           {dep
             ? `Send USDC on Solana: 1 USDC = ${DACITY_PER_USDC} DC, credited as soon as it confirms.`
