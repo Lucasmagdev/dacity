@@ -1690,3 +1690,15 @@
 .usdccoin--spin {
   animation: coin-spin 3.2s ease-in-out infinite;
 }
+
+.usdcicon {
+  flex: none;
+  border-radius: 50%;
+}
+
+.tile__usd {
+  color: #3ddc84;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+}

@@ -155,7 +155,9 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
             </div>
             <div className="tile">
               <dt>Wallet USDC</dt>
-              <dd>{fmt(s.usdc)}</dd>
+              <dd>
+                <img className="usdcicon" src="/token/usdc-256.webp" width={22} height={22} alt="" aria-hidden /> {fmt(s.usdc)}
+              </dd>
             </div>
             <div className="tile tile--ammo">
               <dt>${TOKEN.ticker}</dt>
@@ -165,7 +167,10 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
             </div>
             <div className="tile">
               <dt>Farming / day</dt>
-              <dd>{fmt(totals.rate)} DC</dd>
+              <dd>
+                {fmt(Math.round(totals.rate * 10) / 10)} DC{" "}
+                <small className="tile__usd">≈ ${(totals.rate / DACITY_PER_USDC).toFixed(2)}</small>
+              </dd>
             </div>
           </dl>
         </header>

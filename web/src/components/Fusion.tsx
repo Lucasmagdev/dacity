@@ -12,7 +12,7 @@ const RULES = [
   "Fusing 2 gangsters of the same rarity gives 1 fused gangster of the next rarity up.",
   "It farms both parents' daily DC combined and its career cap is bigger than the two parents' together.",
   `The fee is paid in AMMO and burned, and grows with the tier. ${TOP.name} is the top rarity and can't be fused.`,
-  "Both gangsters must be active: farming (not shot, not retired) and never fused before. Heal shot gangsters first.",
+  "Both gangsters must be idle or farming: not shot, not retired and never fused before. Heal shot gangsters first.",
   "The two gangsters closest to retirement are consumed. Their pending DC is paid out to you first, free.",
   "Fused gangsters start a brand-new career and cannot be fused again.",
 ];
@@ -84,7 +84,7 @@ export default function Fusion({
                 <b>{to.name}</b>
               </span>
               <span role="cell" data-label="Cost">
-                <AmmoIcon size={14} /> {fmt(f.fee)} <small>AMMO 🔥</small>
+                <AmmoIcon size={14} /> {fmt(f.fee)} <small>AMMO</small>
               </span>
               <span role="cell" data-label="Farm">
                 <b className="gold">{fmt(f.perDay)}/day</b> <small>regular {to.name} {fmt(to.perDay)}</small>
