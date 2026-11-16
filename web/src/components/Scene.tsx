@@ -159,12 +159,36 @@ function Stars() {
   );
 }
 
-/** Synthwave sunset city: sky, sun, two skyline layers, neon grid floor, palms and CRT overlays. */
-function Scene({ dim = false, keyart = false }: { dim?: boolean; keyart?: boolean }) {
+/** Full-bleed photo laid over the procedural city (in-game pages), which stays as the fallback while it loads. */
+export type SceneBackdrop = { src: string; blur?: number };
+
+/** Every in-game page (the dimmed scene) sits on the hero key art, blurred so the panels stay readable. */
+const GAME_BACKDROP: SceneBackdrop = { src: "/hero/keyart.jpg", blur: 6 };
+
+function Backdrop({ src, blur = 0 }: SceneBackdrop) {
+  const [loaded, setLoaded] = useState(false);
   return (
-    <div className={`scene${dim ? " scene--dim" : ""}`} aria-hidden>
+    <img
+      className={`keyart scene__backdrop${loaded ? " keyart--on" : ""}`}
+      style={{ "--bd-blur": `${blur}px` } as React.CSSProperties}
+      src={src}
+      alt=""
+      onLoad={() => setLoaded(true)}
+    />
+  );
+}
+
+/** Synthwave sunset city: sky, sun, two skyline layers, neon grid floor, palms and CRT overlays. */
+function Scene({ dim = false, keyart = false, backdrop = dim ? GAME_BACKDROP : undefined }: {
+  dim?: boolean;
+  keyart?: boolean;
+  backdrop?: SceneBackdrop;
+}) {
+  return (
+    <div className={`scene${dim ? " scene--dim" : ""}${backdrop ? " scene--backdrop" : ""}`} aria-hidden>
       <div className="sky" />
       {keyart && <KeyArt />}
+      {backdrop && <Backdrop key={backdrop.src} {...backdrop} />}
       <Stars />
       <div className="sun-wrap">
         <div className="sun-glow" />

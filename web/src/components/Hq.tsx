@@ -37,7 +37,6 @@ import {
   type MockGangster,
 } from "../mock";
 
-
 const fmt1 = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 1, minimumFractionDigits: 1 });
 const fmtUsdc = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 2, minimumFractionDigits: 2 });
 
