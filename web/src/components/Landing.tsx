@@ -2,10 +2,11 @@ import { useRef } from "react";
 import Scene from "./Scene";
 import Nav from "./Nav";
 import ConnectCTA from "./ConnectCTA";
+import Socials from "./Socials";
 import Countdown from "./Countdown";
 import Portrait from "./Portrait";
 import GangsterToy from "./art/GangsterToy";
-import { BOX_PRICE_DC, DACITY_PER_USDC, PROTAGONISTS, RARITIES, SHOT_CHANCE_PER_DAY, SOCIALS, fmt, type Protagonist } from "../config/game";
+import { BOX_PRICE_DC, DACITY_PER_USDC, PROTAGONISTS, RARITIES, SHOT_CHANCE_PER_DAY, fmt, type Protagonist } from "../config/game";
 import { TARGET_CHAIN } from "../chains";
 import { useScrollFx } from "./useScrollFx";
 import "../landing-fx.css";
@@ -51,22 +52,8 @@ function Teaser({ p, side }: { p: Protagonist; side: "left" | "right" }) {
   );
 }
 
-function SocialIcon({ icon }: { icon: (typeof SOCIALS)[number]["icon"] }) {
-  const paths = {
-    x: "M4 4l16 16M20 4L4 20",
-    discord: "M7 7c3-1.3 7-1.3 10 0l1.5 9c-1.8 1.4-3.6 2-3.6 2l-.9-1.6M9 16.4L8.1 18S6.3 17.4 4.5 16L6 7m3.5 6.5h.01m5 0h.01",
-    telegram: "M21 4L3 11l6 2m12-9l-4 16-8-7m12-9L9 13v6l3-4",
-  } as const;
-  return (
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d={paths[icon]} />
-    </svg>
-  );
-}
-
 export default function Landing({ onEnter }: { onEnter: () => void }) {
   const [nina, rico] = PROTAGONISTS;
-  const socials = SOCIALS.filter((s) => s.url);
   const pageRef = useRef<HTMLDivElement>(null);
   useScrollFx(pageRef);
 
@@ -224,17 +211,7 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
           Play now
         </a>
         <span className="nav__logo">Audacity Game</span>
-        {socials.length > 0 && (
-          <ul className="footer__socials">
-            {socials.map((s) => (
-              <li key={s.label}>
-                <a href={s.url} target="_blank" rel="noreferrer" aria-label={s.label}>
-                  <SocialIcon icon={s.icon} />
-                </a>
-              </li>
-            ))}
-          </ul>
-        )}
+        <Socials variant="footer" size={18} />
         <a className="footer__docs" href="#/docs">
           Read the Docs →
         </a>

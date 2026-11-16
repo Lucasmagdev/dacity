@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import Scene from "./Scene";
 import Nav from "./Nav";
-import ResIcon from "./art/ResIcon";
-import { RESOURCE, STORE_NAME, fmt } from "../config/game";
+import AmmoIcon from "./art/AmmoIcon";
+import Socials from "./Socials";
+import { TOKEN, STORE_NAME, fmt } from "../config/game";
 import { MOCK, useMock } from "../mock";
 import { usePlatform } from "../mock/platform";
 import { snapshot, type BurnCategory, type BurnEvent } from "../mock/tokenSim";
@@ -95,7 +96,7 @@ function SupplyChart({ points }: { points: { t: number; supply: number }[] }) {
 export default function Token({ onBack }: { onBack: () => void }) {
   const now = useNow();
   const s = useMock();
-  const yourBurned = usePlatform((p) => p.resourceBurned);
+  const yourBurned = usePlatform((p) => p.ammoBurned);
   const snap = useMemo(() => snapshot(now), [now]);
 
   // your own burns (from the local tx history) join the feed and the categories
@@ -103,9 +104,9 @@ export default function Token({ onBack }: { onBack: () => void }) {
     const events: BurnEvent[] = [];
     const cats: Partial<Record<BurnCategory, { amount: number; count: number }>> = {};
     for (const t of s.txs) {
-      if (!t.resource || t.resource >= 0) continue;
+      if (!t.ammo || t.ammo >= 0) continue;
       const cat = t.type === "shop" && /vest/i.test(t.title) ? "vest" : TX_TO_CAT[t.type] ?? "weapon";
-      const amount = -t.resource;
+      const amount = -t.ammo;
       events.push({ at: t.at, amount, category: cat, who: "You", label: t.title });
       const c = (cats[cat] ??= { amount: 0, count: 0 });
       c.amount += amount;
@@ -115,8 +116,8 @@ export default function Token({ onBack }: { onBack: () => void }) {
   }, [s.txs]);
 
   const burned = snap.simBurned + yourBurned;
-  const supply = RESOURCE.totalSupply - burned;
-  const pctBurned = (burned / RESOURCE.totalSupply) * 100;
+  const supply = TOKEN.totalSupply - burned;
+  const pctBurned = (burned / TOKEN.totalSupply) * 100;
   const perHour = snap.burned1h;
   const circulating = supply; // no locked / non-circulating wallets announced yet
   const feed = [...yours.events.filter((e) => e.at > now - 10 * 60_000), ...snap.recent].sort((a, b) => b.at - a.at).slice(0, 14);
@@ -127,7 +128,7 @@ export default function Token({ onBack }: { onBack: () => void }) {
   });
   const catMax = Math.max(...cats.map((c) => c.amount), 1);
   const totalSpends = cats.reduce((t, c) => t + c.count, 0);
-  const chart = snap.supply24h.map((p) => ({ t: p.t, supply: RESOURCE.totalSupply - p.burnedBefore - yourBurned }));
+  const chart = snap.supply24h.map((p) => ({ t: p.t, supply: TOKEN.totalSupply - p.burnedBefore - yourBurned }));
 
   return (
     <div className="page token">
@@ -153,9 +154,9 @@ export default function Token({ onBack }: { onBack: () => void }) {
         {/* ------------------------------------------------------------ hero */}
         <section className="thero">
           <div className="thero__badge">
-            <ResIcon size={64} />
+            <AmmoIcon size={132} />
           </div>
-          <p className="thero__ticker">${RESOURCE.ticker}</p>
+          <p className="thero__ticker">${TOKEN.ticker}</p>
           <p className="thero__label">Current supply · going down with every burn</p>
           <div className="thero__supply">
             <Odometer value={supply} />
@@ -164,19 +165,23 @@ export default function Token({ onBack }: { onBack: () => void }) {
             <span style={{ width: `${Math.max(0.6, Math.min(100, pctBurned))}%` }} />
           </div>
           <p className="thero__pct">
-            <b>{pctBurned.toFixed(4)}%</b> of the {compact(RESOURCE.totalSupply)} supply burned forever
+            <b>{pctBurned.toFixed(4)}%</b> of the {compact(TOKEN.totalSupply)} supply burned forever
           </p>
           <div className="thero__cta">
-            {RESOURCE.buyUrl ? (
-              <a className="cta" href={RESOURCE.buyUrl} target="_blank" rel="noreferrer">
-                Buy ${RESOURCE.ticker} on {RESOURCE.launchpad}
+            {TOKEN.buyUrl ? (
+              <a className="cta" href={TOKEN.buyUrl} target="_blank" rel="noreferrer">
+                Buy ${TOKEN.ticker} on {TOKEN.launchpad}
               </a>
             ) : (
-              <span className="cta cta--soon">Launching on {RESOURCE.launchpad}</span>
+              <span className="cta cta--soon">Launching on {TOKEN.launchpad}</span>
             )}
-            <a className="btn" href="#/docs/resource">
+            <a className="btn" href="#/docs/ammo">
               Read the token docs
             </a>
+          </div>
+          <div className="thero__socials">
+            <span>Official channels</span>
+            <Socials variant="pill" size={16} />
           </div>
         </section>
 
@@ -184,7 +189,7 @@ export default function Token({ onBack }: { onBack: () => void }) {
         <dl className="tstats">
           <div className="tstat">
             <dt>Initial supply</dt>
-            <dd>{compact(RESOURCE.totalSupply)}</dd>
+            <dd>{compact(TOKEN.totalSupply)}</dd>
             <small>Fixed. No mint function, ever.</small>
           </div>
           <div className="tstat">
@@ -195,7 +200,7 @@ export default function Token({ onBack }: { onBack: () => void }) {
           <div className="tstat tstat--fire">
             <dt>Total burned</dt>
             <dd>🔥 {compact(burned)}</dd>
-            <small>{fmt(Math.floor(burned))} RESOURCE gone</small>
+            <small>{fmt(Math.floor(burned))} AMMO gone</small>
           </div>
           <div className="tstat tstat--fire">
             <dt>Burned 24h</dt>
@@ -205,10 +210,10 @@ export default function Token({ onBack }: { onBack: () => void }) {
           <div className="tstat">
             <dt>Player spends</dt>
             <dd>{fmt(totalSpends)}</dd>
-            <small>Items & fees paid in RESOURCE</small>
+            <small>Items & fees paid in AMMO</small>
           </div>
           <div className="tstat tstat--gold">
-            <dt>{RESOURCE.taxPct}% tax → Reward Pool</dt>
+            <dt>{TOKEN.taxPct}% tax → Reward Pool</dt>
             <dd>{compact(snap.taxTotal)}</dd>
             <small>{compact(snap.tax24h)} in 24h · from {compact(snap.volume24h)} volume</small>
           </div>
@@ -298,8 +303,8 @@ export default function Token({ onBack }: { onBack: () => void }) {
         <section className="tfly">
           {[
             ["Players buy boxes", "USDC fills the Reward Pool"],
-            [`${RESOURCE.taxPct}% tax on every trade`, "Goes into the Reward Pool"],
-            ["Items & fees in RESOURCE", "Med kits, weapons, vests, fusion, claim-all"],
+            [`${TOKEN.taxPct}% tax on every trade`, "Goes into the Reward Pool"],
+            ["Items & fees in AMMO", "Med kits, weapons, vests, fusion, claim-all"],
             ["100% burned", "Supply only goes down"],
           ].map(([t, d], i) => (
             <div key={t} className="tfly__step">
@@ -322,19 +327,19 @@ export default function Token({ onBack }: { onBack: () => void }) {
             </div>
             <div>
               <dt>Launchpad</dt>
-              <dd>{RESOURCE.launchpad}</dd>
+              <dd>{TOKEN.launchpad}</dd>
             </div>
             <div>
               <dt>Supply</dt>
-              <dd>{fmt(RESOURCE.totalSupply)} fixed</dd>
+              <dd>{fmt(TOKEN.totalSupply)} fixed</dd>
             </div>
             <div>
               <dt>Tax</dt>
-              <dd>{RESOURCE.taxPct}% → Reward Pool</dd>
+              <dd>{TOKEN.taxPct}% → Reward Pool</dd>
             </div>
             <div>
               <dt>Contract</dt>
-              <dd>{RESOURCE.address ? <code>{RESOURCE.address}</code> : "Announced at launch"}</dd>
+              <dd>{TOKEN.address ? <code>{TOKEN.address}</code> : "Announced at launch"}</dd>
             </div>
           </dl>
         </section>

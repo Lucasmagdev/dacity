@@ -1735,3 +1735,124 @@ code {
     --palm-b: var(--palm-static);
   }
 }
+
+/* ------------------------------------------------------------------ social links */
+
+.socials {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.socials a,
+.socials__soon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--text);
+  text-decoration: none;
+  transition: color 0.2s, background 0.2s, border-color 0.2s, translate 0.2s;
+}
+
+.socials__soon {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* nav: small round icons */
+.socials--nav a,
+.socials--nav .socials__soon {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: rgba(10, 6, 20, 0.5);
+  backdrop-filter: blur(6px);
+}
+
+.socials--nav a:hover {
+  border-color: #29a9eb;
+  background: rgba(41, 169, 235, 0.18);
+  color: #fff;
+}
+
+/* footer: bigger round icons */
+.socials--footer {
+  gap: 12px;
+}
+
+.socials--footer a,
+.socials--footer .socials__soon {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+}
+
+.socials--footer a:hover {
+  translate: 0 -2px;
+  border-color: #29a9eb;
+  color: #29a9eb;
+}
+
+/* pill: icon + label (token page) */
+.socials--pill a,
+.socials--pill .socials__soon {
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(10, 6, 20, 0.5);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.socials--pill a:hover {
+  border-color: #29a9eb;
+  background: rgba(41, 169, 235, 0.18);
+}
+
+.thero__socials {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.thero__socials > span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* phones: the top bar is tight, the links stay in the footer and token page */
+@media (max-width: 760px) {
+  .nav .socials--nav {
+    display: none;
+  }
+}
+
+/* in-game pages the nav already holds the game tabs: drop the social icons when space runs out */
+@media (max-width: 1365px) {
+  .nav:has(.gamenav) .socials--nav {
+    display: none;
+  }
+}
+
+.socials--nav a[href*="tiktok"]:hover,
+.socials--pill a[href*="tiktok"]:hover {
+  border-color: #fe2c55;
+  background: rgba(254, 44, 85, 0.18);
+}
+
+.socials--footer a[href*="tiktok"]:hover {
+  border-color: #fe2c55;
+  color: #fe2c55;
+}

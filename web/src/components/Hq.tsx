@@ -6,8 +6,8 @@ import BoxReveal from "./BoxReveal";
 import CashBox from "./art/CashBox";
 import Coin from "./art/Coin";
 import GangsterToy from "./art/GangsterToy";
-import ResIcon from "./art/ResIcon";
-import { BOX_PRICE_DC, BULK_TIERS, CLAIM_ALL_FEE_RES, DACITY_PER_USDC, LAUNCH_SALE, MEDKIT_PRICE_RES, RESOURCE, fmtRes, PROTAGONISTS, RARITIES, SHOT_CHANCE_PER_DAY, STORE_NAME, WEAPONS, fmt, quoteBoxes } from "../config/game";
+import AmmoIcon from "./art/AmmoIcon";
+import { BOX_PRICE_DC, BULK_TIERS, CLAIM_ALL_FEE_AMMO, DACITY_PER_USDC, LAUNCH_SALE, MEDKIT_PRICE_AMMO, TOKEN, fmtAmmo, PROTAGONISTS, RARITIES, SHOT_CHANCE_PER_DAY, STORE_NAME, WEAPONS, fmt, quoteBoxes } from "../config/game";
 import { usePlatform } from "../mock/platform";
 import {
   MAX_BOXES_PER_TX,
@@ -124,7 +124,7 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
           <span className="mockbar__tag">Mock mode</span>
           <span>Fake data, stored only in this browser. 1 farming day = {MOCK_DAY_MS / 1000}s.</span>
           <button type="button" onClick={() => run(mock.faucet, "+1,000 test USDC")}>+1,000 USDC</button>
-          <button type="button" onClick={() => run(mock.resourceFaucet, "+10,000 test RESOURCE")}>+10,000 RESOURCE</button>
+          <button type="button" onClick={() => run(mock.ammoFaucet, "+10,000 test AMMO")}>+10,000 AMMO</button>
           <button
             type="button"
             onClick={() => {
@@ -160,10 +160,10 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
               <dt>Wallet USDC</dt>
               <dd>{fmt(s.usdc)}</dd>
             </div>
-            <div className="tile tile--res">
-              <dt>${RESOURCE.ticker}</dt>
+            <div className="tile tile--ammo">
+              <dt>${TOKEN.ticker}</dt>
               <dd>
-                <ResIcon /> {fmt(Math.floor(s.resource))}
+                <AmmoIcon /> {fmt(Math.floor(s.ammo))}
               </dd>
             </div>
             <div className="tile">
@@ -248,11 +248,11 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
                 <button
                   type="button"
                   className="btn btn--gold"
-                  disabled={q.ids.length === 0 || q.fee > s.resource}
+                  disabled={q.ids.length === 0 || q.fee > s.ammo}
                   onClick={() => {
                     try {
                       const r = mock.claimAll(q.ids);
-                      setToast(`Claimed ${fmt1(r.net)} DC · burned ${fmtRes(r.fee)}`);
+                      setToast(`Claimed ${fmt1(r.net)} DC · burned ${fmtAmmo(r.fee)}`);
                     } catch (e) {
                       setToast((e as Error).message);
                     }
@@ -262,15 +262,15 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
                 </button>
                 <span className="claimall__fee">
                   {q.ids.length > 0
-                    ? `🔥 Fee ${fmtRes(q.fee)} (${q.ids.length} × ${CLAIM_ALL_FEE_RES}, burned) · claim one by one for free`
-                    : `${CLAIM_ALL_FEE_RES} RESOURCE fee per gangster, burned · claim one by one for free`}
+                    ? `🔥 Fee ${fmtAmmo(q.fee)} (${q.ids.length} × ${CLAIM_ALL_FEE_AMMO}, burned) · claim one by one for free`
+                    : `${CLAIM_ALL_FEE_AMMO} AMMO fee per gangster, burned · claim one by one for free`}
                 </span>
               </div>
           </div>
 
               <MedBar
                 kits={s.medkits}
-                res={s.resource}
+                ammo={s.ammo}
                 shotIds={s.gangsters.filter((g) => isShot(g, now)).map((g) => g.id)}
                 onToast={setToast}
               />
@@ -306,7 +306,7 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
                       onHeal={() => {
                         try {
                           const r = mock.heal([g.id]);
-                          setToast(`“${archetypeOf(g.id).nick}” is back to work${r.cost ? ` · burned ${fmtRes(r.cost)} for a kit` : " · used 1 kit"}`);
+                          setToast(`“${archetypeOf(g.id).nick}” is back to work${r.cost ? ` · burned ${fmtAmmo(r.cost)} for a kit` : " · used 1 kit"}`);
                         } catch (e) {
                           setToast((e as Error).message);
                         }
@@ -570,9 +570,9 @@ function Shop({ dc, onBuy }: { dc: number; onBuy: (n: number) => void }) {
   );
 }
 
-function MedBar({ kits, res, shotIds, onToast }: { kits: number; res: number; shotIds: number[]; onToast: (m: string) => void }) {
+function MedBar({ kits, ammo, shotIds, onToast }: { kits: number; ammo: number; shotIds: number[]; onToast: (m: string) => void }) {
   const missing = Math.max(0, shotIds.length - kits);
-  const healCost = missing * MEDKIT_PRICE_RES;
+  const healCost = missing * MEDKIT_PRICE_AMMO;
   const act = (fn: () => string) => {
     try {
       onToast(fn());
@@ -591,7 +591,7 @@ function MedBar({ kits, res, shotIds, onToast }: { kits: number; res: number; sh
           {shotIds.length > 0 && <span className="medbar__shot"> · {shotIds.length} shot</span>}
         </strong>
         <small>
-          {fmtRes(MEDKIT_PRICE_RES)} each (burned) · heals one shot gangster · <a href="#/armory">{STORE_NAME} →</a> Shot risk per day: {RARITIES.map((r, i) => `${r.name} ${SHOT_CHANCE_PER_DAY[i]}%`).join(" · ")}
+          {fmtAmmo(MEDKIT_PRICE_AMMO)} each (burned) · heals one shot gangster · <a href="#/armory">{STORE_NAME} →</a> Shot risk per day: {RARITIES.map((r, i) => `${r.name} ${SHOT_CHANCE_PER_DAY[i]}%`).join(" · ")}
         </small>
       </div>
       <div className="medbar__actions">
@@ -600,7 +600,7 @@ function MedBar({ kits, res, shotIds, onToast }: { kits: number; res: number; sh
             key={n}
             type="button"
             className="btn"
-            disabled={n * MEDKIT_PRICE_RES > res}
+            disabled={n * MEDKIT_PRICE_AMMO > ammo}
             onClick={() => act(() => (mock.buyMedkits(n), `Bought ${n} med kit${n > 1 ? "s" : ""}`))}
           >
             +{n}
@@ -610,7 +610,7 @@ function MedBar({ kits, res, shotIds, onToast }: { kits: number; res: number; sh
           <button
             type="button"
             className="btn btn--heal"
-            disabled={healCost > res}
+            disabled={healCost > ammo}
             onClick={() =>
               act(() => {
                 const r = mock.heal(shotIds);
@@ -618,7 +618,7 @@ function MedBar({ kits, res, shotIds, onToast }: { kits: number; res: number; sh
               })
             }
           >
-            Heal all ({shotIds.length}){healCost > 0 ? ` · ${fmt(healCost)} RES` : ""}
+            Heal all ({shotIds.length}){healCost > 0 ? ` · ${fmt(healCost)} AMMO` : ""}
           </button>
         )}
       </div>
@@ -713,7 +713,7 @@ function GangsterCard({
         </dl>
         {shot && (
           <button type="button" className="btn btn--heal gcard__claim" onClick={onHeal}>
-            ✚ {kits > 0 ? "Heal · use 1 kit" : `Heal · ${fmt(MEDKIT_PRICE_RES)} RES`}
+            ✚ {kits > 0 ? "Heal · use 1 kit" : `Heal · ${fmt(MEDKIT_PRICE_AMMO)} AMMO`}
           </button>
         )}
         <button type="button" className="btn btn--gold gcard__claim" disabled={pending < 0.1} onClick={onClaim}>

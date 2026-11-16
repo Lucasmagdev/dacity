@@ -1,19 +1,19 @@
 import { useEffect, useState, type ReactNode } from "react";
 import Scene from "./Scene";
 import Nav from "./Nav";
-import ResIcon from "./art/ResIcon";
+import AmmoIcon from "./art/AmmoIcon";
 import Coin from "./art/Coin";
 import {
   BOX_PRICE_DC,
   BULK_TIERS,
-  CLAIM_ALL_FEE_RES,
+  CLAIM_ALL_FEE_AMMO,
   DACITY_PER_USDC,
   FUSION_RECIPES,
   LAUNCH_SALE,
   MAX_BOXES_PER_ORDER,
-  MEDKIT_PRICE_RES,
+  MEDKIT_PRICE_AMMO,
   RARITIES,
-  RESOURCE,
+  TOKEN,
   SHOT_CHANCE_PER_DAY,
   STORE_NAME,
   VEST,
@@ -76,7 +76,7 @@ function Rarity({ id }: { id: number }) {
  * The game's economic loop on a 5×5 board:
  *   1 Boxes → POOL ← 4 Tax
  *   ↑         ↓        ↑
- *   ↑         2 Farm → 3 Buy RES
+ *   ↑         2 Farm → 3 Buy AMMO
  *   ↑                  ↓
  *   6 Players  ←←←←←   5 Burn
  */
@@ -103,14 +103,14 @@ function Flywheel() {
         <small>The Vault's USDC. Every player withdrawal is paid from here.</small>
       </div>
       {arrow("rp", "←")}
-      {node("r", 4, "res", `${RESOURCE.taxPct}% $RESOURCE tax`, `Every buy and sell of $RESOURCE sends ${RESOURCE.taxPct}% into the Reward Pool.`)}
+      {node("r", 4, "ammo", `${TOKEN.taxPct}% $AMMO tax`, `Every buy and sell of $AMMO sends ${TOKEN.taxPct}% into the Reward Pool.`)}
       {arrow("pw", "↓")}
       {node("w", 2, "dc", "Gangsters farm DC", "Players claim DC and withdraw it as USDC from the pool.")}
       {arrow("wb", "→")}
-      {node("b", 3, "res", "Players buy $RESOURCE", "For med kits, weapons, vests, fusion and claim-all.")}
+      {node("b", 3, "ammo", "Players buy $AMMO", "For med kits, weapons, vests, fusion and claim-all.")}
       {arrow("rb", "↑")}
       {arrow("bs", "↓")}
-      {node("s", 5, "fire", "Spent $RESOURCE is burned", "100% of it, forever. Supply goes down while demand keeps coming.")}
+      {node("s", 5, "fire", "Spent $AMMO is burned", "100% of it, forever. Supply goes down while demand keeps coming.")}
       {arrow("fs", "←")}
       {node("f", 6, "usdc", "More players join", "A deeper pool and a scarcer token pull in new bosses.")}
       {arrow("up", "↑")}
@@ -138,10 +138,10 @@ const SECTIONS: Section[] = [
           rows={[
             [<b>USDC</b>, "Stablecoin in your wallet", "Depositing into the Vault (becomes DC) and withdrawing your earnings"],
             [<b>DC · Dacity Coin</b>, `In-game coin. 1 USDC = ${DACITY_PER_USDC} DC`, "Buying Gangster Boxes. It's also what your gangsters farm"],
-            [<b>$RESOURCE</b>, `On-chain token on ${RESOURCE.launchpad}, ${fmt(RESOURCE.totalSupply)} fixed supply`, "Every item and fee in the game, and 100% of it is burned"],
+            [<b>$AMMO</b>, `On-chain token on ${TOKEN.launchpad}, ${fmt(TOKEN.totalSupply)} fixed supply`, "Every item and fee in the game, and 100% of it is burned"],
           ]}
         />
-        <p>The core loop: deposit → open boxes → farm DC → claim → gear up with $RESOURCE → farm more → withdraw.</p>
+        <p>The core loop: deposit → open boxes → farm DC → claim → gear up with $AMMO → farm more → withdraw.</p>
       </>
     ),
   },
@@ -166,7 +166,7 @@ const SECTIONS: Section[] = [
           <b>Deposit USDC</b> in the Vault to get DC, then <b>buy and open Gangster Boxes</b>.
         </li>
         <li>
-          <b>Claim</b> what your gangsters farm. Buy <b>$RESOURCE</b> when you want items: med kits, weapons, vests, fusion.
+          <b>Claim</b> what your gangsters farm. Buy <b>$AMMO</b> when you want items: med kits, weapons, vests, fusion.
         </li>
       </ol>
     ),
@@ -190,7 +190,7 @@ const SECTIONS: Section[] = [
           <li>Deposit and withdraw sit in the same card in the HQ (Deposit / Withdraw switch).</li>
         </ul>
         <Callout tone="warn" title="Withdrawals depend on the pool">
-          Withdrawals are paid from the USDC actually in the Reward Pool, which is filled by box purchases and the $RESOURCE tax. See{" "}
+          Withdrawals are paid from the USDC actually in the Reward Pool, which is filled by box purchases and the $AMMO tax. See{" "}
           <a href="#/docs/flywheel">The flywheel</a>.
         </Callout>
       </>
@@ -257,7 +257,7 @@ const SECTIONS: Section[] = [
             <b>Claim (one gangster):</b> free. Each card in the HQ has its own Claim button.
           </li>
           <li>
-            <b>Claim all:</b> one click for the whole crew, with a fee of <b>{fmt(CLAIM_ALL_FEE_RES)} $RESOURCE per gangster</b>, burned. You
+            <b>Claim all:</b> one click for the whole crew, with a fee of <b>{fmt(CLAIM_ALL_FEE_AMMO)} $AMMO per gangster</b>, burned. You
             receive the full DC.
           </li>
           <li>Farming keeps counting while you're offline, and if a gangster is transferred, its unclaimed DC goes to the previous owner.</li>
@@ -273,7 +273,7 @@ const SECTIONS: Section[] = [
       <>
         <p>
           Fuse <b>2 gangsters of the same rarity</b> into <b>1 fused gangster of the next rarity</b>. It farms both parents' daily DC
-          combined and has a bigger career cap than the two parents together. The fee is paid in $RESOURCE and burned.
+          combined and has a bigger career cap than the two parents together. The fee is paid in $AMMO and burned.
         </p>
         <Table
           head={["Fusion", "Fee", "Farm / day", "Career cap", "Extra DC"]}
@@ -281,7 +281,7 @@ const SECTIONS: Section[] = [
             <>
               <Rarity id={f.from} /> × 2 → <Rarity id={f.to} />
             </>,
-            `${fmt(f.fee)} RES 🔥`,
+            `${fmt(f.fee)} AMMO 🔥`,
             `${f.perDay} DC (regular ${RARITIES[f.to].name}: ${RARITIES[f.to].perDay})`,
             `${fmt(f.cap)} DC (parents ${fmt(RARITIES[f.from].cap * 2)})`,
             <b className="doc-green">+{fmt(f.cap - RARITIES[f.from].cap * 2)}</b>,
@@ -305,7 +305,7 @@ const SECTIONS: Section[] = [
       <>
         <p>
           The streets are dangerous. Every farming day a gangster has a chance to <b>take a bullet</b>, lower for higher rarities. A shot
-          gangster <b>stops farming</b> until it's healed with a <b>med kit</b> ({fmt(MEDKIT_PRICE_RES)} $RESOURCE, burned).
+          gangster <b>stops farming</b> until it's healed with a <b>med kit</b> ({fmt(MEDKIT_PRICE_AMMO)} $AMMO, burned).
         </p>
         <Table head={RARITIES.map((r) => <Rarity id={r.id} />)} rows={[SHOT_CHANCE_PER_DAY.map((c) => `${c}% / day`)]} />
         <ul>
@@ -324,15 +324,15 @@ const SECTIONS: Section[] = [
     body: () => (
       <>
         <p>
-          The item shop. Everything is paid in <b>$RESOURCE</b> and <b>100% burned</b>. Items go to your stock and you equip them in the
+          The item shop. Everything is paid in <b>$AMMO</b> and <b>100% burned</b>. Items go to your stock and you equip them in the
           Loadout.
         </p>
         <Table
           head={["Item", "Price", "Effect"]}
           rows={[
-            ["Med kit", `${fmt(MEDKIT_PRICE_RES)} RES`, "Heals one shot gangster, any rarity"],
-            ...Object.values(WEAPONS).map((w) => [w.name, `${fmt(w.priceRes)} RES`, `+${w.boostPct}% farm for ${w.days} farming days`]),
-            [VEST.name, `${fmt(VEST.priceRes)} RES`, "Stops the next bullet, then it's gone"],
+            ["Med kit", `${fmt(MEDKIT_PRICE_AMMO)} AMMO`, "Heals one shot gangster, any rarity"],
+            ...Object.values(WEAPONS).map((w) => [w.name, `${fmt(w.priceAmmo)} AMMO`, `+${w.boostPct}% farm for ${w.days} farming days`]),
+            [VEST.name, `${fmt(VEST.priceAmmo)} AMMO`, "Stops the next bullet, then it's gone"],
           ]}
         />
         <ul>
@@ -354,7 +354,7 @@ const SECTIONS: Section[] = [
       <ul>
         <li>Farm output per hour, day, week and month in DC and USDC, counting every gangster and active weapon boost.</li>
         <li>Status: ready to claim, farmed lifetime, claimed, left to farm, crew (farming / shot / retired / fused), next retirement.</li>
-        <li>Breakdown by rarity, your $RESOURCE balance and burns.</li>
+        <li>Breakdown by rarity, your $AMMO balance and burns.</li>
         <li>Every transaction: deposits, withdrawals, boxes, opens, claims, fusions, medical, Armory purchases, with filters.</li>
       </ul>
     ),
@@ -366,15 +366,15 @@ const SECTIONS: Section[] = [
     body: () => <p>A player-to-player marketplace to buy and sell gangsters. Retired gangsters keep their collectible value. Not open yet.</p>,
   },
   {
-    id: "resource",
-    group: "$RESOURCE",
-    title: "The $RESOURCE token",
+    id: "ammo",
+    group: "$AMMO",
+    title: "The $AMMO token",
     body: () => (
       <>
         <div className="doc-token">
-          <ResIcon size={56} />
+          <AmmoIcon size={56} />
           <div>
-            <b>${RESOURCE.ticker}</b>
+            <b>${TOKEN.ticker}</b>
             <small>The game's burn token</small>
           </div>
         </div>
@@ -382,13 +382,13 @@ const SECTIONS: Section[] = [
           head={["", ""]}
           className="doc-table--kv"
           rows={[
-            ["Ticker", <b>${RESOURCE.ticker}</b>],
+            ["Ticker", <b>${TOKEN.ticker}</b>],
             ["Chain", "Robinhood Chain"],
-            ["Launch", `${RESOURCE.launchpad} launchpad`],
-            ["Total supply", <b>{fmt(RESOURCE.totalSupply)} (fixed, no minting)</b>],
-            ["Tax", `${RESOURCE.taxPct}% on every buy and sell, 100% to the game's Reward Pool`],
-            ["Burn", "Every $RESOURCE spent in the game is burned"],
-            ["Contract", RESOURCE.address ? <code>{RESOURCE.address}</code> : "Announced at launch"],
+            ["Launch", `${TOKEN.launchpad} launchpad`],
+            ["Total supply", <b>{fmt(TOKEN.totalSupply)} (fixed, no minting)</b>],
+            ["Tax", `${TOKEN.taxPct}% on every buy and sell, 100% to the game's Reward Pool`],
+            ["Burn", "Every $AMMO spent in the game is burned"],
+            ["Contract", TOKEN.address ? <code>{TOKEN.address}</code> : "Announced at launch"],
           ]}
         />
         <h4>What it's used for</h4>
@@ -397,9 +397,9 @@ const SECTIONS: Section[] = [
           <li>Fusion fees</li>
           <li>The Claim-all fee</li>
         </ul>
-        <p>Gangster Boxes stay in DC. Farming, claiming and the Vault don't use $RESOURCE.</p>
+        <p>Gangster Boxes stay in DC. Farming, claiming and the Vault don't use $AMMO.</p>
         <Callout tone="warn" title="Only use the official contract">
-          The contract address is published here and on the official channels at launch. Anything else claiming to be $RESOURCE is a
+          The contract address is published here and on the official channels at launch. Anything else claiming to be $AMMO is a
           scam.
         </Callout>
       </>
@@ -407,7 +407,7 @@ const SECTIONS: Section[] = [
   },
   {
     id: "flywheel",
-    group: "$RESOURCE",
+    group: "$AMMO",
     title: "The flywheel",
     body: () => (
       <>
@@ -421,18 +421,18 @@ const SECTIONS: Section[] = [
             <b>Gangsters pay out from the pool.</b> They farm DC, which players claim and can withdraw as USDC from the pool.
           </li>
           <li>
-            <b>Playing well needs $RESOURCE.</b> Healing, weapons, vests, fusion and claim-all are all paid in $RESOURCE, so players buy
+            <b>Playing well needs $AMMO.</b> Healing, weapons, vests, fusion and claim-all are all paid in $AMMO, so players buy
             it.
           </li>
           <li>
-            <b>Every trade tops up the pool.</b> The {RESOURCE.taxPct}% tax on each $RESOURCE buy and sell goes straight into the Reward Pool.
+            <b>Every trade tops up the pool.</b> The {TOKEN.taxPct}% tax on each $AMMO buy and sell goes straight into the Reward Pool.
           </li>
           <li>
-            <b>Every token spent is burned.</b> Supply only goes down from {fmt(RESOURCE.totalSupply)}, while new players keep creating
+            <b>Every token spent is burned.</b> Supply only goes down from {fmt(TOKEN.totalSupply)}, while new players keep creating
             demand.
           </li>
           <li>
-            <b>The loop repeats.</b> A deeper pool and a scarcer token bring more players, who buy more boxes and more $RESOURCE.
+            <b>The loop repeats.</b> A deeper pool and a scarcer token bring more players, who buy more boxes and more $AMMO.
           </li>
         </ol>
       </>
@@ -440,7 +440,7 @@ const SECTIONS: Section[] = [
   },
   {
     id: "fees",
-    group: "$RESOURCE",
+    group: "$AMMO",
     title: "All fees at a glance",
     body: () => (
       <Table
@@ -449,12 +449,12 @@ const SECTIONS: Section[] = [
           ["Gangster Box", `${fmt(BOX_PRICE_DC)} DC (${usd(BOX_PRICE_DC)})`, "DC", "Reward Pool (the USDC behind it)"],
           ["Deposit / withdraw", "1 USDC = 100 DC", "USDC / DC", "Vault"],
           ["Claim one gangster", "Free", "—", "—"],
-          ["Claim all", `${fmt(CLAIM_ALL_FEE_RES)} per gangster`, "$RESOURCE", "🔥 Burned"],
-          ["Fusion", FUSION_RECIPES.map((f) => fmt(f.fee)).join(" / "), "$RESOURCE", "🔥 Burned"],
-          ["Med kit", fmt(MEDKIT_PRICE_RES), "$RESOURCE", "🔥 Burned"],
-          ["Weapons", Object.values(WEAPONS).map((w) => fmt(w.priceRes)).join(" / "), "$RESOURCE", "🔥 Burned"],
-          [VEST.name, fmt(VEST.priceRes), "$RESOURCE", "🔥 Burned"],
-          ["$RESOURCE buy / sell", `${RESOURCE.taxPct}% tax`, "$RESOURCE trade", "Reward Pool"],
+          ["Claim all", `${fmt(CLAIM_ALL_FEE_AMMO)} per gangster`, "$AMMO", "🔥 Burned"],
+          ["Fusion", FUSION_RECIPES.map((f) => fmt(f.fee)).join(" / "), "$AMMO", "🔥 Burned"],
+          ["Med kit", fmt(MEDKIT_PRICE_AMMO), "$AMMO", "🔥 Burned"],
+          ["Weapons", Object.values(WEAPONS).map((w) => fmt(w.priceAmmo)).join(" / "), "$AMMO", "🔥 Burned"],
+          [VEST.name, fmt(VEST.priceAmmo), "$AMMO", "🔥 Burned"],
+          ["$AMMO buy / sell", `${TOKEN.taxPct}% tax`, "$AMMO trade", "Reward Pool"],
         ]}
       />
     ),
@@ -479,7 +479,7 @@ const SECTIONS: Section[] = [
     body: () => (
       <Callout tone="warn" title="Read before you play">
         <p>
-          Digital assets are volatile and you can lose what you put in. Withdrawals depend on the USDC in the Reward Pool. $RESOURCE's price
+          Digital assets are volatile and you can lose what you put in. Withdrawals depend on the USDC in the Reward Pool. $AMMO's price
           is set by the market and can go to zero. Box contents are random. Smart contracts can have bugs. Only play with money you can
           afford to lose. 18+ only, and check that this kind of game is legal where you live.
         </p>
@@ -492,13 +492,13 @@ const SECTIONS: Section[] = [
     title: "FAQ",
     body: () => (
       <dl className="doc-faq">
-        <dt>Do I need $RESOURCE to play?</dt>
-        <dd>No. You can deposit, buy boxes, farm and claim one by one with just USDC and DC. $RESOURCE is for items, fusion and claim-all.</dd>
+        <dt>Do I need $AMMO to play?</dt>
+        <dd>No. You can deposit, buy boxes, farm and claim one by one with just USDC and DC. $AMMO is for items, fusion and claim-all.</dd>
         <dt>Is the DC I farm real money?</dt>
         <dd>DC can be withdrawn at {DACITY_PER_USDC} DC = 1 USDC, paid from the Reward Pool.</dd>
-        <dt>What happens to $RESOURCE I spend?</dt>
+        <dt>What happens to $AMMO I spend?</dt>
         <dd>It's burned: removed from the supply forever. Nobody receives it, including the team.</dd>
-        <dt>Where does the {RESOURCE.taxPct}% tax go?</dt>
+        <dt>Where does the {TOKEN.taxPct}% tax go?</dt>
         <dd>100% into the game's Reward Pool, which pays player withdrawals.</dd>
         <dt>Can I lose a gangster?</dt>
         <dd>No. Shot gangsters stop farming until healed, and retired gangsters stop farming, but you keep them all. Fusion consumes two to create one.</dd>
@@ -566,7 +566,7 @@ export default function Docs({ section, onBack }: { section?: string; onBack: ()
             <p className="eyebrow">Audacity Game · Docs</p>
             <h1>How the city works</h1>
             <p className="muted">
-              Everything about the game, the economy and the <b>${RESOURCE.ticker}</b> token. Numbers on this page come straight from the
+              Everything about the game, the economy and the <b>${TOKEN.ticker}</b> token. Numbers on this page come straight from the
               game's config, so they're always current.
             </p>
           </header>

@@ -1,4 +1,4 @@
-/* ------------------------------------------------------------------ $RESOURCE token page */
+/* ------------------------------------------------------------------ $AMMO token page */
 
 .token {
   position: relative;
@@ -594,5 +594,31 @@
 @media (prefers-reduced-motion: reduce) {
   .token__embers {
     display: none;
+  }
+}
+
+/* the logo is already a full coin with its own ring: no extra frame, just a pulsing glow */
+.thero__badge {
+  width: auto;
+  height: auto;
+  background: none;
+  box-shadow: none;
+  animation: none;
+}
+
+.thero__badge .ammoicon {
+  border-radius: 50%;
+  animation: logo-burn 2.4s ease-in-out infinite;
+}
+
+@keyframes logo-burn {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 18px rgba(255, 90, 40, 0.55));
+    scale: 1;
+  }
+  50% {
+    filter: drop-shadow(0 0 36px rgba(255, 120, 60, 0.85));
+    scale: 1.04;
   }
 }

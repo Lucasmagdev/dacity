@@ -1,5 +1,6 @@
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { TARGET_CHAIN } from "../chains";
+import Socials from "./Socials";
 
 /** Compact amber wallet button for the top bar. */
 function NavWallet() {
@@ -59,7 +60,7 @@ function GameNav() {
       </span>
       <a href="#/token" className="gamenav__token" aria-current={route === "/token" ? "page" : undefined}>
         <span className="gamenav__ico" aria-hidden>🔥</span>
-        $RESOURCE
+        $AMMO
       </a>
       <a href="#/docs" aria-current={route.startsWith("/docs") ? "page" : undefined}>
         <span className="gamenav__ico" aria-hidden>?</span>
@@ -96,12 +97,13 @@ export default function Nav({
           <a href="#how-it-works" onClick={(e) => scrollTo(e, "how-it-works")}>How it works</a>
           <a href="#story" onClick={(e) => scrollTo(e, "story")}>Story</a>
           <a href="#rarities" onClick={(e) => scrollTo(e, "rarities")}>Rarities</a>
-          <a href="#/token" className="nav__token">🔥 $RESOURCE</a>
+          <a href="#/token" className="nav__token">🔥 $AMMO</a>
           <a href="#/docs">Docs</a>
         </nav>
       )}
       {game && <GameNav />}
       <div className="nav__right">
+        <Socials variant="nav" size={15} />
         {showChain && (
           <span className="chain-pill">
             <span className="chain-pill__dot" />

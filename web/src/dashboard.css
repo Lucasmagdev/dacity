@@ -1090,19 +1090,19 @@
   }
 }
 
-/* ------------------------------------------------------------------ $RESOURCE */
+/* ------------------------------------------------------------------ $AMMO */
 
-.resicon {
+.ammoicon {
   flex: none;
   filter: drop-shadow(0 0 6px rgba(255, 120, 60, 0.6));
 }
 
-.tile--res {
+.tile--ammo {
   border-color: rgba(255, 138, 61, 0.45);
   background: radial-gradient(120% 120% at 0% 0%, rgba(255, 138, 61, 0.16), transparent 60%), rgba(7, 4, 15, 0.55);
 }
 
-.tile--res dd {
+.tile--ammo dd {
   color: #ffb36b;
 }
 
@@ -1195,7 +1195,7 @@
   color: #ff9a5a;
 }
 
-.tx--resource {
+.tx--ammo {
   --tc: #ff8a3d;
 }
 
@@ -1208,4 +1208,10 @@
     grid-column: 1 / -1;
     flex-wrap: wrap;
   }
+}
+
+.burnpanel__flame {
+  width: auto;
+  height: auto;
+  background: none;
 }

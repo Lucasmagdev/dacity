@@ -55,18 +55,18 @@ export function quoteBoxes(count: number, soldSoFar: number): BoxQuote {
     next: nextTier && nextTier.min <= MAX_BOXES_PER_ORDER ? { ...nextTier, more: nextTier.min - count } : null,
   };
 }
-// ------------------------------------------------------------------ $RESOURCE (burn token)
+// ------------------------------------------------------------------ $AMMO (burn token)
 
 /**
- * $RESOURCE: the game's on-chain token, launched on the Poons launchpad on Robinhood Chain.
- * Every item and fee in the game is paid in RESOURCE and 100% of it is BURNED (supply only goes down).
+ * $AMMO: the game's on-chain token, launched on the Poons launchpad on Robinhood Chain.
+ * Every item and fee in the game is paid in AMMO and 100% of it is BURNED (supply only goes down).
  * Boxes stay in DC. Farming, claims and the Vault stay in DC.
  *
- * PLACEHOLDER AMOUNTS: the token price is only known after launch, so every RESOURCE price below
+ * PLACEHOLDER AMOUNTS: the token price is only known after launch, so every AMMO price below
  * must be re-set then (aim for the same dollar value the old DC prices had).
  */
-export const RESOURCE = {
-  ticker: "RESOURCE",
+export const TOKEN = {
+  ticker: "AMMO",
   /** Fixed supply: no mint function, it can only go down through burns. */
   totalSupply: 1_000_000_000,
   /** Tax on every buy/sell. 100% of it goes to the game's reward pool. */
@@ -78,17 +78,17 @@ export const RESOURCE = {
   address: "",
 };
 
-/** "Claim all" charges this per gangster claimed (in RESOURCE, burned). Claiming one gangster at a time is free. */
-export const CLAIM_ALL_FEE_RES = 100;
+/** "Claim all" charges this per gangster claimed (in AMMO, burned). Claiming one gangster at a time is free. */
+export const CLAIM_ALL_FEE_AMMO = 100;
 
 /** Season start shown in the hero countdown. Override with VITE_SEASON_START (ISO date). */
 export const SEASON_START = new Date(import.meta.env.VITE_SEASON_START || "2026-12-12T20:00:00Z");
 
-/** Footer social links. Empty url = hidden. */
-export const SOCIALS: { label: string; url: string; icon: "x" | "discord" | "telegram" }[] = [
-  { label: "X", url: "", icon: "x" },
-  { label: "Discord", url: "", icon: "discord" },
-  { label: "Telegram", url: "", icon: "telegram" },
+/** Social links (nav, footer, token page). Empty url = shown greyed out as "coming soon". */
+export const SOCIALS: { label: string; url: string; icon: "x" | "telegram" | "tiktok" }[] = [
+  { label: "X (Twitter)", url: "", icon: "x" },
+  { label: "Telegram", url: "https://t.me/audacitygame", icon: "telegram" },
+  { label: "TikTok", url: "https://www.tiktok.com/@audacitygame2026", icon: "tiktok" },
 ];
 
 export type Protagonist = {
@@ -158,7 +158,7 @@ export type FarmStats = { perDay: number; cap: number };
  *  - cap    = both parents' caps combined + 20% / 25% / 30% / 35%, rounded to 100.
  *  - fee    = doubles each tier. It is ~3–5% of the extra DC the fusion unlocks.
  */
-/** `fee` is in RESOURCE and burned. */
+/** `fee` is in AMMO and burned. */
 export type FusionRecipe = FarmStats & { from: number; to: number; fee: number };
 
 export const FUSION_RECIPES: FusionRecipe[] = [
@@ -182,8 +182,8 @@ export const fusedStats = (rarity: number): FarmStats | undefined => FUSION_RECI
  */
 export const SHOT_CHANCE_PER_DAY = [4, 3, 2, 1.5, 1];
 
-/** One med kit heals one shot gangster, any rarity. Price in RESOURCE (burned). */
-export const MEDKIT_PRICE_RES = 500;
+/** One med kit heals one shot gangster, any rarity. Price in AMMO (burned). */
+export const MEDKIT_PRICE_AMMO = 500;
 
 // ------------------------------------------------------------------ the armory (item shop)
 
@@ -197,14 +197,14 @@ export type WeaponId = "pistol" | "smg" | "rifle";
  * The bonus is extra DC on top of the career cap. One weapon per gangster; equipping another replaces it.
  * Worth more on high-rarity and fused gangsters, since the boost is a % of their rate.
  */
-/** Prices in RESOURCE (burned). */
-export const WEAPONS: Record<WeaponId, { id: WeaponId; name: string; boostPct: number; days: number; priceRes: number; blurb: string }> = {
-  pistol: { id: "pistol", name: "Pistol", boostPct: 15, days: 30, priceRes: 400, blurb: "Cheap and reliable. Keeps the street honest." },
-  smg: { id: "smg", name: "SMG", boostPct: 30, days: 30, priceRes: 900, blurb: "Spray and collect. Debtors pay faster." },
-  rifle: { id: "rifle", name: "Rifle", boostPct: 50, days: 30, priceRes: 1_600, blurb: "Heavy hardware for your top earners." },
+/** Prices in AMMO (burned). */
+export const WEAPONS: Record<WeaponId, { id: WeaponId; name: string; boostPct: number; days: number; priceAmmo: number; blurb: string }> = {
+  pistol: { id: "pistol", name: "Pistol", boostPct: 15, days: 30, priceAmmo: 400, blurb: "Cheap and reliable. Keeps the street honest." },
+  smg: { id: "smg", name: "SMG", boostPct: 30, days: 30, priceAmmo: 900, blurb: "Spray and collect. Debtors pay faster." },
+  rifle: { id: "rifle", name: "Rifle", boostPct: 50, days: 30, priceAmmo: 1_600, blurb: "Heavy hardware for your top earners." },
 };
 
 /** Absorbs the next bullet, then it's gone. One per gangster. */
-export const VEST = { name: "Kevlar vest", priceRes: 350 };
+export const VEST = { name: "Kevlar vest", priceAmmo: 350 };
 
-export const fmtRes = (n: number) => `${Math.round(n).toLocaleString("en-US")} RESOURCE`;
+export const fmtAmmo = (n: number) => `${Math.round(n).toLocaleString("en-US")} AMMO`;

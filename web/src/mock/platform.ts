@@ -28,8 +28,8 @@ export type PlatformState = {
   log: AdminLogEntry[];
   /** Boxes sold game-wide (drives the launch sale). Admin gifts don't count. */
   boxesSold: number;
-  /** RESOURCE burned game-wide by items and fees. */
-  resourceBurned: number;
+  /** AMMO burned game-wide by items and fees. */
+  ammoBurned: number;
 };
 
 const KEY = "dacity.platform.v1";
@@ -41,13 +41,18 @@ const initial = (): PlatformState => ({
   announcement: null,
   log: [],
   boxesSold: 0,
-  resourceBurned: 0,
+  ammoBurned: 0,
 });
 
 function read(): PlatformState {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) return { ...initial(), ...JSON.parse(raw) };
+    if (raw) {
+      const saved = JSON.parse(raw);
+      // renamed from resourceBurned when the token became AMMO
+      if (saved.resourceBurned !== undefined && saved.ammoBurned === undefined) saved.ammoBurned = saved.resourceBurned;
+      return { ...initial(), ...saved };
+    }
   } catch {
     /* ignore */
   }
@@ -107,7 +112,7 @@ export const platform = {
 
   recordBurn(amount: number) {
     const fresh = read();
-    set({ ...fresh, resourceBurned: fresh.resourceBurned + amount });
+    set({ ...fresh, ammoBurned: fresh.ammoBurned + amount });
   },
 
   recordBoxSale(count: number) {

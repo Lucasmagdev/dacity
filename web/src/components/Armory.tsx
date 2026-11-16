@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import Scene from "./Scene";
 import Nav from "./Nav";
 import GangsterToy from "./art/GangsterToy";
-import { MEDKIT_PRICE_RES, RARITIES, RESOURCE, STORE_NAME, VEST, WEAPONS, fmt, type WeaponId } from "../config/game";
-import ResIcon from "./art/ResIcon";
+import { MEDKIT_PRICE_AMMO, RARITIES, TOKEN, STORE_NAME, VEST, WEAPONS, fmt, type WeaponId } from "../config/game";
+import AmmoIcon from "./art/AmmoIcon";
 import { usePlatform } from "../mock/platform";
 import { archetypeOf, hasVest, isRetired, isShot, mock, rateOf, statsOf, useMock, weaponDaysLeft, type MockGangster } from "../mock";
 
@@ -35,21 +35,21 @@ function ItemIcon({ id }: { id: ItemId }) {
 }
 
 const ITEMS: { id: ItemId; name: string; price: number; stat: string; blurb: string; tone: string }[] = [
-  { id: "medkit", name: "Med kit", price: MEDKIT_PRICE_RES, stat: "Heals 1 shot gangster", blurb: "Patch them up and get them back on the street.", tone: "#ff5a6e" },
+  { id: "medkit", name: "Med kit", price: MEDKIT_PRICE_AMMO, stat: "Heals 1 shot gangster", blurb: "Patch them up and get them back on the street.", tone: "#ff5a6e" },
   ...(Object.values(WEAPONS).map((w) => ({
     id: w.id,
     name: w.name,
-    price: w.priceRes,
+    price: w.priceAmmo,
     stat: `+${w.boostPct}% farm · ${w.days} days`,
     blurb: w.blurb,
     tone: w.id === "pistol" ? "#22e4ff" : w.id === "smg" ? "#b45cff" : "#ffb020",
   })) as { id: ItemId; name: string; price: number; stat: string; blurb: string; tone: string }[]),
-  { id: "vest", name: VEST.name, price: VEST.priceRes, stat: "Stops the next bullet", blurb: "One shot it doesn't have to take.", tone: "#3ddc84" },
+  { id: "vest", name: VEST.name, price: VEST.priceAmmo, stat: "Stops the next bullet", blurb: "One shot it doesn't have to take.", tone: "#3ddc84" },
 ];
 
 export default function Armory({ onBack, onFound }: { onBack: () => void; onFound: () => void }) {
   const s = useMock();
-  const burned = usePlatform((p) => p.resourceBurned);
+  const burned = usePlatform((p) => p.ammoBurned);
   const now = useNow();
   const [toast, setToast] = useState<string | null>(null);
 
@@ -104,23 +104,23 @@ export default function Armory({ onBack, onFound }: { onBack: () => void; onFoun
             <h1>{STORE_NAME}</h1>
             <p className="muted">Gear up your crew: weapons boost the farm, vests stop bullets, med kits get the wounded back to work.</p>
             <p className="burnline">
-              Everything here is paid in <b>${RESOURCE.ticker}</b> and <b>100% burned</b>.{" "}
+              Everything here is paid in <b>${TOKEN.ticker}</b> and <b>100% burned</b>.{" "}
               <span className="burnline__total">🔥 {fmt(Math.floor(burned))} burned so far</span>
-              {RESOURCE.buyUrl && (
+              {TOKEN.buyUrl && (
                 <>
                   {" "}
-                  <a href={RESOURCE.buyUrl} target="_blank" rel="noreferrer">
-                    Buy ${RESOURCE.ticker} →
+                  <a href={TOKEN.buyUrl} target="_blank" rel="noreferrer">
+                    Buy ${TOKEN.ticker} →
                   </a>
                 </>
               )}
             </p>
           </div>
           <dl className="tiles armory__tiles">
-            <div className="tile tile--res">
-              <dt>${RESOURCE.ticker}</dt>
+            <div className="tile tile--ammo">
+              <dt>${TOKEN.ticker}</dt>
               <dd>
-                <ResIcon size={20} /> {fmt(Math.floor(s.resource))}
+                <AmmoIcon size={20} /> {fmt(Math.floor(s.ammo))}
               </dd>
             </div>
             <div className="tile">
@@ -158,7 +158,7 @@ export default function Armory({ onBack, onFound }: { onBack: () => void; onFoun
                 )}
                 <div className="item__foot">
                   <span className="item__price">
-                    <ResIcon size={16} /> {fmt(it.price)} <small>RES</small>
+                    <AmmoIcon size={16} /> {fmt(it.price)} <small>AMMO</small>
                   </span>
                   <span className="item__stock">In stock: {stock(it.id)}</span>
                 </div>
@@ -168,7 +168,7 @@ export default function Armory({ onBack, onFound }: { onBack: () => void; onFoun
                       key={n}
                       type="button"
                       className={`btn${n === 1 ? " btn--pink" : ""}`}
-                      disabled={n * it.price > s.resource}
+                      disabled={n * it.price > s.ammo}
                       onClick={() => run(() => mock.buyItem(it.id, n), `Bought ${n} × ${it.name}`)}
                     >
                       {n === 1 ? `Buy · ${fmt(it.price)}` : `×${n}`}
@@ -254,7 +254,7 @@ function LoadoutRow({
       <div className="lo__actions">
         {shot ? (
           <button type="button" className="btn btn--heal" onClick={() => run(() => mock.heal([g.id]), `#${g.id} healed`)}>
-            ✚ Heal {kits > 0 ? "· use kit" : `· ${fmt(MEDKIT_PRICE_RES)} RES`}
+            ✚ Heal {kits > 0 ? "· use kit" : `· ${fmt(MEDKIT_PRICE_AMMO)} AMMO`}
           </button>
         ) : (
           <>

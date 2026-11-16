@@ -3,8 +3,8 @@ import Scene from "./Scene";
 import Nav from "./Nav";
 import GangsterToy from "./art/GangsterToy";
 import Fusion from "./Fusion";
-import { RARITIES, RESOURCE, fmt, recipeFrom } from "../config/game";
-import ResIcon from "./art/ResIcon";
+import { RARITIES, TOKEN, fmt, recipeFrom } from "../config/game";
+import AmmoIcon from "./art/AmmoIcon";
 import { archetypeOf, farmedOf, fusionCandidates, isFarming, isRetired, isShot, statsOf, useMock, type MockGangster } from "../mock";
 
 function useNow(ms = 1000) {
@@ -66,10 +66,10 @@ export default function FusionPage({ onBack, onFound }: { onBack: () => void; on
             <p className="muted">Merge two gangsters of the same rarity into one fused gangster of the next rarity.</p>
           </div>
           <dl className="tiles fusionpage__tiles">
-            <div className="tile tile--res">
-              <dt>${RESOURCE.ticker}</dt>
+            <div className="tile tile--ammo">
+              <dt>${TOKEN.ticker}</dt>
               <dd>
-                <ResIcon size={20} /> {fmt(Math.floor(s.resource))}
+                <AmmoIcon size={20} /> {fmt(Math.floor(s.ammo))}
               </dd>
             </div>
             <div className={`tile${pairs > 0 ? " tile--hot" : ""}`}>
@@ -91,7 +91,7 @@ export default function FusionPage({ onBack, onFound }: { onBack: () => void; on
           <div className="panel__head">
             <h2>Recipes</h2>
           </div>
-          <Fusion gangsters={s.gangsters} resource={s.resource} now={now} onToast={setToast} />
+          <Fusion gangsters={s.gangsters} ammo={s.ammo} now={now} onToast={setToast} />
         </section>
 
         <section className="panel">

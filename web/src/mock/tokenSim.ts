@@ -1,5 +1,5 @@
 /**
- * $RESOURCE network SIMULATOR (mock only).
+ * $AMMO network SIMULATOR (mock only).
  *
  * The token isn't live yet and mock mode has a single player, so the token page would sit still.
  * This generates believable game-wide activity (other bosses buying med kits, weapons, vests, fusing,
@@ -12,7 +12,7 @@
  * In production, replace with on-chain reads: totalSupply(), Transfer(to = 0x0 / dead) events for burns,
  * the game contract's ItemBought / Fused / ClaimedAll events for categories, and the pool balance.
  */
-import { CLAIM_ALL_FEE_RES, FUSION_RECIPES, MEDKIT_PRICE_RES, RESOURCE, VEST, WEAPONS } from "../config/game";
+import { CLAIM_ALL_FEE_AMMO, FUSION_RECIPES, MEDKIT_PRICE_AMMO, TOKEN, VEST, WEAPONS } from "../config/game";
 
 export type BurnCategory = "medkit" | "weapon" | "vest" | "fusion" | "claimAll";
 
@@ -67,15 +67,15 @@ function bucket(start: number, i: number): Bucket {
     const who = `0x${hex(r, 4)}…${hex(r, 4)}`;
     const at = t0 + Math.floor(r() * MIN);
     const x = r();
-    if (x < 0.34) burns.push({ at, who, category: "medkit", amount: MEDKIT_PRICE_RES, label: "Med kit" });
+    if (x < 0.34) burns.push({ at, who, category: "medkit", amount: MEDKIT_PRICE_AMMO, label: "Med kit" });
     else if (x < 0.58) {
       const g = 1 + Math.floor(r() * 9);
-      burns.push({ at, who, category: "claimAll", amount: CLAIM_ALL_FEE_RES * g, label: `Claim all · ${g} gangsters` });
+      burns.push({ at, who, category: "claimAll", amount: CLAIM_ALL_FEE_AMMO * g, label: `Claim all · ${g} gangsters` });
     } else if (x < 0.8) {
       const ws = Object.values(WEAPONS);
       const w = ws[Math.min(ws.length - 1, Math.floor(r() ** 1.6 * ws.length))];
-      burns.push({ at, who, category: "weapon", amount: w.priceRes, label: w.name });
-    } else if (x < 0.9) burns.push({ at, who, category: "vest", amount: VEST.priceRes, label: VEST.name });
+      burns.push({ at, who, category: "weapon", amount: w.priceAmmo, label: w.name });
+    } else if (x < 0.9) burns.push({ at, who, category: "vest", amount: VEST.priceAmmo, label: VEST.name });
     else {
       const f = FUSION_RECIPES[Math.min(FUSION_RECIPES.length - 1, Math.floor(r() ** 2 * FUSION_RECIPES.length))];
       burns.push({ at, who, category: "fusion", amount: f.fee, label: "Fusion" });
@@ -139,7 +139,7 @@ export function snapshot(now = Date.now()): TokenSnapshot {
     }
   }
   recent.sort((a, b) => b.at - a.at);
-  const tax = RESOURCE.taxPct / 100;
+  const tax = TOKEN.taxPct / 100;
   return {
     simBurned,
     burned24h,

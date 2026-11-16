@@ -10,7 +10,7 @@
 import { useSyncExternalStore } from "react";
 import { platform } from "./platform";
 import deployments from "../contracts/deployments.json";
-import { CLAIM_ALL_FEE_RES, MAX_BOXES_PER_ORDER, MEDKIT_PRICE_RES, fmtRes, SHOT_CHANCE_PER_DAY, STORE_NAME, VEST, WEAPONS, quoteBoxes, type WeaponId, DACITY_PER_USDC, RARITIES, fusedStats, recipeFrom, type FarmStats } from "../config/game";
+import { CLAIM_ALL_FEE_AMMO, MAX_BOXES_PER_ORDER, MEDKIT_PRICE_AMMO, fmtAmmo, SHOT_CHANCE_PER_DAY, STORE_NAME, VEST, WEAPONS, quoteBoxes, type WeaponId, DACITY_PER_USDC, RARITIES, fusedStats, recipeFrom, type FarmStats } from "../config/game";
 
 const envMock = import.meta.env.VITE_MOCK as string | undefined;
 export const MOCK = envMock === "1" || (envMock !== "0" && Object.keys(deployments).length === 0);
@@ -110,13 +110,13 @@ export type MockState = {
   txs: MockTx[];
   /** med kits in stock */
   medkits: number;
-  /** $RESOURCE in the wallet (spent on items and fees, and burned) */
-  resource: number;
+  /** $AMMO in the wallet (spent on items and fees, and burned) */
+  ammo: number;
   /** unequipped items in stock */
   inventory: { pistol: number; smg: number; rifle: number; vest: number };
 };
 
-export type TxType = "gang" | "deposit" | "withdraw" | "faucet" | "buy" | "open" | "claim" | "claimAll" | "fuse" | "gift" | "medkit" | "heal" | "shop" | "equip" | "resource";
+export type TxType = "gang" | "deposit" | "withdraw" | "faucet" | "buy" | "open" | "claim" | "claimAll" | "fuse" | "gift" | "medkit" | "heal" | "shop" | "equip" | "ammo";
 
 export type MockTx = {
   id: string;
@@ -129,8 +129,8 @@ export type MockTx = {
   /** signed balance changes caused by this tx */
   dc?: number;
   usdc?: number;
-  /** RESOURCE spent (negative = burned) */
-  resource?: number;
+  /** AMMO spent (negative = burned) */
+  ammo?: number;
 };
 
 const TX_MAX = 500;
@@ -149,7 +149,7 @@ const initial = (): MockState => ({
   stats: { deposited: 0, claimed: 0, opened: 0 },
   txs: [],
   medkits: 0,
-  resource: 0,
+  ammo: 0,
   inventory: { pistol: 0, smg: 0, rifle: 0, vest: 0 },
 });
 
@@ -167,7 +167,22 @@ function load(): MockState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
-      const s: MockState = { ...initial(), ...JSON.parse(raw) };
+      const saved = JSON.parse(raw);
+      // the token was called RESOURCE before it became AMMO: carry old balances and history over
+      if (saved.resource !== undefined && saved.ammo === undefined) saved.ammo = saved.resource;
+      if (Array.isArray(saved.txs))
+        saved.txs = saved.txs.map((t: Record<string, unknown>) => {
+          const { resource, ...rest } = t;
+          const rename = (v: unknown) => (typeof v === "string" ? v.replace(/\bRESOURCE\b/g, "AMMO") : v);
+          return {
+            ...rest,
+            title: rename(rest.title),
+            detail: rename(rest.detail),
+            ...(resource !== undefined && rest.ammo === undefined ? { ammo: resource } : {}),
+            ...(rest.type === "resource" ? { type: "ammo", title: "Test AMMO" } : {}),
+          };
+        });
+      const s: MockState = { ...initial(), ...saved };
       const now = Date.now();
       s.gangsters = s.gangsters.map((g) => (g.nextShotAt ? g : { ...g, nextShotAt: sampleNextShot(g.rarity, now) }));
       return s;
@@ -294,7 +309,7 @@ export const isBoxReady = (b: MockBox, now = Date.now()) => now - b.boughtAt >= 
 
 /**
  * What "Claim all" would do right now: every gangster with at least 1 DC pending, full DC to the player,
- * and a fee of CLAIM_ALL_FEE_RES per gangster paid in RESOURCE (burned).
+ * and a fee of CLAIM_ALL_FEE_AMMO per gangster paid in AMMO (burned).
  * are included, so claiming all never costs more than it pays out for any single gangster.
  */
 export function claimAllQuote(gangsters: MockGangster[], now = Date.now()) {
@@ -307,7 +322,7 @@ export function claimAllQuote(gangsters: MockGangster[], now = Date.now()) {
       gross += p;
     }
   }
-  const fee = ids.length * CLAIM_ALL_FEE_RES;
+  const fee = ids.length * CLAIM_ALL_FEE_AMMO;
   return { ids, gross, fee, net: gross };
 }
 
@@ -344,8 +359,8 @@ export const mock = {
       gangsters: demo,
       nextGangsterId: 6,
       nextBoxId: 3,
-      resource: 5_000,
-    }, { type: "gang", title: "Gang founded", detail: `${name} · demo crew of 5 + 2 boxes + 5,000 test RESOURCE`, dc: 1_500, resource: 5_000 }));
+      ammo: 5_000,
+    }, { type: "gang", title: "Gang founded", detail: `${name} · demo crew of 5 + 2 boxes + 5,000 test AMMO`, dc: 1_500, ammo: 5_000 }));
   },
 
   /** DacityVault.deposit */
@@ -394,9 +409,9 @@ export const mock = {
     );
   },
 
-  /** Test RESOURCE (mock only; in production players buy it on the Poons launchpad). */
-  resourceFaucet() {
-    set(withTx({ ...state, resource: state.resource + 10_000 }, { type: "resource", title: "Test RESOURCE", detail: "Faucet (mock only)", resource: 10_000 }));
+  /** Test AMMO (mock only; in production players buy it on the Poons launchpad). */
+  ammoFaucet() {
+    set(withTx({ ...state, ammo: state.ammo + 10_000 }, { type: "ammo", title: "Test AMMO", detail: "Faucet (mock only)", ammo: 10_000 }));
   },
 
   /** MockUSDC.faucet */
@@ -475,7 +490,7 @@ export const mock = {
     // charge for exactly the gangsters the player saw in the quote, even if another one crossed 1 DC since
     const q = claimAllQuote(onlyIds ? state.gangsters.filter((g) => onlyIds.includes(g.id)) : state.gangsters, now);
     if (q.ids.length === 0) throw new Error("Nothing to claim yet");
-    if (q.fee > state.resource) throw new Error(`Need ${fmtRes(q.fee)} for the claim-all fee`);
+    if (q.fee > state.ammo) throw new Error(`Need ${fmtAmmo(q.fee)} for the claim-all fee`);
     const ids = new Set(q.ids);
     set(
       withTx(
@@ -483,10 +498,10 @@ export const mock = {
           ...state,
           gangsters: state.gangsters.map((g) => (ids.has(g.id) ? { ...g, claimed: g.claimed + pendingOf(g, now) } : g)),
           dc: state.dc + q.net,
-          resource: state.resource - q.fee,
+          ammo: state.ammo - q.fee,
           stats: { ...state.stats, claimed: state.stats.claimed + q.net },
         },
-        { type: "claimAll", title: "Claim all", detail: `${plural(q.ids.length, "gangster")} · fee burned`, dc: q.net, resource: -q.fee },
+        { type: "claimAll", title: "Claim all", detail: `${plural(q.ids.length, "gangster")} · fee burned`, dc: q.net, ammo: -q.fee },
       ),
     );
     platform.recordBurn(q.fee);
@@ -504,14 +519,14 @@ export const mock = {
     const [a, b] = fusionCandidates(state.gangsters, rarity, now);
     if (!a || !b) throw new Error(`Need 2 active ${RARITIES[rarity].name} gangsters`);
     const payout = pendingOf(a, now) + pendingOf(b, now);
-    if (state.resource < recipe.fee) throw new Error(`Need ${fmtRes(recipe.fee)} to fuse`);
+    if (state.ammo < recipe.fee) throw new Error(`Need ${fmtAmmo(recipe.fee)} to fuse`);
     const child: MockGangster = { id: state.nextGangsterId, rarity: recipe.to, mintedAt: now, claimed: 0, fused: true, nextShotAt: sampleNextShot(recipe.to, now) };
     set(
       withTx(
         {
           ...state,
           dc: state.dc + payout,
-          resource: state.resource - recipe.fee,
+          ammo: state.ammo - recipe.fee,
           gangsters: [child, ...state.gangsters.filter((g) => g.id !== a.id && g.id !== b.id)],
           nextGangsterId: state.nextGangsterId + 1,
           stats: { ...state.stats, claimed: state.stats.claimed + payout },
@@ -521,7 +536,7 @@ export const mock = {
           title: "Fusion",
           detail: `#${a.id} + #${b.id} (${RARITIES[rarity].name}) → fused ${RARITIES[recipe.to].name} #${child.id} · fee burned`,
           dc: payout,
-          resource: -recipe.fee,
+          ammo: -recipe.fee,
         },
       ),
     );
@@ -532,12 +547,12 @@ export const mock = {
   /** Buy med kits into stock. */
   buyMedkits(count: number) {
     if (!Number.isInteger(count) || count < 1) throw new Error("Count must be a whole number ≥ 1");
-    const cost = count * MEDKIT_PRICE_RES;
-    if (cost > state.resource) throw new Error(`Need ${fmtRes(cost)}`);
+    const cost = count * MEDKIT_PRICE_AMMO;
+    if (cost > state.ammo) throw new Error(`Need ${fmtAmmo(cost)}`);
     set(
       withTx(
-        { ...state, resource: state.resource - cost, medkits: state.medkits + count },
-        { type: "medkit", title: `Bought ${plural(count, "med kit")}`, detail: `${fmtRes(MEDKIT_PRICE_RES)} each · burned`, resource: -cost },
+        { ...state, ammo: state.ammo - cost, medkits: state.medkits + count },
+        { type: "medkit", title: `Bought ${plural(count, "med kit")}`, detail: `${fmtAmmo(MEDKIT_PRICE_AMMO)} each · burned`, ammo: -cost },
       ),
     );
     platform.recordBurn(cost);
@@ -553,8 +568,8 @@ export const mock = {
     if (targets.length === 0) throw new Error("Nobody to heal");
     const fromStock = Math.min(state.medkits, targets.length);
     const toBuy = targets.length - fromStock;
-    const cost = toBuy * MEDKIT_PRICE_RES;
-    if (cost > state.resource) throw new Error(`Need ${fmtRes(cost)} for ${plural(toBuy, "med kit")}`);
+    const cost = toBuy * MEDKIT_PRICE_AMMO;
+    if (cost > state.ammo) throw new Error(`Need ${fmtAmmo(cost)} for ${plural(toBuy, "med kit")}`);
     const healed = new Set(targets.map((g) => g.id));
     const gangsters = state.gangsters.map((g) =>
       healed.has(g.id)
@@ -565,8 +580,8 @@ export const mock = {
     const used = [fromStock ? `${fromStock} from stock` : "", toBuy ? `${toBuy} bought` : ""].filter(Boolean).join(" · ");
     set(
       withTx(
-        { ...state, gangsters, medkits: state.medkits - fromStock, resource: state.resource - cost },
-        { type: "heal", title: "Healed", detail: `${who} back to farming · ${plural(targets.length, "med kit")} (${used})`, resource: cost ? -cost : undefined },
+        { ...state, gangsters, medkits: state.medkits - fromStock, ammo: state.ammo - cost },
+        { type: "heal", title: "Healed", detail: `${who} back to farming · ${plural(targets.length, "med kit")} (${used})`, ammo: cost ? -cost : undefined },
       ),
     );
     if (cost) platform.recordBurn(cost);
@@ -577,13 +592,13 @@ export const mock = {
   buyItem(item: WeaponId | "vest" | "medkit", count: number) {
     if (!Number.isInteger(count) || count < 1) throw new Error("Count must be a whole number ≥ 1");
     if (item === "medkit") return mock.buyMedkits(count);
-    const def = item === "vest" ? { name: VEST.name, priceRes: VEST.priceRes } : WEAPONS[item];
-    const cost = def.priceRes * count;
-    if (cost > state.resource) throw new Error(`Need ${fmtRes(cost)}`);
+    const def = item === "vest" ? { name: VEST.name, priceAmmo: VEST.priceAmmo } : WEAPONS[item];
+    const cost = def.priceAmmo * count;
+    if (cost > state.ammo) throw new Error(`Need ${fmtAmmo(cost)}`);
     set(
       withTx(
-        { ...state, resource: state.resource - cost, inventory: { ...state.inventory, [item]: state.inventory[item] + count } },
-        { type: "shop", title: `Bought ${count} × ${def.name}`, detail: `${STORE} · ${fmtRes(def.priceRes)} each · burned`, resource: -cost },
+        { ...state, ammo: state.ammo - cost, inventory: { ...state.inventory, [item]: state.inventory[item] + count } },
+        { type: "shop", title: `Bought ${count} × ${def.name}`, detail: `${STORE} · ${fmtAmmo(def.priceAmmo)} each · burned`, ammo: -cost },
       ),
     );
     platform.recordBurn(cost);

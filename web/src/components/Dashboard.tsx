@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import Scene from "./Scene";
 import Nav from "./Nav";
 import Coin from "./art/Coin";
-import { DACITY_PER_USDC, RARITIES, RESOURCE, WEAPONS, fmt } from "../config/game";
-import ResIcon from "./art/ResIcon";
+import { DACITY_PER_USDC, RARITIES, TOKEN, WEAPONS, fmt } from "../config/game";
+import AmmoIcon from "./art/AmmoIcon";
 import { usePlatform } from "../mock/platform";
 import { MOCK, MOCK_DAY_MS, farmedOf, isFarming, isShot, pendingOf, rateOf, statsOf, useMock, weaponDaysLeft, type MockTx, type TxType } from "../mock";
 
@@ -22,7 +22,7 @@ const TX_FILTERS: { label: string; types: TxType[] | null }[] = [
   { label: "Fusion", types: ["fuse"] },
   { label: "Medical", types: ["medkit", "heal"] },
   { label: "Armory", types: ["shop", "equip"] },
-  { label: "RESOURCE", types: ["resource"] },
+  { label: "AMMO", types: ["ammo"] },
   { label: "Other", types: ["gang", "gift"] },
 ];
 
@@ -41,7 +41,7 @@ const TX_ICON: Record<TxType, string> = {
   heal: "✚",
   shop: "⌖",
   equip: "⚔",
-  resource: "🔥",
+  ammo: "🔥",
 };
 
 const PAGE = 25;
@@ -69,7 +69,7 @@ function when(t: number, now: number) {
 
 export default function Dashboard({ onBack, onFound }: { onBack: () => void; onFound: () => void }) {
   const s = useMock();
-  const burnedAll = usePlatform((p) => p.resourceBurned);
+  const burnedAll = usePlatform((p) => p.ammoBurned);
   const now = useNow();
   const [filter, setFilter] = useState(0);
   const [shown, setShown] = useState(PAGE);
@@ -240,23 +240,23 @@ export default function Dashboard({ onBack, onFound }: { onBack: () => void; onF
           </div>
         </dl>
 
-        {/* ------------------------------------------------------------ $RESOURCE */}
+        {/* ------------------------------------------------------------ $AMMO */}
         <section className="panel burnpanel">
           <div className="burnpanel__flame" aria-hidden>
-            <ResIcon size={44} />
+            <AmmoIcon size={60} />
           </div>
           <div className="burnpanel__text">
-            <p className="eyebrow">${RESOURCE.ticker}</p>
-            <p className="muted">Items and fees are paid in RESOURCE and every token spent is burned, so the supply only goes down.</p>
+            <p className="eyebrow">${TOKEN.ticker}</p>
+            <p className="muted">Items and fees are paid in AMMO and every token spent is burned, so the supply only goes down.</p>
           </div>
           <dl className="burnpanel__stats">
             <div>
               <dt>Your balance</dt>
-              <dd>{fmt(Math.floor(s.resource))}</dd>
+              <dd>{fmt(Math.floor(s.ammo))}</dd>
             </div>
             <div>
               <dt>You burned</dt>
-              <dd>{fmt(Math.floor(s.txs.reduce((t, x) => t + (x.resource && x.resource < 0 ? -x.resource : 0), 0)))}</dd>
+              <dd>{fmt(Math.floor(s.txs.reduce((t, x) => t + (x.ammo && x.ammo < 0 ? -x.ammo : 0), 0)))}</dd>
             </div>
             <div>
               <dt>Burned game-wide</dt>
@@ -384,10 +384,10 @@ function TxRow({ t, now }: { t: MockTx; now: number }) {
       </div>
       <div className="tx__amounts">
         {t.dc !== undefined && t.dc !== 0 && <span className={t.dc > 0 ? "up" : "down"}>{signed(t.dc, fmtDc)} DC</span>}
-        {t.resource !== undefined && t.resource !== 0 && (
-          <span className={t.resource > 0 ? "up" : "burn"}>
-            {t.resource < 0 ? "🔥 " : ""}
-            {signed(t.resource, (x) => x.toLocaleString("en-US", { maximumFractionDigits: 0 }))} RES
+        {t.ammo !== undefined && t.ammo !== 0 && (
+          <span className={t.ammo > 0 ? "up" : "burn"}>
+            {t.ammo < 0 ? "🔥 " : ""}
+            {signed(t.ammo, (x) => x.toLocaleString("en-US", { maximumFractionDigits: 0 }))} AMMO
           </span>
         )}
         {t.usdc !== undefined && t.usdc !== 0 && (
