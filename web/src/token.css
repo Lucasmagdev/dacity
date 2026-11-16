@@ -522,10 +522,6 @@
 }
 
 /* nav highlight */
-.gamenav .gamenav__token:not([aria-current]) {
-  color: #ffb36b;
-}
-
 .nav__links .nav__token {
   color: #ffb36b;
   font-weight: 700;
@@ -570,24 +566,6 @@
 
   .tfly {
     grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-/* the bottom tab bar now has 7 entries: let it scroll sideways on narrow phones */
-@media (max-width: 760px) {
-  .gamenav {
-    justify-content: flex-start;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .gamenav::-webkit-scrollbar {
-    display: none;
-  }
-
-  .gamenav a,
-  .gamenav__soon {
-    flex: none;
   }
 }
 

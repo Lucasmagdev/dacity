@@ -1,43 +1,92 @@
 import { CHAIN_NAME } from "../solana";
+import AmmoIcon from "./art/AmmoIcon";
 import Socials from "./Socials";
 import { NavWallet } from "./Wallet";
+
+/** One stroke style for every tab icon (24px grid, square ends). */
+const ICONS = {
+  hq: <path d="M3 21h18M5 21V9.5L12 4l7 5.5V21M10 21v-5h4v5" />,
+  fusion: <path d="M9 3h6M10 3v6.5L4.6 18.8A1.5 1.5 0 0 0 5.9 21h12.2a1.5 1.5 0 0 0 1.3-2.2L14 9.5V3M7.2 15h9.6" />,
+  inventory: <path d="M4 8h16v12H4zM9 8V4h6v4M4 13h16M10.5 13v2.5h3V13" />,
+  armory: (
+    <>
+      <circle cx="12" cy="12" r="7" />
+      <path d="M12 2v5M12 17v5M2 12h5M17 12h5" />
+    </>
+  ),
+  market: (
+    <>
+      <path d="M3 3h8.5L21 12.5 12.5 21 3 11.5z" />
+      <circle cx="7.5" cy="7.5" r="1.4" />
+    </>
+  ),
+  dashboard: <path d="M3 21h18M6 17v-5M11 17V6M16 17v-8M21 17V3" />,
+  docs: <path d="M3 4h6a3 3 0 0 1 3 3v14a2 2 0 0 0-2-2H3zM21 4h-6a3 3 0 0 0-3 3v14a2 2 0 0 1 2-2h7z" />,
+};
+
+function Ico({ name }: { name: keyof typeof ICONS }) {
+  return (
+    <svg
+      className="gamenav__ico"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="square"
+      strokeLinejoin="miter"
+      aria-hidden
+    >
+      {ICONS[name]}
+    </svg>
+  );
+}
 
 /** In-game sections. Black Market is announced but not open yet. */
 function GameNav() {
   const route = window.location.hash.replace(/^#/, "") || "/";
+  const tab = (href: string, active: boolean) => ({
+    href,
+    className: "gamenav__item",
+    "aria-current": active ? ("page" as const) : undefined,
+  });
   return (
     <nav className="gamenav" aria-label="Game">
-      <a href="#/hq" aria-current={route === "/hq" ? "page" : undefined}>
-        <span className="gamenav__ico" aria-hidden>⌂</span>
+      <a {...tab("#/hq", route === "/hq")}>
+        <Ico name="hq" />
         HQ
       </a>
-      <a href="#/fusion" aria-current={route === "/fusion" ? "page" : undefined}>
-        <span className="gamenav__ico" aria-hidden>⚗</span>
+      <a {...tab("#/fusion", route === "/fusion")}>
+        <Ico name="fusion" />
         Fusion
       </a>
-      <a href="#/inventory" aria-current={route === "/inventory" ? "page" : undefined}>
-        <span className="gamenav__ico" aria-hidden>🎒</span>
+      <a {...tab("#/inventory", route === "/inventory")}>
+        <Ico name="inventory" />
         Inventory
       </a>
-      <a href="#/armory" aria-current={route === "/armory" ? "page" : undefined}>
-        <span className="gamenav__ico" aria-hidden>⌖</span>
+      <a {...tab("#/armory", route === "/armory")}>
+        <Ico name="armory" />
         Armory
       </a>
-      <a href="#/dashboard" aria-current={route === "/dashboard" ? "page" : undefined}>
-        <span className="gamenav__ico" aria-hidden>▤</span>
-        Dashboard
-      </a>
-      <span className="gamenav__soon" aria-disabled="true" title="The Black Market opens soon: buy and sell gangsters with other bosses.">
-        <span className="gamenav__ico" aria-hidden>⚖</span>
+      <span
+        className="gamenav__item gamenav__item--soon"
+        aria-disabled="true"
+        title="The Black Market opens soon: buy and sell gangsters with other bosses."
+      >
+        <Ico name="market" />
         Black Market
         <em>Soon</em>
       </span>
-      <a href="#/token" className="gamenav__token" aria-current={route === "/token" ? "page" : undefined}>
-        <span className="gamenav__ico" aria-hidden>🔥</span>
+      <span className="gamenav__sep" aria-hidden />
+      <a {...tab("#/dashboard", route === "/dashboard")}>
+        <Ico name="dashboard" />
+        Dashboard
+      </a>
+      <a {...tab("#/token", route === "/token")} className="gamenav__item gamenav__item--token">
+        <AmmoIcon size={16} />
         $AMMO
       </a>
-      <a href="#/docs" aria-current={route.startsWith("/docs") ? "page" : undefined}>
-        <span className="gamenav__ico" aria-hidden>?</span>
+      <a {...tab("#/docs", route.startsWith("/docs"))}>
+        <Ico name="docs" />
         Docs
       </a>
     </nav>

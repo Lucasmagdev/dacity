@@ -1,65 +1,133 @@
 /* ------------------------------------------------------------------ in-game nav (HQ / Dashboard / Black Market) */
 
+/* flat HUD strip: condensed caps, one stroke icon set, a slanted bar under the active tab */
 .gamenav {
   display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: rgba(10, 6, 20, 0.6);
-  backdrop-filter: blur(8px);
+  align-items: stretch;
+  height: 40px;
 }
 
-.gamenav a,
-.gamenav__soon {
+.gamenav__item {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 7px 14px;
-  border-radius: 999px;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 700;
+  padding: 0 11px;
+  color: rgba(203, 186, 217, 0.62);
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-transform: uppercase;
   text-decoration: none;
   white-space: nowrap;
-  transition: color 0.2s, background 0.2s;
+  transition: color 0.15s;
 }
 
-.gamenav a:hover {
+.gamenav__item::after {
+  content: "";
+  position: absolute;
+  left: 11px;
+  right: 11px;
+  bottom: 3px;
+  height: 3px;
+  background: var(--pink);
+  transform: skewX(-28deg) scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.18s ease-out;
+}
+
+a.gamenav__item:hover,
+.gamenav__item[aria-current="page"] {
   color: var(--text);
-  background: rgba(255, 255, 255, 0.06);
 }
 
-.gamenav a[aria-current="page"] {
-  color: #fff;
-  background: linear-gradient(90deg, var(--pink), var(--orange));
-  box-shadow: 0 4px 16px rgba(255, 46, 136, 0.35);
+a.gamenav__item:hover::after {
+  transform: skewX(-28deg) scaleX(0.35);
+}
+
+.gamenav__item[aria-current="page"]::after {
+  transform: skewX(-28deg) scaleX(1);
 }
 
 .gamenav__ico {
-  font-size: 14px;
-  line-height: 1;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  transition: color 0.15s;
 }
 
-.gamenav__soon {
+.gamenav__item[aria-current="page"] .gamenav__ico {
+  color: var(--pink);
+}
+
+.gamenav__item .ammoicon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  filter: grayscale(0.5) brightness(0.85);
+  transition: filter 0.15s;
+}
+
+.gamenav__item--token {
+  color: rgba(255, 179, 107, 0.8);
+}
+
+.gamenav__item--token::after {
+  background: var(--orange);
+}
+
+.gamenav__item--token:hover .ammoicon,
+.gamenav__item--token[aria-current="page"] .ammoicon {
+  filter: none;
+}
+
+.gamenav__item--soon {
   cursor: not-allowed;
-  opacity: 0.6;
+  color: rgba(203, 186, 217, 0.32);
 }
 
-.gamenav__soon em {
-  padding: 1px 6px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, var(--sun), var(--orange));
-  color: #2a0f00;
-  font-size: 9px;
+.gamenav__item--soon em {
+  padding: 2px 4px 1px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 2px;
+  color: rgba(203, 186, 217, 0.5);
+  font-family: var(--font-body);
+  font-size: 8px;
   font-style: normal;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.14em;
 }
 
-/* phones: becomes a bottom tab bar */
+.gamenav__sep {
+  flex: none;
+  align-self: center;
+  width: 1px;
+  height: 18px;
+  margin: 0 8px;
+  background: var(--line);
+}
+
+/* mid-size screens: 8 tabs still on one line */
+@media (max-width: 1400px) and (min-width: 761px) {
+  .gamenav__item {
+    gap: 5px;
+    padding: 0 8px;
+    font-size: 14px;
+  }
+
+  .gamenav__item::after {
+    left: 8px;
+    right: 8px;
+  }
+
+  .gamenav__sep {
+    margin: 0 4px;
+  }
+}
+
+/* phones: becomes a bottom tab bar that scrolls sideways */
 @media (max-width: 760px) {
   .gamenav {
     position: fixed;
@@ -67,30 +135,50 @@
     right: 12px;
     bottom: calc(12px + env(safe-area-inset-bottom));
     z-index: 30;
-    justify-content: space-around;
-    border-radius: 18px;
-    background: rgba(10, 6, 20, 0.92);
+    height: auto;
+    overflow-x: auto;
+    scrollbar-width: none;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: rgba(10, 6, 20, 0.95);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   }
 
-  .gamenav a,
-  .gamenav__soon {
-    position: relative;
+  .gamenav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .gamenav__item {
+    flex: none;
     flex-direction: column;
-    gap: 2px;
-    padding: 6px 10px;
-    border-radius: 12px;
+    gap: 5px;
+    padding: 11px 12px 9px;
     font-size: 11px;
+    letter-spacing: 0.05em;
   }
 
-  .gamenav__ico {
-    font-size: 18px;
+  .gamenav__item::after {
+    top: 0;
+    bottom: auto;
+    left: 12px;
+    right: 12px;
   }
 
-  .gamenav__soon em {
+  .gamenav__ico,
+  .gamenav__item .ammoicon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .gamenav__item--soon em {
     position: absolute;
-    top: -6px;
-    right: -2px;
+    top: 4px;
+    right: 2px;
+    font-size: 7px;
+  }
+
+  .gamenav__sep {
+    display: none;
   }
 
   /* keep the page content clear of the tab bar */
@@ -1082,12 +1170,6 @@
   .lo__gear {
     grid-column: 1 / -1;
   }
-
-  .gamenav a,
-  .gamenav__soon {
-    padding: 6px 6px;
-    font-size: 10px;
-  }
 }
 
 /* ------------------------------------------------------------------ $AMMO */
@@ -1340,15 +1422,6 @@
 /* the game nav has 8 entries: keep it on one line and tighten it on mid-size screens */
 .nav__back {
   white-space: nowrap;
-}
-
-@media (max-width: 1400px) and (min-width: 761px) {
-  .gamenav a,
-  .gamenav__soon {
-    gap: 5px;
-    padding: 7px 10px;
-    font-size: 12px;
-  }
 }
 
 @media (max-width: 1180px) and (min-width: 761px) {
