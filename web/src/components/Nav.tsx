@@ -15,6 +15,10 @@ function GameNav() {
         <span className="gamenav__ico" aria-hidden>⚗</span>
         Fusion
       </a>
+      <a href="#/inventory" aria-current={route === "/inventory" ? "page" : undefined}>
+        <span className="gamenav__ico" aria-hidden>🎒</span>
+        Inventory
+      </a>
       <a href="#/armory" aria-current={route === "/armory" ? "page" : undefined}>
         <span className="gamenav__ico" aria-hidden>⌖</span>
         Armory

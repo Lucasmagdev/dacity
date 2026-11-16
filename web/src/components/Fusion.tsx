@@ -213,7 +213,7 @@ function FusionReveal({ result, onClose }: { result: FuseResult; onClose: () => 
             </li>
           </ul>
           <button type="button" className="cta" onClick={onClose} autoFocus>
-            Put them to work
+            Keep in inventory
           </button>
         </div>
       )}

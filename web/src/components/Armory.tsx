@@ -91,7 +91,7 @@ export default function Armory({ onBack, onFound }: { onBack: () => void; onFoun
   }
 
   const stock = (id: ItemId) => (id === "medkit" ? s.medkits : s.inventory[id]);
-  const crew = s.gangsters.filter((g) => !isRetired(g, now)).sort((a, b) => statsOf(b).perDay - statsOf(a).perDay);
+  const crew = s.gangsters.filter((g) => !g.idle && !isRetired(g, now)).sort((a, b) => statsOf(b).perDay - statsOf(a).perDay);
 
   return (
     <div className="page hq armory">
@@ -196,7 +196,9 @@ export default function Armory({ onBack, onFound }: { onBack: () => void; onFoun
             </span>
           </div>
           {crew.length === 0 ? (
-            <p className="empty">No active gangsters. Open a box in the HQ.</p>
+            <p className="empty">
+              No gangsters at work. Put them to work from the <a href="#/inventory">Inventory</a>.
+            </p>
           ) : (
             <ul className="loadout">
               {crew.map((g) => (
@@ -216,7 +218,7 @@ export default function Armory({ onBack, onFound }: { onBack: () => void; onFoun
   );
 }
 
-function LoadoutRow({
+export function LoadoutRow({
   g,
   now,
   inv,

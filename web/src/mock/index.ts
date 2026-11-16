@@ -82,6 +82,8 @@ export type MockGangster = {
   mintedAt: number;
   claimed: number;
   fused?: boolean;
+  /** in the inventory, not put to work yet: no farming, no shot risk, career not started */
+  idle?: boolean;
   /** when the next bullet lands (wall time while farming). Re-rolled on every heal. */
   nextShotAt?: number;
   /** total time spent shot and waiting for a med kit, so it doesn't count as farming */
@@ -118,7 +120,7 @@ export type MockState = {
   inventory: { pistol: number; smg: number; rifle: number; vest: number };
 };
 
-export type TxType = "gang" | "deposit" | "withdraw" | "faucet" | "buy" | "open" | "claim" | "claimAll" | "fuse" | "gift" | "medkit" | "heal" | "shop" | "equip" | "ammo" | "ammoDeposit" | "ammoWithdraw";
+export type TxType = "gang" | "deposit" | "withdraw" | "faucet" | "buy" | "open" | "claim" | "claimAll" | "fuse" | "gift" | "medkit" | "heal" | "shop" | "equip" | "ammo" | "ammoDeposit" | "ammoWithdraw" | "deploy";
 
 export type MockTx = {
   id: string;
@@ -247,10 +249,12 @@ function sampleShotGap(rarity: number) {
 }
 
 /** When this gangster got shot, or null if it's fine. */
-export const shotAt = (g: MockGangster, now = Date.now()) => (g.nextShotAt !== undefined && g.nextShotAt <= now ? g.nextShotAt : null);
+export const shotAt = (g: MockGangster, now = Date.now()) =>
+  !g.idle && g.nextShotAt !== undefined && g.nextShotAt <= now ? g.nextShotAt : null;
 
 /** Time actually spent farming: stops at the shot, minus past downtime. */
-export const activeMs = (g: MockGangster, now: number) => Math.max(0, (shotAt(g, now) ?? now) - g.mintedAt - (g.pausedMs ?? 0));
+export const activeMs = (g: MockGangster, now: number) =>
+  g.idle ? 0 : Math.max(0, (shotAt(g, now) ?? now) - g.mintedAt - (g.pausedMs ?? 0));
 
 export function farmedOf(g: MockGangster, now = Date.now()) {
   const s = statsOf(g);
@@ -290,7 +294,9 @@ export const isRetired = (g: MockGangster, now = Date.now()) => farmedOf(g, now)
 /** Shot and waiting for a med kit (a retired gangster can't be shot: its career is over). */
 export const isShot = (g: MockGangster, now = Date.now()) => !isRetired(g, now) && shotAt(g, now) !== null;
 /** Actually earning right now. */
-export const isFarming = (g: MockGangster, now = Date.now()) => !isRetired(g, now) && shotAt(g, now) === null;
+export const isFarming = (g: MockGangster, now = Date.now()) => !g.idle && !isRetired(g, now) && shotAt(g, now) === null;
+/** Waiting in the inventory. */
+export const isIdle = (g: MockGangster) => !!g.idle;
 
 /** DC per day right now, weapon boost included (0 when shot or retired). */
 export function rateOf(g: MockGangster, now = Date.now()) {
@@ -305,7 +311,7 @@ export function rateOf(g: MockGangster, now = Date.now()) {
  */
 export function fusionCandidates(gangsters: MockGangster[], rarity: number, now = Date.now()) {
   return gangsters
-    .filter((g) => g.rarity === rarity && !g.fused && isFarming(g, now))
+    .filter((g) => g.rarity === rarity && !g.fused && !isRetired(g, now) && !isShot(g, now))
     .sort((a, b) => farmedOf(b, now) / statsOf(b).cap - farmedOf(a, now) / statsOf(a).cap);
 }
 export const isBoxReady = (b: MockBox, now = Date.now()) => now - b.boughtAt >= MOCK_REVEAL_MS;
@@ -476,7 +482,8 @@ export const mock = {
     if (!box) throw new Error("Box not found");
     if (!isBoxReady(box)) throw new Error("Box not ready yet");
     const rarity = rollRarity();
-    const g: MockGangster = { id: state.nextGangsterId, rarity, mintedAt: Date.now(), claimed: 0, nextShotAt: sampleNextShot(rarity) };
+    // new gangsters wait in the inventory: the career only starts when the player puts them to work
+    const g: MockGangster = { id: state.nextGangsterId, rarity, mintedAt: Date.now(), claimed: 0, idle: true };
     const r = RARITIES[g.rarity];
     set(
       withTx(
@@ -487,7 +494,7 @@ export const mock = {
           nextGangsterId: state.nextGangsterId + 1,
           stats: { ...state.stats, opened: state.stats.opened + 1 },
         },
-        { type: "open", title: `Opened box #${boxId}`, detail: `${r.name} gangster #${g.id} · started farming ${r.perDay} DC/day` },
+        { type: "open", title: `Opened box #${boxId}`, detail: `${r.name} gangster #${g.id} · waiting in your inventory` },
       ),
     );
     return g;
@@ -547,10 +554,10 @@ export const mock = {
     if (!recipe) throw new Error(`${RARITIES[rarity].name} is the top rarity and can't be fused`);
     const now = Date.now();
     const [a, b] = fusionCandidates(state.gangsters, rarity, now);
-    if (!a || !b) throw new Error(`Need 2 active ${RARITIES[rarity].name} gangsters`);
+    if (!a || !b) throw new Error(`Need 2 ${RARITIES[rarity].name} gangsters that aren't shot, retired or fused`);
     const payout = pendingOf(a, now) + pendingOf(b, now);
     if (state.ammo < recipe.fee) throw new Error(`Need ${fmtAmmo(recipe.fee)} to fuse`);
-    const child: MockGangster = { id: state.nextGangsterId, rarity: recipe.to, mintedAt: now, claimed: 0, fused: true, nextShotAt: sampleNextShot(recipe.to, now) };
+    const child: MockGangster = { id: state.nextGangsterId, rarity: recipe.to, mintedAt: now, claimed: 0, fused: true, idle: true };
     set(
       withTx(
         {
@@ -640,6 +647,7 @@ export const mock = {
     const g = state.gangsters.find((x) => x.id === gangsterId);
     if (!g) throw new Error("Gangster not found");
     if (state.inventory[weaponId] < 1) throw new Error(`No ${WEAPONS[weaponId].name} in stock`);
+    if (g.idle) throw new Error("Put this gangster to work first");
     if (isRetired(g, now)) throw new Error("Retired gangsters don't need weapons");
     const banked = bonusOf(g, now);
     // one weapon at a time: a new one only goes on after the current one runs out
@@ -669,6 +677,7 @@ export const mock = {
     const g = state.gangsters.find((x) => x.id === gangsterId);
     if (!g) throw new Error("Gangster not found");
     if (state.inventory.vest < 1) throw new Error("No vest in stock");
+    if (g.idle) throw new Error("Put this gangster to work first");
     if (isShot(g, now)) throw new Error("Heal this gangster first");
     if (isRetired(g, now)) throw new Error("Retired gangsters don't need a vest");
     if (hasVest(g, now)) throw new Error("Already wearing a vest");
@@ -683,6 +692,27 @@ export const mock = {
         { type: "equip", title: `Equipped ${VEST.name}`, detail: `#${gangsterId} · stops the next bullet` },
       ),
     );
+  },
+
+  /** Put idle gangsters to work: their career (and shot risk) starts now. */
+  deploy(ids: number[]) {
+    const now = Date.now();
+    const targets = state.gangsters.filter((g) => ids.includes(g.id) && g.idle);
+    if (targets.length === 0) throw new Error("Nobody to put to work");
+    const set_ = new Set(targets.map((g) => g.id));
+    const who = targets.length === 1 ? `#${targets[0].id}` : plural(targets.length, "gangster");
+    set(
+      withTx(
+        {
+          ...state,
+          gangsters: state.gangsters.map((g) =>
+            set_.has(g.id) ? { ...g, idle: false, mintedAt: now, pausedMs: 0, nextShotAt: sampleNextShot(g.rarity, now) } : g,
+          ),
+        },
+        { type: "deploy", title: "Put to work", detail: `${who} started farming` },
+      ),
+    );
+    return targets.length;
   },
 
   reset() {

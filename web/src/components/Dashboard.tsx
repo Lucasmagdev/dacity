@@ -23,7 +23,7 @@ const TX_FILTERS: { label: string; types: TxType[] | null }[] = [
   { label: "Medical", types: ["medkit", "heal"] },
   { label: "Armory", types: ["shop", "equip"] },
   { label: "AMMO", types: ["ammo", "ammoDeposit", "ammoWithdraw"] },
-  { label: "Other", types: ["gang", "gift"] },
+  { label: "Other", types: ["gang", "gift", "deploy"] },
 ];
 
 const TX_ICON: Record<TxType, string> = {
@@ -41,6 +41,7 @@ const TX_ICON: Record<TxType, string> = {
   heal: "✚",
   shop: "⌖",
   equip: "⚔",
+  deploy: "▶",
   ammo: "🔥",
   ammoDeposit: "↓",
   ammoWithdraw: "↑",
@@ -155,7 +156,8 @@ export default function Dashboard({ onBack, onFound }: { onBack: () => void; onF
 
   const types = TX_FILTERS[filter].types;
   const txs = types ? s.txs.filter((t) => types.includes(t.type)) : s.txs;
-  const retired = s.gangsters.length - farm.active - farm.shot;
+  const idle = s.gangsters.filter((g) => g.idle).length;
+  const retired = s.gangsters.length - farm.active - farm.shot - idle;
 
   return (
     <div className="page hq dash">
@@ -232,7 +234,7 @@ export default function Dashboard({ onBack, onFound }: { onBack: () => void; onF
             <dt>Crew</dt>
             <dd>{fmt(s.gangsters.length)}</dd>
             <small>
-              {fmt(farm.active)} farming · {fmt(farm.shot)} shot · {fmt(retired)} retired · {fmt(farm.fused)} fused
+              {fmt(farm.active)} farming · {fmt(idle)} idle · {fmt(farm.shot)} shot · {fmt(retired)} retired · {fmt(farm.fused)} fused
             </small>
           </div>
           <div className="tile">

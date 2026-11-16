@@ -1215,3 +1215,144 @@
   height: auto;
   background: none;
 }
+
+/* ------------------------------------------------------------------ inventory */
+
+.inv__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.inv__head h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(40px, 7vw, 64px);
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.inv__head .muted {
+  margin: 6px 0 0;
+}
+
+.inv__hint {
+  margin: 0 0 14px;
+  font-size: 13px;
+}
+
+.inv__hint a,
+.empty a {
+  color: var(--sun);
+  font-weight: 700;
+}
+
+.gcard--idle .gcard__art {
+  filter: saturate(0.75);
+}
+
+.gcard__idle {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(7, 4, 15, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.inv__items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.inv__item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--tone) 40%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--tone) 8%, rgba(7, 4, 15, 0.6));
+}
+
+.inv__item--empty {
+  opacity: 0.45;
+}
+
+.inv__item div {
+  display: grid;
+}
+
+.inv__item small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.inv__item-ico {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--tone) 18%, transparent);
+  color: var(--tone);
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.inv__item-count {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-variant-numeric: tabular-nums;
+}
+
+.inv__heal {
+  margin-top: 14px;
+}
+
+.crewhead__inv {
+  border-color: rgba(255, 211, 107, 0.5);
+  background: rgba(255, 211, 107, 0.1);
+}
+
+.reveal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* the game nav has 8 entries: keep it on one line and tighten it on mid-size screens */
+.nav__back {
+  white-space: nowrap;
+}
+
+@media (max-width: 1400px) and (min-width: 761px) {
+  .gamenav a,
+  .gamenav__soon {
+    gap: 5px;
+    padding: 7px 10px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 1180px) and (min-width: 761px) {
+  .nav:has(.gamenav) .chain-pill {
+    display: none;
+  }
+}

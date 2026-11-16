@@ -1840,7 +1840,7 @@ code {
 }
 
 /* in-game pages the nav already holds the game tabs: drop the social icons when space runs out */
-@media (max-width: 1365px) {
+@media (max-width: 1560px) {
   .nav:has(.gamenav) .socials--nav {
     display: none;
   }

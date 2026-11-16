@@ -6,6 +6,7 @@ import Hq from "./components/Hq";
 import Dashboard from "./components/Dashboard";
 import FusionPage from "./components/FusionPage";
 import Armory from "./components/Armory";
+import Inventory from "./components/Inventory";
 import Docs from "./components/Docs";
 import Token from "./components/Token";
 import Admin from "./components/Admin";
@@ -18,7 +19,7 @@ import "./docs.css";
 import "./token.css";
 
 /** Routes that are closed to players while maintenance is on. */
-const GAME_ROUTES = ["/choose", "/hq", "/fusion", "/armory", "/dashboard"];
+const GAME_ROUTES = ["/choose", "/hq", "/inventory", "/fusion", "/armory", "/dashboard"];
 
 function useHashRoute() {
   const read = () => window.location.hash.replace(/^#/, "") || "/";
@@ -51,6 +52,7 @@ export default function App() {
   else if (route === "/choose") page = <CharacterSelect onBack={() => go("/")} onEnterHq={() => go("/hq")} />;
   else if (route === "/hq") page = <Hq onBack={() => go("/")} onFound={() => go("/choose")} />;
   else if (route === "/fusion") page = <FusionPage onBack={() => go("/")} onFound={() => go("/choose")} />;
+  else if (route === "/inventory") page = <Inventory onBack={() => go("/")} onFound={() => go("/choose")} />;
   else if (route === "/armory") page = <Armory onBack={() => go("/")} onFound={() => go("/choose")} />;
   else if (route === "/dashboard") page = <Dashboard onBack={() => go("/")} onFound={() => go("/choose")} />;
   else page = <Landing onEnter={() => go("/choose")} />;

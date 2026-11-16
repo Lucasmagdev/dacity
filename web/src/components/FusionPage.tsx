@@ -151,7 +151,7 @@ function FCard({ g, now, next, eligible }: { g: MockGangster; now: number; next:
   const st = statsOf(g);
   const pct = Math.min(100, (farmedOf(g, now) / st.cap) * 100);
   const retired = isRetired(g, now);
-  const why = g.fused ? "Fused" : retired ? "Retired" : isShot(g, now) ? "Shot · heal first" : null;
+  const why = g.fused ? "Fused" : retired ? "Retired" : isShot(g, now) ? "Shot · heal first" : g.idle ? "Idle" : null;
   return (
     <li className={`fcard${next ? " fcard--next" : ""}${!eligible ? " fcard--locked" : ""}`}>
       {next && <span className="fcard__flag">Next</span>}

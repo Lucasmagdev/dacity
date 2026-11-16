@@ -8,7 +8,16 @@ import GangsterToy from "./art/GangsterToy";
  * Box opening sequence: shake → burst of light in the best rarity's color → card(s).
  * `open` performs the actual roll (contract call in production) and is invoked once the shake starts.
  */
-export default function BoxReveal({ open, onClose }: { open: () => MockGangster[]; onClose: () => void }) {
+export default function BoxReveal({
+  open,
+  onClose,
+  onDeploy,
+}: {
+  open: () => MockGangster[];
+  onClose: () => void;
+  /** Put the revealed gangsters to work right away. */
+  onDeploy?: (ids: number[]) => void;
+}) {
   const [phase, setPhase] = useState<"shake" | "burst" | "cards">("shake");
   const [result, setResult] = useState<MockGangster[]>([]);
 
@@ -83,9 +92,23 @@ export default function BoxReveal({ open, onClose }: { open: () => MockGangster[
               );
             })}
           </ul>
-          <button type="button" className="cta" onClick={onClose} autoFocus>
-            Put them to work
-          </button>
+          <div className="reveal__actions">
+            {onDeploy && (
+              <button
+                type="button"
+                className="cta"
+                onClick={() => {
+                  onDeploy(result.map((g) => g.id));
+                  onClose();
+                }}
+              >
+                Put {result.length > 1 ? "them" : "to"} {result.length > 1 ? "to work" : "work"} now
+              </button>
+            )}
+            <button type="button" className={onDeploy ? "btn" : "cta"} onClick={onClose} autoFocus>
+              Keep in inventory
+            </button>
+          </div>
         </div>
       )}
     </div>

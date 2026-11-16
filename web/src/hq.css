@@ -1667,3 +1667,26 @@
   font-family: var(--font-display);
   font-size: 28px;
 }
+
+/* USDC coin in the Vault: same spin as the DC coin, neon-pink rim */
+.usdccoin {
+  position: relative;
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  border-radius: 50%;
+  /* pink halo + rim, like the DC coin */
+  background: #ff5aa5;
+  box-shadow: 0 0 0 4px rgba(255, 46, 136, 0.35), 0 0 26px rgba(255, 46, 136, 0.55);
+}
+
+.usdccoin img {
+  display: block;
+  width: calc(100% - 6px);
+  height: calc(100% - 6px);
+  border-radius: 50%;
+}
+
+.usdccoin--spin {
+  animation: coin-spin 3.2s ease-in-out infinite;
+}

@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import Scene from "./Scene";
 import Nav from "./Nav";
 import Portrait from "./Portrait";
-import BoxReveal from "./BoxReveal";
 import CashBox from "./art/CashBox";
 import Coin from "./art/Coin";
+import UsdcCoin from "./art/UsdcCoin";
 import GangsterToy from "./art/GangsterToy";
 import AmmoIcon from "./art/AmmoIcon";
 import { BOX_PRICE_DC, BULK_TIERS, CLAIM_ALL_FEE_AMMO, DACITY_PER_USDC, LAUNCH_SALE, MEDKIT_PRICE_AMMO, TOKEN, fmtAmmo, PROTAGONISTS, RARITIES, SHOT_CHANCE_PER_DAY, STORE_NAME, WEAPONS, fmt, quoteBoxes } from "../config/game";
@@ -17,7 +17,6 @@ import {
   claimAllQuote,
   fusionCandidates,
   farmedOf,
-  isBoxReady,
   isFarming,
   isRetired,
   isShot,
@@ -32,10 +31,6 @@ import {
   type MockGangster,
 } from "../mock";
 
-/** Unopened boxes drawn individually; the rest are summarised. */
-const BOXES_SHOWN = 24;
-/** Boxes opened per reveal, so the reveal stays readable. */
-const OPEN_BATCH = 10;
 
 const fmt1 = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 1, minimumFractionDigits: 1 });
 const fmtUsdc = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 2, minimumFractionDigits: 2 });
@@ -60,7 +55,6 @@ const SOON = [
 export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: () => void }) {
   const s = useMock();
   const now = useNow();
-  const [opening, setOpening] = useState<number[] | null>(null);
   const [filter, setFilter] = useState<number | "all">("all");
   const [toast, setToast] = useState<string | null>(null);
 
@@ -103,8 +97,10 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
   }
 
   const boss = PROTAGONISTS.find((p) => p.id === s.gang!.protagonist) ?? PROTAGONISTS[0];
-  const ready = s.boxes.filter((b) => isBoxReady(b, now));
-  const shown = s.gangsters.filter((g) => filter === "all" || g.rarity === filter);
+  // the HQ shows gangsters that were put to work; idle ones wait in the inventory
+  const crew = s.gangsters.filter((g) => !g.idle);
+  const idleCount = s.gangsters.length - crew.length;
+  const shown = crew.filter((g) => filter === "all" || g.rarity === filter);
 
   const run = (fn: () => void, msg: string) => {
     try {
@@ -187,7 +183,7 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
             onBuy={(n) => {
               try {
                 const q = mock.buyBoxes(n);
-                setToast(`Bought ${fmt(n)} box${n > 1 ? "es" : ""} for ${fmt(q.totalDc)} DC${q.savedDc > 0 ? ` · saved ${fmt(q.savedDc)} DC` : ""}`);
+                setToast(`Bought ${fmt(n)} box${n > 1 ? "es" : ""} for ${fmt(q.totalDc)} DC${q.savedDc > 0 ? ` · saved ${fmt(q.savedDc)} DC` : ""} · in your Inventory`);
               } catch (e) {
                 setToast((e as Error).message);
               }
@@ -195,52 +191,21 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
           />
         </div>
 
-        {/* ------------------------------------------------------------ unopened boxes */}
-        {s.boxes.length > 0 && (
-          <section className="panel">
-            <div className="panel__head">
-              <h2>
-                Unopened boxes <span className="count">{s.boxes.length}</span>
-              </h2>
-              <button
-                type="button"
-                className="btn btn--pink"
-                disabled={ready.length === 0}
-                onClick={() => setOpening(ready.slice(0, OPEN_BATCH).map((b) => b.id))}
-              >
-                {ready.length > OPEN_BATCH ? `Open ${OPEN_BATCH} (${fmt(ready.length)} ready)` : `Open all ready (${ready.length})`}
-              </button>
-            </div>
-            <ul className="boxes">
-              {s.boxes.slice(0, BOXES_SHOWN).map((b) => {
-                const ok = isBoxReady(b, now);
-                return (
-                  <li key={b.id} className="boxes__item">
-                    <CashBox state={ok ? "idle" : "still"} />
-                    <span className="boxes__id">Box #{b.id}</span>
-                    <button type="button" className="btn" disabled={!ok} onClick={() => setOpening([b.id])}>
-                      {ok ? "Open" : "Sealing…"}
-                    </button>
-                  </li>
-                );
-              })}
-              {s.boxes.length > BOXES_SHOWN && (
-                <li className="boxes__item boxes__more">
-                  <b>+{fmt(s.boxes.length - BOXES_SHOWN)}</b>
-                  <span className="boxes__id">more boxes</span>
-                </li>
-              )}
-            </ul>
-          </section>
-        )}
-
         {/* ------------------------------------------------------------ crew */}
         <section className="panel">
           <div className="panel__head">
             <div className="crewhead">
               <h2>
-                Your crew <span className="count">{s.gangsters.length}</span>
+                Your crew <span className="count">{crew.length}</span>
               </h2>
+              <a className="crewhead__fuse crewhead__inv" href="#/inventory">
+                🎒 Inventory{" "}
+                {idleCount + s.boxes.length > 0 && (
+                  <span className="count count--hot">
+                    {[idleCount ? `${idleCount} idle` : "", s.boxes.length ? `${fmt(s.boxes.length)} box${s.boxes.length > 1 ? "es" : ""}` : ""].filter(Boolean).join(" · ")}
+                  </span>
+                )}
+              </a>
               <a className="crewhead__fuse" href="#/fusion">
                 ⚗ Fusion {fusable > 0 && <span className="count count--hot">{fusable} ready</span>}
               </a>
@@ -289,13 +254,15 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
                     style={{ "--rc": r.color } as React.CSSProperties}
                     onClick={() => setFilter(r.id)}
                   >
-                    {r.name} · {s.gangsters.filter((g) => g.rarity === r.id).length}
+                    {r.name} · {crew.filter((g) => g.rarity === r.id).length}
                   </button>
                 ))}
               </div>
 
               {shown.length === 0 ? (
-                <p className="empty">No gangsters here yet. Open a box.</p>
+                <p className="empty">
+                  Nobody working here yet. Open boxes and put your gangsters to work from the <a href="#/inventory">Inventory</a>.
+                </p>
               ) : (
                 <ul className="roster">
                   {shown.map((g) => (
@@ -342,12 +309,6 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
         </section>
       </div>
 
-      {opening && (
-        <BoxReveal
-          open={() => opening.map((id) => mock.openBox(id))}
-          onClose={() => setOpening(null)}
-        />
-      )}
       {toast && (
         <div className="toast" role="status">
           {toast}
@@ -391,7 +352,7 @@ function Vault({
   return (
     <section className={`panel panel--vault vault--${mode}`}>
       <div className="panel__art">
-        <Coin size={120} spin />
+        <UsdcCoin size={120} spin />
       </div>
       <div className="panel__body">
         <div className="vault__top">
