@@ -1,0 +1,476 @@
+/*
+ * "How it works" redesign: wider cards, per-step art, a trail connecting 01 -> 04,
+ * concrete data chips, and a gold-lit featured card (Open boxes).
+ * Imported after styles.css so it overrides the old .steps / .step rules.
+ */
+
+.steps {
+  --gap: 22px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--gap);
+  align-items: stretch;
+}
+
+/* ------------------------------------------------------------------ trail node (badge + line to next step) */
+
+.step {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  backdrop-filter: none;
+}
+
+.magenta .step {
+  background: none;
+  border: 0;
+  backdrop-filter: none;
+}
+
+.step__node {
+  display: flex;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.step__badge {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: radial-gradient(circle at 35% 30%, #ff5aa5, #b0207a);
+  box-shadow: 0 0 0 5px rgba(255, 46, 136, 0.22), 0 0 22px rgba(255, 46, 136, 0.7);
+  font-family: var(--font-display);
+  font-size: 20px;
+  line-height: 1;
+  color: #fff;
+}
+
+.step__trail {
+  flex: 1;
+  height: 2px;
+  margin-right: calc(var(--gap) * -1 - 46px);
+  margin-left: 6px;
+  border-radius: 2px;
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.85) 0 8px, transparent 8px 14px);
+  filter: drop-shadow(0 0 6px rgba(255, 46, 136, 0.9));
+  transform-origin: left;
+}
+
+.step:last-child .step__trail {
+  display: none;
+}
+
+/* ------------------------------------------------------------------ card */
+
+.step__card {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0 24px 26px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03));
+  backdrop-filter: blur(6px);
+  transition: translate 0.35s var(--fx-ease, ease), border-color 0.3s, box-shadow 0.35s;
+}
+
+.step:hover .step__card {
+  translate: 0 -6px;
+  border-color: rgba(255, 138, 61, 0.7);
+  box-shadow: 0 18px 44px rgba(20, 0, 30, 0.45), 0 0 30px rgba(255, 46, 136, 0.28);
+}
+
+/* giant outline number as a watermark */
+.step__ghost {
+  position: absolute;
+  right: -6px;
+  bottom: -26px;
+  font-family: var(--font-display);
+  font-size: 150px;
+  line-height: 1;
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.13);
+  pointer-events: none;
+  user-select: none;
+}
+
+.step__art {
+  position: relative;
+  margin: 0 -24px 18px;
+  height: 138px;
+  background: radial-gradient(70% 90% at 50% 100%, rgba(255, 138, 61, 0.34), transparent 72%),
+    linear-gradient(180deg, rgba(20, 4, 40, 0.55), rgba(20, 4, 40, 0.1));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.magenta .step h3 {
+  position: relative;
+  margin: 0 0 8px;
+  font-size: 30px;
+}
+
+.magenta .step p {
+  position: relative;
+  color: #f6e3f7;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.magenta .step__num {
+  display: none;
+}
+
+/* data chips */
+.step__chips {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: auto 0 0;
+  padding: 18px 0 0;
+  list-style: none;
+}
+
+.step__chips li {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 211, 107, 0.45);
+  border-radius: 999px;
+  background: rgba(20, 4, 40, 0.5);
+  color: var(--sun);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.step__dots {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.step__dots i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow: 0 0 6px var(--c);
+}
+
+/* featured card: Open boxes is the hook of the game */
+.step--hot .step__card {
+  border-color: rgba(255, 211, 107, 0.85);
+  background: linear-gradient(180deg, rgba(255, 211, 107, 0.2), rgba(255, 46, 136, 0.1));
+  box-shadow: 0 0 0 1px rgba(255, 211, 107, 0.35), 0 22px 60px rgba(20, 0, 30, 0.5), 0 0 46px rgba(255, 197, 51, 0.3);
+}
+
+.step--hot .step__badge {
+  background: radial-gradient(circle at 35% 30%, #ffe28a, #e08a00);
+  box-shadow: 0 0 0 5px rgba(255, 197, 51, 0.25), 0 0 26px rgba(255, 197, 51, 0.8);
+  color: #3a2400;
+}
+
+.step__tag {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--sun), var(--orange));
+  color: #3a2400;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* ------------------------------------------------------------------ art */
+
+.sart {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 01 deposit: USDC -> DC */
+.sart--deposit {
+  gap: 10px;
+}
+
+.sart__arrows {
+  display: inline-flex;
+}
+
+.sart__arrows i {
+  width: 12px;
+  height: 12px;
+  margin-left: -3px;
+  border-top: 4px solid var(--sun);
+  border-right: 4px solid var(--sun);
+  rotate: 45deg;
+  opacity: 0.25;
+  animation: sart-flow 1.5s infinite;
+}
+
+.sart__arrows i:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.sart__arrows i:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes sart-flow {
+  40% {
+    opacity: 1;
+    filter: drop-shadow(0 0 6px var(--sun));
+  }
+}
+
+/* 02 gang */
+.sart--gang {
+  gap: 0;
+}
+
+.sart__avatar {
+  width: 92px;
+  height: 92px;
+  margin: 0;
+  overflow: hidden;
+  border-radius: 50%;
+  border: 3px solid var(--accent, var(--pink));
+  box-shadow: 0 0 22px color-mix(in srgb, var(--accent, var(--pink)) 60%, transparent);
+  background: #1a0a24;
+}
+
+.sart__avatar:first-child {
+  margin-right: -8px;
+}
+
+.sart__avatar:nth-child(2) {
+  margin-left: -8px;
+}
+
+.sart__avatar .portrait-img {
+  object-position: 50% 18%;
+}
+
+.sart__avatar .silhouette {
+  width: 100%;
+  height: 100%;
+}
+
+.sart__or {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #fff;
+  color: #1a0a24;
+  font-family: var(--font-display);
+  font-size: 14px;
+  box-shadow: 0 0 14px rgba(255, 255, 255, 0.7);
+}
+
+/* 03 boxes */
+.sart__halo {
+  position: absolute;
+  inset: 8% 20% 0;
+  background: radial-gradient(closest-side, rgba(255, 211, 107, 0.55), transparent);
+  filter: blur(6px);
+}
+
+.sart__box {
+  position: relative;
+  width: 118px;
+  height: 106px;
+}
+
+.sart__spark {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--sun);
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  scale: 1.6;
+  animation: sart-twinkle 2s ease-in-out infinite;
+}
+
+.sart__spark--a {
+  left: 28%;
+  top: 22%;
+}
+
+.sart__spark--b {
+  right: 26%;
+  top: 30%;
+  animation-delay: 0.7s;
+}
+
+.sart__spark--c {
+  right: 36%;
+  bottom: 18%;
+  animation-delay: 1.3s;
+}
+
+@keyframes sart-twinkle {
+  0%,
+  100% {
+    opacity: 0.15;
+    rotate: 0deg;
+  }
+  50% {
+    opacity: 1;
+    rotate: 45deg;
+  }
+}
+
+/* 04 farm: coins drip into a meter that fills up to the cap */
+.sart--farm {
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sart__coins {
+  display: flex;
+  gap: 10px;
+}
+
+.sart__coins span {
+  animation: sart-bob 2.2s ease-in-out infinite;
+  animation-delay: calc(var(--k) * 0.25s);
+}
+
+.sart__coins span:nth-child(2) {
+  margin-top: -14px;
+}
+
+@keyframes sart-bob {
+  50% {
+    translate: 0 -8px;
+  }
+}
+
+.sart__meter {
+  width: 62%;
+  height: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 999px;
+  background: rgba(20, 4, 40, 0.6);
+}
+
+.sart__meter span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--pink), var(--orange), var(--sun));
+  box-shadow: 0 0 12px rgba(255, 138, 61, 0.8);
+  animation: sart-fill 3.6s ease-in-out infinite;
+}
+
+@keyframes sart-fill {
+  0% {
+    width: 8%;
+  }
+  80%,
+  100% {
+    width: 100%;
+  }
+}
+
+.sart__cap {
+  position: absolute;
+  right: 15%;
+  bottom: 14px;
+  color: var(--sun);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+}
+
+/* ------------------------------------------------------------------ scroll reveal (overrides landing-fx.css) */
+
+/* the old single line above the grid is replaced by the per-step trail */
+.fx-ready [data-fx="steps"]::before {
+  display: none;
+}
+
+.fx-ready [data-fx="steps"] .step__trail {
+  scale: 0 1;
+  transition: scale 0.7s var(--fx-ease);
+  transition-delay: calc(0.55s + var(--i, 0) * 0.14s);
+}
+
+.fx-ready [data-fx="steps"].is-in .step__trail {
+  scale: 1 1;
+}
+
+.fx-ready [data-fx="steps"].is-in .step__badge {
+  animation: fx-neon-on 1s steps(1, end) both;
+  animation-delay: calc(0.4s + var(--i, 0) * 0.14s);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sart *,
+  .sart__arrows i,
+  .sart__spark,
+  .sart__coins span,
+  .sart__meter span {
+    animation: none !important;
+  }
+  .sart__meter span {
+    width: 70%;
+  }
+}
+
+/* ------------------------------------------------------------------ responsive */
+
+@media (max-width: 1100px) {
+  .steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 34px;
+  }
+  .step__trail {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .steps {
+    grid-template-columns: 1fr;
+  }
+  .step__ghost {
+    font-size: 120px;
+  }
+}
+
+/* ------------------------------------------------------------------ real character photos: keep the face in frame */
+
+.portrait-img {
+  object-position: 50% 12%;
+}
+
+/* Rico's photo is a narrow, tall crop with the head at the very top */
+.portrait-img.portrait-img--rico {
+  object-position: 50% 4%;
+}

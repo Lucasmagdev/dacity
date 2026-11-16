@@ -1,0 +1,316 @@
+/*
+ * Rarities section ("Who's in the box?") + final CTA.
+ * The box is the hero (opens in a loop), a stacked bar shows the true odds, the five cards step up in
+ * size toward the Legendary, and the closing CTA sits on the city key art.
+ * Imported after styles.css / landing-fx.css so it wins ties.
+ */
+
+/* lets the seam / beam colour of the CashBox be animated through the rarity colours */
+@property --light {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #ff2e88;
+}
+
+/* ------------------------------------------------------------------ box + odds */
+
+.drop {
+  display: grid;
+  justify-items: center;
+  gap: 26px;
+  margin: -4px auto 56px;
+}
+
+.drop__box {
+  position: relative;
+  width: clamp(200px, 22vw, 270px);
+  aspect-ratio: 200 / 180;
+}
+
+.drop__cb {
+  position: absolute;
+  inset: 0;
+}
+
+/* fades back in after the lid resets, so the loop never "snaps" */
+.drop__cb--idle {
+  animation: drop-in 0.6s var(--fx-ease, ease) both;
+}
+
+@keyframes drop-in {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+
+.drop__box .cashbox {
+  animation: drop-hue 12s linear infinite;
+}
+
+@keyframes drop-hue {
+  0%,
+  100% {
+    --light: #ff2e88;
+  }
+  20% {
+    --light: #2fb4ff;
+  }
+  40% {
+    --light: #b45cff;
+  }
+  60% {
+    --light: #ffb020;
+  }
+  80% {
+    --light: #3ddc84;
+  }
+}
+
+.drop__glow {
+  position: absolute;
+  inset: 18% -26% -14%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255, 46, 136, 0.5), transparent);
+  filter: blur(10px);
+  animation: drop-breathe 4.2s ease-in-out infinite;
+}
+
+@keyframes drop-breathe {
+  50% {
+    opacity: 0.55;
+    scale: 0.92;
+  }
+}
+
+/* sun-burst behind the box: faint at rest, flares when the lid flies */
+.drop__rays {
+  position: absolute;
+  inset: -70% -50%;
+  background: repeating-conic-gradient(from 0deg, transparent 0 9deg, rgba(255, 211, 107, 0.34) 9deg 12deg);
+  -webkit-mask-image: radial-gradient(closest-side, #000 14%, transparent 70%);
+  mask-image: radial-gradient(closest-side, #000 14%, transparent 70%);
+  opacity: 0.18;
+  scale: 0.7;
+  transition: opacity 0.5s ease, scale 0.9s var(--fx-ease, ease);
+  animation: drop-spin 28s linear infinite;
+  pointer-events: none;
+}
+
+.drop__box:has(.drop__cb--open) .drop__rays {
+  opacity: 1;
+  scale: 1.15;
+}
+
+@keyframes drop-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+/* odds bar: real proportions, 60 / 25 / 10 / 4 / 1 */
+.dodds {
+  width: min(100%, 900px);
+}
+
+.dodds__bar {
+  display: flex;
+  gap: 3px;
+  height: 22px;
+  padding: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  background: rgba(20, 4, 40, 0.55);
+}
+
+.dodds__bar span {
+  flex: var(--g) 1 0;
+  min-width: 7px;
+  border-radius: 999px;
+  background: var(--rc);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--rc) 70%, transparent);
+}
+
+.dodds__legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 26px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dodds__legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #f0d9f2;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.dodds__legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--rc);
+  box-shadow: 0 0 8px var(--rc);
+}
+
+.dodds__legend b {
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+/* reveal */
+.fx-ready [data-fx="drop"] .drop__box {
+  opacity: 0;
+  scale: 0.7;
+  translate: 0 40px;
+  transition: opacity 0.8s var(--fx-ease), scale 1s var(--fx-bounce), translate 1s var(--fx-ease);
+}
+
+.fx-ready [data-fx="drop"].is-in .drop__box {
+  opacity: 1;
+  scale: 1;
+  translate: 0 0;
+}
+
+.fx-ready [data-fx="drop"] .dodds__bar {
+  clip-path: inset(0 100% 0 0 round 999px);
+  transition: clip-path 1.3s var(--fx-ease) 0.5s;
+}
+
+.fx-ready [data-fx="drop"].is-in .dodds__bar {
+  clip-path: inset(0 0 0 0 round 999px);
+}
+
+.fx-ready [data-fx="drop"] .dodds__legend {
+  opacity: 0;
+  translate: 0 14px;
+  transition: opacity 0.8s var(--fx-ease) 1s, translate 0.8s var(--fx-ease) 1s;
+}
+
+.fx-ready [data-fx="drop"].is-in .dodds__legend {
+  opacity: 1;
+  translate: 0 0;
+}
+
+/* ------------------------------------------------------------------ final CTA on the city art */
+
+.final {
+  padding: 24px 16px 130px;
+}
+
+.final__card {
+  isolation: isolate;
+  overflow: hidden;
+  gap: 16px;
+  max-width: 1040px;
+  padding: clamp(52px, 8vw, 104px) 24px;
+  background: #1a0630;
+  border-radius: 32px;
+  box-shadow: 0 40px 90px rgba(20, 0, 30, 0.55), 0 0 70px rgba(255, 46, 136, 0.25);
+}
+
+.final__bg {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background: url("/story/dacity.png") 50% 45% / cover no-repeat;
+  filter: saturate(1.15) contrast(1.05);
+  transform-origin: 60% 55%;
+  animation: final-drift 36s ease-in-out infinite alternate;
+}
+
+@keyframes final-drift {
+  from {
+    scale: 1.04;
+  }
+  to {
+    scale: 1.16;
+    translate: -1.5% -1%;
+  }
+}
+
+.final__veil {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(75% 85% at 50% 42%, rgba(34, 5, 62, 0.5), rgba(18, 2, 36, 0.9) 100%),
+    linear-gradient(180deg, rgba(255, 46, 136, 0.2), rgba(18, 2, 36, 0.55));
+}
+
+.final__card .eyebrow {
+  margin: 0;
+  font-size: 13px;
+}
+
+.final__card h2 {
+  text-shadow: 0 6px 40px rgba(10, 0, 20, 0.8);
+}
+
+.final__card p {
+  max-width: 520px;
+  font-size: 18px;
+}
+
+.final__facts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.final__facts li {
+  padding: 7px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  background: rgba(20, 4, 40, 0.55);
+  backdrop-filter: blur(6px);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ------------------------------------------------------------------ reduced motion */
+
+@media (prefers-reduced-motion: reduce) {
+  .drop__box .cashbox,
+  .drop__glow,
+  .drop__rays,
+  .drop__cb--idle,
+  .final__bg {
+    animation: none !important;
+  }
+}
+
+/* ------------------------------------------------------------------ responsive */
+
+@media (max-width: 960px) {
+  .drop {
+    margin-bottom: 40px;
+  }
+}
+
+@media (max-width: 560px) {
+  .dodds__legend {
+    gap: 8px 16px;
+  }
+  .dodds__legend li {
+    font-size: 12px;
+  }
+  .final__card p {
+    font-size: 16px;
+  }
+}

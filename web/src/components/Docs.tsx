@@ -159,7 +159,7 @@ const SECTIONS: Section[] = [
           <b>Get a little ETH</b> on Robinhood Chain for gas, and <b>USDC</b> to deposit.
         </li>
         <li>
-          <b>Connect</b> and pick your boss: <b>Nina Solano</b> (The Accountant) or <b>Rico Tavares</b> (The Driver). Name your gang;
+          <b>Connect</b> and pick your boss: <b>Lucia Caminos</b> (Born Fighter) or <b>Jason Duval</b> (Ex-Army). Name your gang;
           it's registered on-chain.
         </li>
         <li>
