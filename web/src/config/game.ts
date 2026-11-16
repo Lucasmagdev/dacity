@@ -85,10 +85,11 @@ export const CLAIM_ALL_FEE_AMMO = 100;
 export const SEASON_START = new Date(import.meta.env.VITE_SEASON_START || "2026-12-12T20:00:00Z");
 
 /** Social links (nav, footer, token page). Empty url = shown greyed out as "coming soon". */
-export const SOCIALS: { label: string; url: string; icon: "x" | "telegram" | "tiktok" }[] = [
+export const SOCIALS: { label: string; url: string; icon: "x" | "telegram" | "tiktok" | "instagram" }[] = [
   { label: "X (Twitter)", url: "", icon: "x" },
   { label: "Telegram", url: "https://t.me/audacitygame", icon: "telegram" },
   { label: "TikTok", url: "https://www.tiktok.com/@audacitygame2026", icon: "tiktok" },
+  { label: "Instagram", url: "https://www.instagram.com/audacitygame", icon: "instagram" },
 ];
 
 export type Protagonist = {

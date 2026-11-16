@@ -1856,3 +1856,14 @@ code {
   border-color: #fe2c55;
   color: #fe2c55;
 }
+
+.socials--nav a[href*="instagram"]:hover,
+.socials--pill a[href*="instagram"]:hover {
+  border-color: #e1306c;
+  background: rgba(225, 48, 108, 0.18);
+}
+
+.socials--footer a[href*="instagram"]:hover {
+  border-color: #e1306c;
+  color: #e1306c;
+}
