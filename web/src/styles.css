@@ -1867,3 +1867,77 @@ code {
   border-color: #e1306c;
   color: #e1306c;
 }
+
+/* ------------------------------------------------------------------ landing sky: the page runs through one day in Dacity */
+/* dusk (how it works) -> neon pink (glow-up) -> night with stars (story) -> neon midnight (rarities) -> dawn (final) */
+
+main.magenta {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(70% 16% at 50% 100%, rgba(255, 138, 61, 0.42), transparent 72%),
+    linear-gradient(
+      180deg,
+      var(--magenta-1) 0%,
+      #33145f 6%,
+      #3d1a78 11%,
+      #6a1488 17%,
+      #8a1590 23%,
+      #3a1466 30%,
+      #170e45 36%,
+      #0f0a33 55%,
+      #0a0618 64%,
+      #0b0519 82%,
+      #3a0f3f 91%,
+      #7a2a3f 100%
+    );
+}
+
+/* film grain + faint CRT scanlines over the whole sky, under the content */
+main.magenta::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    var(--grain) 0 0 / 160px 160px,
+    repeating-linear-gradient(180deg, rgba(0, 0, 0, 0.18) 0 1px, transparent 1px 4px);
+  opacity: 0.45;
+  mix-blend-mode: overlay;
+}
+
+main.magenta > section {
+  position: relative;
+  z-index: 1;
+}
+
+/* full-bleed decor layers behind each section's content */
+main.magenta > section::before,
+main.magenta > section::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: 100vw;
+  transform: translateX(-50%);
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* night sky: two star tiles of different sizes so the pattern never lines up */
+#story::before {
+  top: 0;
+  bottom: 0;
+  background:
+    radial-gradient(1.2px 1.2px at 30px 40px, rgba(255, 255, 255, 0.9), transparent),
+    radial-gradient(1px 1px at 150px 90px, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1.4px 1.4px at 210px 180px, rgba(255, 211, 107, 0.85), transparent),
+    radial-gradient(1px 1px at 80px 200px, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(1px 1px at 300px 30px, rgba(34, 228, 255, 0.7), transparent),
+    radial-gradient(1.2px 1.2px at 340px 260px, rgba(255, 255, 255, 0.8), transparent),
+    radial-gradient(1px 1px at 120px 320px, rgba(255, 255, 255, 0.55), transparent);
+  background-size: 260px 260px, 260px 260px, 260px 260px, 260px 260px, 380px 380px, 380px 380px, 380px 380px;
+  -webkit-mask-image: linear-gradient(transparent, #000 12%, #000 70%, transparent);
+  mask-image: linear-gradient(transparent, #000 12%, #000 70%, transparent);
+  opacity: 0.8;
+}
