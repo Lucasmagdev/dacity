@@ -10,7 +10,7 @@ import AmmoIcon from "./art/AmmoIcon";
 import { BOX_PRICE_DC, BULK_TIERS, CLAIM_ALL_FEE_USD, DACITY_PER_USDC, LAUNCH_SALE, MEDKIT_PRICE_USD, TOKEN, fmtAmmo, PROTAGONISTS, RARITIES, SHOT_CHANCE_PER_DAY, STORE_NAME, WEAPONS, fmt, quoteBoxes } from "../config/game";
 import { usePlatform } from "../mock/platform";
 import { game } from "../game";
-import { WITHDRAW_COOLDOWN_HOURS } from "../config/game";
+import { WITHDRAW_COOLDOWN_HOURS, WITHDRAW_FEE_PCT, withdrawQuote } from "../config/game";
 import { ammoFor, fmtUsd, useAmmoPrice } from "../price";
 import { WITHDRAW_FEE_NOTE } from "../solana";
 import {
@@ -195,7 +195,7 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
             dc={s.dc}
             waitMs={withdrawWaitMs(s, now)}
             onDeposit={(n) => run(() => game.deposit(n), `Deposited ${fmt(n)} USDC → ${fmt(n * DACITY_PER_USDC)} DC`)}
-            onWithdraw={(n) => run(() => game.withdraw(n), `Withdrew ${fmt(n)} DC → ${fmtUsdc(n / DACITY_PER_USDC)} USDC`)}
+            onWithdraw={(n) => run(() => game.withdraw(n), `Withdrew ${fmt(n)} DC → ${fmtUsdc(withdrawQuote(n).net)} USDC (after the ${WITHDRAW_FEE_PCT}% fee)`)}
           />
           <Shop
             dc={s.dc}
@@ -397,7 +397,7 @@ function Vault({
         <p className="muted">
           {dep
             ? `Send USDC on Solana: 1 USDC = ${DACITY_PER_USDC} DC, credited as soon as it confirms.`
-            : `${DACITY_PER_USDC} DC = 1 USDC, sent from the Reward Pool to your wallet. ${WITHDRAW_FEE_NOTE}`}
+            : `${DACITY_PER_USDC} DC = 1 USDC, minus a ${WITHDRAW_FEE_PCT}% withdrawal fee that stays in the Reward Pool. ${WITHDRAW_FEE_NOTE}`}
         </p>
         <div className="amount">
           <input
@@ -422,7 +422,13 @@ function Vault({
           </span>
         </div>
         <p className="quote">
-          You get <b>{dep ? `${fmt(n * DACITY_PER_USDC)} DC` : `${fmtUsdc(n / DACITY_PER_USDC)} USDC`}</b>
+          You get <b>{dep ? `${fmt(n * DACITY_PER_USDC)} DC` : `${fmtUsdc(withdrawQuote(n).net)} USDC`}</b>
+          {!dep && n > 0 && (
+            <small className="quote__fee">
+              {" "}
+              ({fmtUsdc(withdrawQuote(n).gross)} − {WITHDRAW_FEE_PCT}% fee {fmtUsdc(withdrawQuote(n).fee)})
+            </small>
+          )}
         </p>
         {locked ? (
           <div className="cooldown" role="timer" aria-live="off">

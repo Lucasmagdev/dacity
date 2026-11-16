@@ -585,6 +585,11 @@
   color: var(--sun);
 }
 
+.quote__fee {
+  font-size: 0.85em;
+  opacity: 0.8;
+}
+
 .stepper {
   display: inline-flex;
   align-items: center;

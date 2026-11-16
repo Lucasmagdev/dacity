@@ -37,6 +37,7 @@ create table if not exists public.game_config (
   day_seconds              int     not null default 86400,
   withdraw_cooldown_hours  int     not null default 24,
   min_withdraw_dc          numeric not null default 100,
+  withdraw_fee_pct         numeric not null default 10 check (withdraw_fee_pct >= 0 and withdraw_fee_pct < 100),
   claim_all_fee_usd        numeric not null default 0.05,
   token_total_supply       numeric not null default 1000000000,
   price_window_seconds     int     not null default 600,
@@ -80,6 +81,10 @@ create table if not exists public.bulk_tiers (
   min_count  int primary key check (min_count > 1),
   pct        numeric not null check (pct > 0 and pct < 100)
 );
+
+-- columns added after the first version (the table may already exist)
+alter table public.game_config add column if not exists withdraw_fee_pct numeric not null default 10
+  check (withdraw_fee_pct >= 0 and withdraw_fee_pct < 100);
 
 insert into public.game_config (id) values (1) on conflict (id) do nothing;
 
@@ -1006,6 +1011,7 @@ begin
 end $$;
 
 -- Withdraw DC as USDC: one withdrawal per wallet every withdraw_cooldown_hours.
+-- withdraw_fee_pct (10%) of the USDC value stays in the Reward Pool; the rest is sent (rounded down to the cent).
 create or replace function public.request_withdrawal_usdc(p_amount_dc numeric)
 returns public.withdrawals language plpgsql security definer set search_path = public, pg_temp
 as $$
@@ -1014,6 +1020,8 @@ declare
   v_p public.players;
   v_w public.withdrawals;
   v_next timestamptz;
+  v_gross numeric;
+  v_net numeric;
 begin
   perform public.assert_open();
   v_p := public.lock_me();
@@ -1023,11 +1031,18 @@ begin
   v_next := v_p.last_withdraw_at + make_interval(hours => c.withdraw_cooldown_hours);
   if v_next > now() then raise exception 'One withdrawal every % hours. Next one at %', c.withdraw_cooldown_hours, v_next; end if;
 
+  v_gross := p_amount_dc / c.dacity_per_usdc;
+  v_net := floor(v_gross * (100 - c.withdraw_fee_pct)) / 100;
+  if v_net <= 0 then raise exception 'Amount too small after the % percent fee', c.withdraw_fee_pct; end if;
+
   update public.players set dc = dc - p_amount_dc, last_withdraw_at = now() where user_id = v_p.user_id;
-  insert into public.withdrawals (user_id, asset, amount_in, amount_out, wallet)
-  values (v_p.user_id, 'usdc', p_amount_dc, round(p_amount_dc / c.dacity_per_usdc, 6), v_p.wallet)
+  insert into public.withdrawals (user_id, asset, amount_in, amount_out, wallet, note)
+  values (v_p.user_id, 'usdc', p_amount_dc, v_net, v_p.wallet,
+          format('fee %s%% = %s USDC kept in the Reward Pool', c.withdraw_fee_pct, round(v_gross - v_net, 6)))
   returning * into v_w;
-  perform public.log_tx(v_p.user_id, 'withdraw', 'Withdraw', 'Vault: DC → USDC (requested)', -p_amount_dc, v_w.amount_out);
+  perform public.log_tx(v_p.user_id, 'withdraw', 'Withdraw',
+    format('Vault: DC → USDC (requested) · %s%% fee $%s to the Reward Pool', c.withdraw_fee_pct, to_char(v_gross - v_net, 'FM999999990.00')),
+    -p_amount_dc, v_w.amount_out);
   return v_w;
 end $$;
 
@@ -1204,7 +1219,7 @@ begin
   if v_w.id is null then raise exception 'Unknown withdrawal'; end if;
   if v_w.status <> 'requested' then raise exception 'This withdrawal is already %', v_w.status; end if;
   update public.withdrawals
-     set status = p_status, signature = p_signature, note = p_note, updated_at = now()
+     set status = p_status, signature = p_signature, note = coalesce(p_note, note), updated_at = now()
    where id = p_id
   returning * into v_w;
   if p_status = 'failed' then

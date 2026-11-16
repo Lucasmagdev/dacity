@@ -8,6 +8,18 @@ export const DACITY_PER_USDC = 100;
  */
 export const WITHDRAW_COOLDOWN_HOURS = 24;
 export const WITHDRAW_COOLDOWN_MS = WITHDRAW_COOLDOWN_HOURS * 60 * 60 * 1000;
+
+/**
+ * Withdrawal fee: 10% of every DC → USDC withdrawal stays in the Reward Pool.
+ * 1,000 DC = $10.00 gross → $1.00 fee → $9.00 USDC sent. $AMMO withdrawals have no fee.
+ */
+export const WITHDRAW_FEE_PCT = 10;
+/** USDC sent for a DC withdrawal, after the fee (rounded down to the cent). */
+export const withdrawQuote = (dc: number) => {
+  const gross = dc / DACITY_PER_USDC;
+  const net = Math.floor(gross * (100 - WITHDRAW_FEE_PCT)) / 100;
+  return { gross, fee: gross - net, net };
+};
 /** Regular box price: 300 DC = $3.00. */
 export const BOX_PRICE_DC = 300;
 
@@ -108,11 +120,10 @@ export const CLAIM_ALL_FEE_USD = 0.05;
 export const SEASON_START = new Date(import.meta.env.VITE_SEASON_START || "2026-12-12T20:00:00Z");
 
 /** Social links (nav, footer, token page). Empty url = shown greyed out as "coming soon". */
-export const SOCIALS: { label: string; url: string; icon: "x" | "telegram" | "tiktok" | "instagram" }[] = [
+export const SOCIALS: { label: string; url: string; icon: "x" | "telegram" | "tiktok" }[] = [
   { label: "X (Twitter)", url: "", icon: "x" },
   { label: "Telegram", url: "https://t.me/audacitygame", icon: "telegram" },
   { label: "TikTok", url: "https://www.tiktok.com/@audacitygame2026", icon: "tiktok" },
-  { label: "Instagram", url: "https://www.instagram.com/audacitygame", icon: "instagram" },
 ];
 
 export type Protagonist = {

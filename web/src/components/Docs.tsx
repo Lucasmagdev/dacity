@@ -20,6 +20,8 @@ import {
   VEST,
   WEAPONS,
   WITHDRAW_COOLDOWN_HOURS,
+  WITHDRAW_FEE_PCT,
+  withdrawQuote,
   PROTAGONISTS,
   fmt,
 } from "../config/game";
@@ -304,7 +306,9 @@ const SECTIONS: Section[] = [
             the game credits 1 USDC → {DACITY_PER_USDC} DC to your account.
           </li>
           <li>
-            <b>Withdraw:</b> {DACITY_PER_USDC} DC → 1 USDC. The game sends the USDC from the Reward Pool to the wallet you play with.
+            <b>Withdraw:</b> {DACITY_PER_USDC} DC → 1 USDC, minus a <b>{WITHDRAW_FEE_PCT}% withdrawal fee</b>. The game sends the rest
+            in USDC from the Reward Pool to the wallet you play with; the fee stays in the pool. Example: 1,000 DC = $10.00 → {fmtUsd(withdrawQuote(1_000).fee)} fee → you receive{" "}
+            {fmtUsd(withdrawQuote(1_000).net)} USDC.
           </li>
           <li>
             <b>One withdrawal every {WITHDRAW_COOLDOWN_HOURS} hours per wallet.</b> After you withdraw, the Withdraw button locks and shows a
@@ -611,6 +615,7 @@ const SECTIONS: Section[] = [
           ["Gangster Box", `${fmt(BOX_PRICE_DC)} DC (${usd(BOX_PRICE_DC)})`, "DC", "Reward Pool (the USDC behind it)"],
           ["Deposit USDC", "1 USDC = 100 DC, no limit", "USDC", "Vault"],
           ["Withdraw DC → USDC", `100 DC = 1 USDC, once every ${WITHDRAW_COOLDOWN_HOURS}h per wallet`, "DC", "Your wallet"],
+          ["Withdrawal fee", `${WITHDRAW_FEE_PCT}% of every DC → USDC withdrawal`, "USDC", "Stays in the Reward Pool"],
           ["Deposit / withdraw $AMMO", "Free (Solana network fee only)", "$AMMO", "Your in-game balance"],
           ["Solana network fee", "~0.00001 SOL per deposit or withdrawal, paid by you", "SOL", "Solana validators"],
           ["Claim one gangster", "Free", "—", "—"],
@@ -668,11 +673,14 @@ const SECTIONS: Section[] = [
         <dt>Do I need $AMMO to play?</dt>
         <dd>No. You can deposit, buy boxes, farm and claim one by one with just USDC and DC. $AMMO is for items, fusion and claim-all.</dd>
         <dt>Is the DC I farm real money?</dt>
-        <dd>DC can be withdrawn at {DACITY_PER_USDC} DC = 1 USDC, paid from the Reward Pool.</dd>
+        <dd>
+          DC can be withdrawn at {DACITY_PER_USDC} DC = 1 USDC, minus a {WITHDRAW_FEE_PCT}% withdrawal fee, paid from the Reward Pool.
+        </dd>
         <dt>How often can I withdraw?</dt>
         <dd>
           Once every {WITHDRAW_COOLDOWN_HOURS} hours per wallet, for any amount you have. The countdown starts when you withdraw and is shown
-          in the Vault card. $AMMO withdrawals are not limited.
+          in the Vault card. Each USDC withdrawal has a {WITHDRAW_FEE_PCT}% fee that stays in the Reward Pool. $AMMO withdrawals are not
+          limited and have no fee.
         </dd>
         <dt>What happens to $AMMO I spend?</dt>
         <dd>It's burned: removed from the supply forever. Nobody receives it, including the team.</dd>
