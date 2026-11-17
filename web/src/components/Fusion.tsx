@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import GangsterToy from "./art/GangsterToy";
-import { FUSION_RECIPES, RARITIES, fmt } from "../config/game";
+import { FUSION_RECIPES, RARITIES, fmt, characterOf } from "../config/game";
 import { game } from "../game";
 import { ammoFor, fmtUsd, useAmmoPrice } from "../price";
 import AmmoIcon from "./art/AmmoIcon";
-import { archetypeOf, farmedOf, fusionCandidates, statsOf, type MockGangster } from "../mock";
+import { farmedOf, fusionCandidates, statsOf, type MockGangster } from "../mock";
 
 type FuseResult = Awaited<ReturnType<typeof game.fuse>>;
 
@@ -170,7 +170,7 @@ function FusionReveal({ result, onClose }: { result: FuseResult; onClose: () => 
   const { parents, child, payout } = result;
   const r = RARITIES[child.rarity];
   const s = statsOf(child);
-  const a = archetypeOf(child.id);
+  const a = characterOf(child.rarity);
 
   return (
     <div className="reveal" role="dialog" aria-modal="true" aria-label="Fusion" style={{ "--rc": r.color } as React.CSSProperties}>
@@ -201,7 +201,7 @@ function FusionReveal({ result, onClose }: { result: FuseResult; onClose: () => 
                 <h3>
                   “{a.nick}” <small>#{child.id}</small>
                 </h3>
-                <p className="gcard__title">{a.title}</p>
+                <p className="gcard__title">{a.title} · {a.gang}</p>
                 <dl className="gcard__stats">
                   <div>
                     <dt>Farm/day</dt>

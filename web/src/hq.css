@@ -1943,3 +1943,8 @@
   padding: 8px 14px;
   font-size: 0.85rem;
 }
+
+/* real gangster portraits on cards: keep the face in frame */
+.toy--portrait {
+  object-position: 50% 20%;
+}

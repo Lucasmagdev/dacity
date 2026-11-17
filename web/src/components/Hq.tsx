@@ -7,7 +7,7 @@ import Coin from "./art/Coin";
 import UsdcCoin from "./art/UsdcCoin";
 import GangsterToy from "./art/GangsterToy";
 import AmmoIcon from "./art/AmmoIcon";
-import { BOX_PRICE_DC, BULK_TIERS, CLAIM_ALL_FEE_USD, DACITY_PER_USDC, LAUNCH_SALE, MEDKIT_PRICE_USD, TOKEN, fmtAmmo, PROTAGONISTS, RARITIES, SHOT_CHANCE_PER_DAY, STORE_NAME, WEAPONS, fmt, quoteBoxes } from "../config/game";
+import { BOX_PRICE_DC, BULK_TIERS, CLAIM_ALL_FEE_USD, DACITY_PER_USDC, LAUNCH_SALE, MEDKIT_PRICE_USD, TOKEN, fmtAmmo, PROTAGONISTS, RARITIES, SHOT_CHANCE_PER_DAY, STORE_NAME, WEAPONS, fmt, quoteBoxes, characterOf } from "../config/game";
 import { usePlatform } from "../mock/platform";
 import { game } from "../game";
 import { WITHDRAW_COOLDOWN_HOURS, WITHDRAW_FEE_PCT, withdrawQuote } from "../config/game";
@@ -18,7 +18,6 @@ import {
   MAX_BOXES_PER_TX,
   MOCK,
   MOCK_DAY_MS,
-  archetypeOf,
   claimAllQuote,
   fmtWait,
   withdrawWaitMs,
@@ -296,7 +295,7 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
                       onHeal={async () => {
                         try {
                           const r = await game.heal([g.id]);
-                          setToast(`“${archetypeOf(g.id).nick}” is back to work${r.cost ? ` · burned ${fmtAmmo(r.cost)} for a kit` : " · used 1 kit"}`);
+                          setToast(`“${characterOf(g.rarity).nick}” is back to work${r.cost ? ` · burned ${fmtAmmo(r.cost)} for a kit` : " · used 1 kit"}`);
                         } catch (e) {
                           setToast((e as Error).message);
                         }
@@ -304,7 +303,7 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
                       onClaim={async () => {
                         try {
                           const got = await game.claim(g.id);
-                          setToast(`Claimed ${fmt1(got)} DC from “${archetypeOf(g.id).nick}”`);
+                          setToast(`Claimed ${fmt1(got)} DC from “${characterOf(g.rarity).nick}”`);
                         } catch (e) {
                           setToast((e as Error).message);
                         }
@@ -657,7 +656,7 @@ function GangsterCard({
 }) {
   const r = RARITIES[g.rarity];
   const st = statsOf(g);
-  const a = archetypeOf(g.id);
+  const a = characterOf(g.rarity);
   const farmed = farmedOf(g, now);
   const pct = (farmed / st.cap) * 100;
   const retired = isRetired(g, now);
@@ -694,7 +693,7 @@ function GangsterCard({
         <h3>
           “{a.nick}” <small>#{g.id}</small>
         </h3>
-        <p className="gcard__title">{a.title}</p>
+        <p className="gcard__title">{a.title} · {a.gang}</p>
         <div className="bar" aria-label={`${Math.round(pct)}% of career cap`}>
           <span style={{ width: `${pct}%` }} />
         </div>

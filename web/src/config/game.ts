@@ -188,6 +188,52 @@ export const RARITIES: Rarity[] = [
   { id: 4, name: "Legendary", chance: 1, perDay: 75, cap: 5_250, color: "#ffb020" },
 ];
 
+/**
+ * The gangster you get for each rarity: one character per rarity (every Common is the same guy).
+ * Crews are inspired by the kinds of gangs in Leonida (street crews, Haitian street gangs, outlaw biker
+ * clubs), with original names. `img` = the portrait in public/characters/; without it the SVG toy shows.
+ */
+export type Character = {
+  rarity: number;
+  nick: string;
+  title: string;
+  gang: string;
+  flavor: string;
+  /** base path, without the size suffix: `${img}-512.webp` / `${img}-256.webp` */
+  img?: string;
+};
+
+export const CHARACTERS: Character[] = [
+  {
+    rarity: 0,
+    nick: "Lil Blinds",
+    title: "Corner Runner",
+    gang: "Gutta Babie$",
+    flavor: "Shades on at midnight, already owes the whole block.",
+    img: "/characters/common",
+  },
+  {
+    rarity: 1,
+    nick: "Papa Krown",
+    title: "Block Enforcer",
+    gang: "Lakay Kings",
+    flavor: "Wears the crown on his neck and the city on his chain.",
+    img: "/characters/uncommon",
+  },
+  {
+    rarity: 2,
+    nick: "Red Ash",
+    title: "Road Captain",
+    gang: "Last Mile MC",
+    flavor: "Smokes, rides, collects. In that order.",
+    img: "/characters/rare",
+  },
+  { rarity: 3, nick: "El Silencio", title: "Cartel Lieutenant", gang: "Sangre Azul", flavor: "Never raises his voice. Never needs to." },
+  { rarity: 4, nick: "The Don", title: "Kingpin", gang: "Old Money", flavor: "Owns the docks, the cops and the sunset." },
+];
+
+export const characterOf = (rarity: number): Character => CHARACTERS[rarity] ?? CHARACTERS[0];
+
 export const fmt = (n: number) => n.toLocaleString("en-US");
 
 // ------------------------------------------------------------------ fusion

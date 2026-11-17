@@ -1,5 +1,5 @@
 import { useId, useState } from "react";
-import { RARITIES } from "../../config/game";
+import { RARITIES, characterOf } from "../../config/game";
 import { archetypeOf, type Archetype } from "../../mock";
 
 const INK = "#1a0a24";
@@ -22,6 +22,25 @@ export default function GangsterToy({
 }) {
   const a = archetypeOf(gangsterId);
   const [failed, setFailed] = useState(false);
+  const [portraitFailed, setPortraitFailed] = useState(false);
+  const ch = characterOf(rarity);
+
+  // the character's real portrait (one per rarity); small sizes load the 256px version
+  if (ch.img && !portraitFailed) {
+    return (
+      <img
+        className={`toy toy--img toy--portrait${animate ? " toy--animate" : ""}`}
+        src={`${ch.img}-512.webp`}
+        srcSet={`${ch.img}-256.webp 256w, ${ch.img}-512.webp 512w`}
+        sizes="(max-width: 600px) 45vw, 240px"
+        alt={`${ch.nick}, ${ch.title} (${RARITIES[rarity].name})`}
+        loading="lazy"
+        decoding="async"
+        style={{ "--rc": RARITIES[rarity].color } as React.CSSProperties}
+        onError={() => setPortraitFailed(true)}
+      />
+    );
+  }
   const src = `/gangsters/${slug(a.title)}-${RARITIES[rarity].name.toLowerCase()}.webp`;
 
   if (!failed && !bare) {

@@ -311,3 +311,27 @@
     font-size: 13px;
   }
 }
+
+/* ---- real portraits (one per rarity): a framed mugshot, placard held at the chest ---- */
+.suspect__fig:has(.toy--portrait) {
+  width: 84%;
+  justify-self: center;
+  margin-bottom: 0;
+}
+
+.suspect__fig .toy--portrait {
+  aspect-ratio: 1;
+  height: auto;
+  border: 1.4cqw solid var(--rc);
+  border-radius: 7cqw;
+  box-shadow:
+    0 0 0 1cqw #1a0a24,
+    0 0 6cqw color-mix(in srgb, var(--rc) 55%, transparent);
+  animation: toy-bob 2.4s ease-in-out infinite;
+  animation-delay: calc(var(--slot) * -0.47s);
+  transform-origin: 50% 100%;
+}
+
+.suspect__fig:has(.toy--portrait) .suspect__board {
+  top: 80%;
+}

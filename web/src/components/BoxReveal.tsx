@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { RARITIES, SHOT_CHANCE_PER_DAY, fmt } from "../config/game";
-import { archetypeOf, type MockGangster } from "../mock";
+import { RARITIES, SHOT_CHANCE_PER_DAY, fmt, characterOf } from "../config/game";
+import { type MockGangster } from "../mock";
 import CashBox from "./art/CashBox";
 import GangsterToy from "./art/GangsterToy";
 
@@ -72,7 +72,7 @@ export default function BoxReveal({
           <ul className={`reveal__grid${result.length === 1 ? " reveal__grid--single" : ""}`}>
             {result.map((g, i) => {
               const r = RARITIES[g.rarity];
-              const a = archetypeOf(g.id);
+              const a = characterOf(g.rarity);
               return (
                 <li key={g.id} className="gcard gcard--reveal" style={{ "--rc": r.color, animationDelay: `${i * 90}ms` } as React.CSSProperties}>
                   <div className="gcard__art">
@@ -83,7 +83,7 @@ export default function BoxReveal({
                     <h3>
                       “{a.nick}” <small>#{g.id}</small>
                     </h3>
-                    <p className="gcard__title">{a.title}</p>
+                    <p className="gcard__title">{a.title} · {a.gang}</p>
                     {result.length === 1 && <p className="gcard__flavor">{a.flavor}</p>}
                     <dl className="gcard__stats">
                       <div>

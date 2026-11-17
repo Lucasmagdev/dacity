@@ -1,4 +1,4 @@
-import { Buffer } from "buffer";
+import "./polyfills";
 import React, { useMemo } from "react";
 import ReactDOM from "react-dom/client";
 import { ConnectionProvider, WalletProvider } from "@solana/wallet-adapter-react";
@@ -9,9 +9,6 @@ import "./hq.css";
 import "./wallet.css";
 import { RPC_URL } from "./solana";
 import App from "./App";
-
-// @solana/web3.js expects Node's Buffer in the browser
-(globalThis as unknown as { Buffer: typeof Buffer }).Buffer ??= Buffer;
 
 function Providers({ children }: { children: React.ReactNode }) {
   // Wallet Standard wallets (Phantom, Solflare, Backpack…) register themselves: no adapters to list

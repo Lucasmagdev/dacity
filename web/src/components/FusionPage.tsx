@@ -3,9 +3,9 @@ import Scene from "./Scene";
 import Nav from "./Nav";
 import GangsterToy from "./art/GangsterToy";
 import Fusion from "./Fusion";
-import { RARITIES, TOKEN, fmt, recipeFrom } from "../config/game";
+import { RARITIES, TOKEN, fmt, recipeFrom, characterOf } from "../config/game";
 import AmmoIcon from "./art/AmmoIcon";
-import { archetypeOf, farmedOf, fusionCandidates, isFarming, isRetired, isShot, statsOf, useMock, type MockGangster } from "../mock";
+import { farmedOf, fusionCandidates, isFarming, isRetired, isShot, statsOf, useMock, type MockGangster } from "../mock";
 
 function useNow(ms = 1000) {
   const [now, setNow] = useState(Date.now());
@@ -160,7 +160,7 @@ function FCard({ g, now, next, eligible }: { g: MockGangster; now: number; next:
         <GangsterToy gangsterId={g.id} rarity={g.rarity} />
       </div>
       <strong>
-        “{archetypeOf(g.id).nick}” <small>#{g.id}</small>
+        “{characterOf(g.rarity).nick}” <small>#{g.id}</small>
       </strong>
       <div className="bar" aria-label={`${Math.round(pct)}% of career done`}>
         <span style={{ width: `${pct}%` }} />

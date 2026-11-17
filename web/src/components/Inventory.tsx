@@ -7,8 +7,8 @@ import GangsterToy from "./art/GangsterToy";
 import AmmoIcon from "./art/AmmoIcon";
 import { ItemIcon, LoadoutRow } from "./Armory";
 import { game } from "../game";
-import { RARITIES, SHOT_CHANCE_PER_DAY, STORE_NAME, VEST, WEAPONS, fmt, type WeaponId } from "../config/game";
-import { archetypeOf, isBoxReady, isRetired, isShot, statsOf, useMock, type MockGangster } from "../mock";
+import { RARITIES, SHOT_CHANCE_PER_DAY, STORE_NAME, VEST, WEAPONS, fmt, type WeaponId, characterOf } from "../config/game";
+import { isBoxReady, isRetired, isShot, statsOf, useMock, type MockGangster } from "../mock";
 
 type Tab = "gangsters" | "boxes" | "items";
 
@@ -147,7 +147,7 @@ export default function Inventory({ onBack, onFound }: { onBack: () => void; onF
             ) : (
               <ul className="roster">
                 {idle.map((g) => (
-                  <IdleCard key={g.id} g={g} onDeploy={() => run(() => game.deploy([g.id]), `“${archetypeOf(g.id).nick}” is on the job`)} />
+                  <IdleCard key={g.id} g={g} onDeploy={() => run(() => game.deploy([g.id]), `“${characterOf(g.rarity).nick}” is on the job`)} />
                 ))}
               </ul>
             )}
@@ -279,7 +279,7 @@ export default function Inventory({ onBack, onFound }: { onBack: () => void; onF
 function IdleCard({ g, onDeploy }: { g: MockGangster; onDeploy: () => void }) {
   const r = RARITIES[g.rarity];
   const st = statsOf(g);
-  const a = archetypeOf(g.id);
+  const a = characterOf(g.rarity);
   return (
     <li className={`gcard gcard--idle${g.fused ? " gcard--fused" : ""}`} style={{ "--rc": r.color } as React.CSSProperties}>
       <div className="gcard__art">
@@ -292,7 +292,7 @@ function IdleCard({ g, onDeploy }: { g: MockGangster; onDeploy: () => void }) {
         <h3>
           “{a.nick}” <small>#{g.id}</small>
         </h3>
-        <p className="gcard__title">{a.title}</p>
+        <p className="gcard__title">{a.title} · {a.gang}</p>
         <dl className="gcard__stats">
           <div>
             <dt>Farm</dt>

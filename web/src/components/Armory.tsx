@@ -3,12 +3,12 @@ import Scene from "./Scene";
 import Nav from "./Nav";
 import GangsterToy from "./art/GangsterToy";
 import { ammoFor, fmtTokenPrice, fmtUsd, useAmmoPrice } from "../price";
-import { MEDKIT_PRICE_USD, RARITIES, TOKEN, STORE_NAME, VEST, WEAPONS, fmt, type WeaponId } from "../config/game";
+import { MEDKIT_PRICE_USD, RARITIES, TOKEN, STORE_NAME, VEST, WEAPONS, fmt, type WeaponId, characterOf } from "../config/game";
 import AmmoIcon from "./art/AmmoIcon";
 import AmmoVault from "./AmmoVault";
 import { usePlatform } from "../mock/platform";
 import { game } from "../game";
-import { archetypeOf, hasVest, isRetired, isShot, rateOf, statsOf, useMock, weaponDaysLeft, type MockGangster } from "../mock";
+import { hasVest, isRetired, isShot, rateOf, statsOf, useMock, weaponDaysLeft, type MockGangster } from "../mock";
 
 type ItemId = WeaponId | "vest" | "medkit";
 
@@ -231,7 +231,7 @@ export function LoadoutRow({
   run: (fn: () => unknown, msg: string) => unknown;
 }) {
   const r = RARITIES[g.rarity];
-  const a = archetypeOf(g.id);
+  const a = characterOf(g.rarity);
   const shot = isShot(g, now);
   const wLeft = weaponDaysLeft(g, now);
   const vest = hasVest(g, now);
