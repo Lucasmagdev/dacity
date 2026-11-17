@@ -1,4 +1,5 @@
 import { CHAIN_NAME } from "../solana";
+import MusicToggle from "./MusicToggle";
 import AmmoIcon from "./art/AmmoIcon";
 import Socials from "./Socials";
 import NavStats from "./NavStats";
@@ -98,11 +99,14 @@ export default function Nav({
   links = true,
   game = false,
   showChain = true,
+  music = false,
   onBack,
 }: {
   links?: boolean;
   game?: boolean;
   showChain?: boolean;
+  /** landing page: background music + on/off button */
+  music?: boolean;
   onBack?: () => void;
 }) {
   return (
@@ -128,6 +132,7 @@ export default function Nav({
       {game && <GameNav />}
       {game && <NavStats />}
       <div className="nav__right">
+        {music && <MusicToggle />}
         <Socials variant="nav" size={15} />
         {showChain && (
           <span className="chain-pill">

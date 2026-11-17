@@ -88,7 +88,7 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
   return (
     <div className="page" ref={pageRef}>
       <div className="fx-progress" aria-hidden />
-      <Nav showChain={false} />
+      <Nav showChain={false} music />
 
       {/* ------------------------------------------------------------ hero */}
       <section className="hero" data-fx-hero>
