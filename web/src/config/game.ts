@@ -123,7 +123,7 @@ export const SEASON_START = new Date(import.meta.env.VITE_SEASON_START || "2026-
 
 /** Social links (nav, footer, token page). Empty url = shown greyed out as "coming soon". */
 export const SOCIALS: { label: string; url: string; icon: "x" | "telegram" | "tiktok" }[] = [
-  { label: "X (Twitter)", url: "", icon: "x" },
+  { label: "X (Twitter)", url: "https://x.com/audacitygamesol", icon: "x" },
   { label: "Telegram", url: "https://t.me/audacitygame", icon: "telegram" },
   { label: "TikTok", url: "https://www.tiktok.com/@audacitygame2026", icon: "tiktok" },
 ];
