@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Audacity Game payment server: $AMMO price feed, deposits, withdrawals and burns on Solana.",
   "engines": {
-    "node": ">=20.6"
+    "node": "22.x"
   },
   "scripts": {
     "build": "tsc -p .",
