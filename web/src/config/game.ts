@@ -87,6 +87,8 @@ export function quoteBoxes(count: number, soldSoFar: number): BoxQuote {
  *
  * Prices are in USD and converted to AMMO at the live token price (src/price.ts).
  */
+const AMMO_MINT = ((import.meta.env.VITE_AMMO_MINT as string | undefined) ?? "").trim();
+
 export const TOKEN = {
   ticker: "AMMO",
   chain: "Solana",
@@ -96,10 +98,10 @@ export const TOKEN = {
   pairTicker: "TTWO",
   /** pump.fun's standard fixed supply: no minting after launch, it only goes down through burns. */
   totalSupply: 1_000_000_000,
-  /** pump.fun token page, set once the token is live. Empty = link hidden. */
-  buyUrl: "",
   /** Token mint address (VITE_AMMO_MINT), set once launched. Empty = shown as "announced at launch". */
-  address: (import.meta.env.VITE_AMMO_MINT as string | undefined)?.trim() || "",
+  address: AMMO_MINT,
+  /** pump.fun token page, from the mint. Empty before launch = "Buy" links hidden. */
+  buyUrl: AMMO_MINT ? `https://pump.fun/coin/${AMMO_MINT}` : "",
 };
 
 /**
