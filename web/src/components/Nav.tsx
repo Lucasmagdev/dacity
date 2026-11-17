@@ -1,6 +1,7 @@
 import { CHAIN_NAME } from "../solana";
 import AmmoIcon from "./art/AmmoIcon";
 import Socials from "./Socials";
+import NavStats from "./NavStats";
 import { NavWallet } from "./Wallet";
 
 /** One stroke style for every tab icon (24px grid, square ends). */
@@ -125,6 +126,7 @@ export default function Nav({
         </nav>
       )}
       {game && <GameNav />}
+      {game && <NavStats />}
       <div className="nav__right">
         <Socials variant="nav" size={15} />
         {showChain && (

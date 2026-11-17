@@ -1490,3 +1490,144 @@ a.gamenav__item:hover::after {
   overflow: hidden;
   padding: 0;
 }
+
+/* ------------------------------------------------------------------ top bar: $AMMO CA + live Reward Pool */
+.navstats {
+  display: none;
+  align-items: center;
+  gap: 8px;
+}
+
+.navstat {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(20, 10, 36, 0.72);
+  backdrop-filter: blur(8px);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    background 0.2s,
+    translate 0.2s;
+}
+
+.navstat:hover {
+  translate: 0 -1px;
+}
+
+.navstat img {
+  flex: none;
+  border-radius: 50%;
+}
+
+.navstat__label {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.navstat__value {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* CA: fire orange, dashed while the token isn't out yet */
+.navstat--ca {
+  border-color: rgba(255, 138, 61, 0.4);
+}
+
+.navstat--ca:hover {
+  border-color: rgba(255, 138, 61, 0.85);
+  background: rgba(255, 138, 61, 0.12);
+}
+
+.navstat--ca .navstat__value {
+  color: #ffb36b;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+
+.navstat--soon {
+  border-style: dashed;
+}
+
+.navstat--soon .navstat__value {
+  font-family: inherit;
+  letter-spacing: 0.04em;
+}
+
+.navstat--ca.is-done {
+  border-color: #3ddc84;
+}
+
+.navstat--ca.is-done .navstat__value {
+  color: #3ddc84;
+}
+
+.navstat__copy {
+  width: 14px;
+  height: 14px;
+  color: var(--muted);
+}
+
+/* Reward Pool: USDC blue, a live dot */
+.navstat--pool {
+  border-color: rgba(47, 180, 255, 0.4);
+}
+
+.navstat--pool:hover {
+  border-color: rgba(47, 180, 255, 0.85);
+  background: rgba(47, 180, 255, 0.12);
+}
+
+.navstat--pool .navstat__value {
+  color: #7fd0ff;
+}
+
+.navstat__live {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #3ddc84;
+  box-shadow: 0 0 0 0 rgba(61, 220, 132, 0.6);
+  animation: navstat-live 2s ease-out infinite;
+}
+
+@keyframes navstat-live {
+  70% {
+    box-shadow: 0 0 0 6px rgba(61, 220, 132, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(61, 220, 132, 0);
+  }
+}
+
+/* only where the bar has room for them next to the game tabs */
+@media (min-width: 1440px) {
+  .navstats {
+    display: flex;
+  }
+}
+
+@media (min-width: 1440px) and (max-width: 1699px) {
+  .navstat--pool .navstat__label {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navstat__live {
+    animation: none;
+  }
+}
