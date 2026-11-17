@@ -7,7 +7,7 @@ import Coin from "./art/Coin";
 import UsdcCoin from "./art/UsdcCoin";
 import GangsterToy from "./art/GangsterToy";
 import AmmoIcon from "./art/AmmoIcon";
-import { BOX_PRICE_DC, BULK_TIERS, CLAIM_ALL_FEE_USD, DACITY_PER_USDC, LAUNCH_SALE, MEDKIT_PRICE_USD, TOKEN, fmtAmmo, PROTAGONISTS, RARITIES, SHOT_CHANCE_PER_DAY, STORE_NAME, WEAPONS, fmt, quoteBoxes, characterOf } from "../config/game";
+import { BOX_PRICE_DC, BULK_TIERS, CLAIM_ALL_FEE_USD, DACITY_PER_USDC, LAUNCH_SALE, MEDKIT_PRICE_USD, TOKEN, fmtAmmo, PROTAGONISTS, RARITIES, SEASON_START, SHOT_CHANCE_PER_DAY, STORE_NAME, WEAPONS, fmt, quoteBoxes, characterOf } from "../config/game";
 import { usePlatform } from "../mock/platform";
 import { game } from "../game";
 import { WITHDRAW_COOLDOWN_HOURS, WITHDRAW_FEE_PCT, withdrawQuote } from "../config/game";
@@ -466,7 +466,18 @@ const QTY_CHIPS = [1, 10, 50, 100, 1_000];
 const usd = (dc: number) => `$${(dc / DACITY_PER_USDC).toFixed(2)}`;
 const tierPct = (n: number) => BULK_TIERS.find((t) => n >= t.min)?.pct ?? 0;
 
+/** "3h 05m 09s" / "1d 02h 05m" until a moment */
+function fmtCountdown(ms: number) {
+  const t = Math.max(0, Math.floor(ms / 1000));
+  const d = Math.floor(t / 86400), h = Math.floor((t % 86400) / 3600), m = Math.floor((t % 3600) / 60), sec = t % 60;
+  const p = (n: number) => String(n).padStart(2, "0");
+  return d > 0 ? `${d}d ${p(h)}h ${p(m)}m` : `${h}h ${p(m)}m ${p(sec)}s`;
+}
+
 function Shop({ dc, onBuy }: { dc: number; onBuy: (n: number) => void }) {
+  // box sales open with Season 01 (same moment as the home-page countdown; the database enforces it too)
+  const opensIn = SEASON_START.getTime() - useNow();
+  const closed = opensIn > 0;
   const sold = usePlatform((p) => p.boxesSold);
   const [count, setCount] = useState(1);
   const q = quoteBoxes(count, sold);
@@ -576,9 +587,17 @@ function Shop({ dc, onBuy }: { dc: number; onBuy: (n: number) => void }) {
             </li>
           ))}
         </ul>
-        <button type="button" className="btn btn--pink btn--block" disabled={short} onClick={() => onBuy(count)}>
-          {short ? `Need ${fmt(q.totalDc)} DC` : `Buy ${fmt(count)} for ${fmt(q.totalDc)} DC`}
-        </button>
+        {closed ? (
+          <div className="cooldown shop__opens" role="timer" aria-live="off">
+            <span>Box sales open with Season 01 in</span>
+            <b>{fmtCountdown(opensIn)}</b>
+            <small>Deposit now so you're ready for the launch sale.</small>
+          </div>
+        ) : (
+          <button type="button" className="btn btn--pink btn--block" disabled={short} onClick={() => onBuy(count)}>
+            {short ? `Need ${fmt(q.totalDc)} DC` : `Buy ${fmt(count)} for ${fmt(q.totalDc)} DC`}
+          </button>
+        )}
       </div>
     </section>
   );

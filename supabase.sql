@@ -88,6 +88,8 @@ alter table public.game_config add column if not exists withdraw_fee_pct numeric
 -- referrals: the referrer earns this % of every USDC deposit their recruits make (credited in DC)
 alter table public.game_config add column if not exists referral_pct numeric not null default 5
   check (referral_pct >= 0 and referral_pct <= 50);
+-- box sales stay closed until Season 01 opens (the site's countdown). NULL = always open.
+alter table public.game_config add column if not exists boxes_open_at timestamptz default '2026-11-18T11:00:00Z';
 
 insert into public.game_config (id) values (1) on conflict (id) do nothing;
 -- launch sale raised from 250 to 500 boxes (only touches a row still on the old default)
@@ -738,6 +740,9 @@ declare
   i int;
 begin
   perform public.assert_open();
+  if c.boxes_open_at is not null and now() < c.boxes_open_at then
+    raise exception 'Box sales open when Season 01 starts (%)', to_char(c.boxes_open_at at time zone 'UTC', 'Mon DD, HH24:MI "UTC"');
+  end if;
   v_p := public.lock_me();
   perform public.require_gang(v_p);
   if p_count is null or p_count < 1 or p_count > c.max_boxes_per_order then

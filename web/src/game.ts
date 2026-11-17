@@ -11,7 +11,7 @@ import { rpc } from "./backend/supabase";
 import { refresh, refreshPlatform } from "./backend/live";
 import * as pay from "./backend/payments";
 import { clearStoredRef, storedRef } from "./referral";
-import type { WeaponId } from "./config/game";
+import { SEASON_START, type WeaponId } from "./config/game";
 
 type Item = WeaponId | "vest" | "medkit";
 type Row = Record<string, unknown>;
@@ -80,6 +80,7 @@ export const game = {
   },
 
   async buyBoxes(count: number): Promise<{ totalDc: number; savedDc: number }> {
+    if (Date.now() < SEASON_START.getTime()) throw new Error("Box sales open when Season 01 starts");
     if (MOCK) return mock.buyBoxes(count);
     const r = await live(() => rpc<Row>("buy_boxes", { p_count: count }));
     return { totalDc: num(r.total_dc), savedDc: num(r.saved_dc) };
