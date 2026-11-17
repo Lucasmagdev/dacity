@@ -5,19 +5,17 @@ import ConnectCTA from "./ConnectCTA";
 import Socials from "./Socials";
 import Countdown from "./Countdown";
 import Portrait from "./Portrait";
-import GangsterToy from "./art/GangsterToy";
 import StepArt, { type StepKind } from "./art/StepArt";
 import LoreArt from "./art/LoreArt";
 import DropBox from "./art/DropBox";
-import { archetypeOf } from "../mock";
-import { BOX_PRICE_DC, DACITY_PER_USDC, PROTAGONISTS, RARITIES, SHOT_CHANCE_PER_DAY, fmt, type Protagonist } from "../config/game";
+import { BOX_PRICE_DC, DACITY_PER_USDC, PROTAGONISTS, RARITIES, SHOT_CHANCE_PER_DAY, characterOf, fmt, type Protagonist } from "../config/game";
 import { CHAIN_NAME } from "../solana";
 import { useScrollFx } from "./useScrollFx";
 import "../landing-fx.css";
 import "../how.css";
 import "../story.css";
 import "../rarity.css";
-import "../lineup.css";
+import "../mugshots.css";
 
 const STEPS: { kind: StepKind; title: string; text: string; chips: string[]; hot?: boolean }[] = [
   {
@@ -47,11 +45,26 @@ const STEPS: { kind: StepKind; title: string; text: string; chips: string[]; hot
   },
 ];
 
-/** Which archetype represents each rarity on the landing lineup (Mechanic, Skater, Hacker, Dealer, Old Boss). */
-const LINEUP_ARCHETYPE = [8, 5, 2, 4, 11];
-
-/** Lineup order, left -> right: Common, Uncommon, Rare, Epic, Legendary. */
-const LINEUP_ORDER = [0, 1, 2, 3, 4];
+/** Booking-photo stand-in for a rarity whose portrait isn't ready yet: a dark head-and-shoulders shape. */
+function Silhouette() {
+  return (
+    <svg className="mug__shade" viewBox="0 0 200 200" aria-hidden>
+      <defs>
+        <linearGradient id="mug-shade" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="var(--rc)" stopOpacity=".55" />
+          <stop offset="1" stopColor="var(--rc)" stopOpacity=".12" />
+        </linearGradient>
+      </defs>
+      <path
+        d="M100 26c-27 0-46 21-46 49 0 20 9 37 22 46-34 9-56 34-60 79h168c-4-45-26-70-60-79 13-9 22-26 22-46 0-28-19-49-46-49z"
+        fill="url(#mug-shade)"
+      />
+      <text x="100" y="92" textAnchor="middle" fill="var(--rc)" fontSize="46" fontWeight="800">
+        ?
+      </text>
+    </svg>
+  );
+}
 
 function Teaser({ p, side }: { p: Protagonist; side: "left" | "right" }) {
   return (
@@ -243,40 +256,50 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
             </div>
           </div>
 
-          <div className="lu" data-fx="lineup">
-            <ul className="lu__row">
-              {LINEUP_ORDER.map((ri, slot) => {
-                const r = RARITIES[ri];
+          <div className="mugs" data-fx="lineup">
+            <ul className="mugs__row">
+              {RARITIES.map((r) => {
+                const ch = characterOf(r.id);
+                const known = !!ch.img;
                 return (
                   <li
                     key={r.id}
-                    className={`suspect${r.id === 4 ? " suspect--legend" : ""}`}
-                    style={
-                      {
-                        "--rc": r.color,
-                        "--r": r.id,
-                        "--slot": slot,
-                        "--skin": archetypeOf(LINEUP_ARCHETYPE[ri]).skin,
-                      } as React.CSSProperties
-                    }
+                    className={`mug${known ? "" : " mug--classified"}${r.id === 4 ? " mug--legend" : ""}`}
+                    style={{ "--rc": r.color, "--r": r.id } as React.CSSProperties}
                     tabIndex={0}
                   >
-                    <span className="suspect__shadow" aria-hidden />
-                    <div className="suspect__fig">
-                      <GangsterToy gangsterId={LINEUP_ARCHETYPE[ri]} rarity={r.id} bare animate />
-                      {/* the booking placard each gangster holds */}
-                      <div className="suspect__board">
-                        <span className="suspect__bar">{r.name}</span>
-                        <span className="suspect__pct">{r.chance}%</span>
+                    <div className="mug__photo">
+                      {known ? (
+                        <img
+                          src={`${ch.img}-512.webp`}
+                          srcSet={`${ch.img}-256.webp 256w, ${ch.img}-512.webp 512w`}
+                          sizes="(max-width: 760px) 70vw, 220px"
+                          alt={`${ch.nick}, ${r.name} gangster`}
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      ) : (
+                        <Silhouette />
+                      )}
+                      <div className="mug__board">
+                        <span className="mug__pd">Audacity PD</span>
+                        <strong>{r.name}</strong>
+                        <span className="mug__no">
+                          {r.chance}% drop · #{String(r.id + 1).padStart(4, "0")}
+                        </span>
                       </div>
                     </div>
-                    <dl className="suspect__stats">
+                    <div className="mug__id">
+                      <h3>{known ? `“${ch.nick}”` : "???"}</h3>
+                      <p>{known ? `${ch.title} · ${ch.gang}` : "Identity unknown. Pull one to find out."}</p>
+                    </div>
+                    <dl className="mug__stats">
                       <div>
                         <dt>Farm/day</dt>
                         <dd>{fmt(r.perDay)} DC</dd>
                       </div>
                       <div>
-                        <dt>Cap</dt>
+                        <dt>Career cap</dt>
                         <dd>{fmt(r.cap)} DC</dd>
                       </div>
                       <div>

@@ -1,0 +1,282 @@
+/*
+ * Rarity lineup as booking photos: five equal mugshot cards in one dark room. Each card = photo with the
+ * booking board, who it is, and the numbers. Rarer = stronger glow; Legendary gets a gold frame.
+ * A rarity without a portrait yet shows a "?" silhouette (kept as a surprise), so the row always matches.
+ * --rc = rarity colour, --r = rarity 0..4 (reveal order).
+ */
+
+/* the room is a full-bleed band: it breaks out of the section and runs edge to edge */
+.magenta {
+  overflow-x: clip;
+}
+
+.mugs {
+  position: relative;
+  isolation: isolate;
+  width: 100vw;
+  margin: 8px calc(50% - 50vw) 0;
+  padding: 56px 0 88px;
+  background:
+    radial-gradient(60% 70% at 50% 0%, rgba(180, 92, 255, 0.16), transparent 70%),
+    linear-gradient(180deg, #170730 0%, #12052a 55%, #0a0214 100%);
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 56px, #000 calc(100% - 64px), transparent);
+  mask-image: linear-gradient(180deg, transparent, #000 56px, #000 calc(100% - 64px), transparent);
+}
+
+.mugs__row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: clamp(10px, 1.4vw, 20px);
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 2.4vw, 32px);
+  list-style: none;
+}
+
+/* ---------------------------------------------------------------- the card */
+
+.mug {
+  --glow: calc(0.18 + var(--r) * 0.1);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid color-mix(in srgb, var(--rc) 45%, transparent);
+  border-radius: 18px;
+  background: linear-gradient(180deg, #1c0d33, #120724);
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.45),
+    0 0 calc(10px + var(--r) * 8px) color-mix(in srgb, var(--rc) calc(var(--glow) * 100%), transparent);
+  outline: none;
+  transition:
+    translate 0.35s var(--fx-ease, ease),
+    box-shadow 0.35s ease;
+}
+
+.mug:hover,
+.mug:focus-visible {
+  translate: 0 -8px;
+  box-shadow:
+    0 26px 50px rgba(0, 0, 0, 0.5),
+    0 0 calc(18px + var(--r) * 10px) color-mix(in srgb, var(--rc) 60%, transparent);
+}
+
+/* animated gold frame for the Legendary: the border box shows a spinning gold gradient */
+.mug--legend {
+  border: 2px solid transparent;
+  background:
+    linear-gradient(180deg, #1c0d33, #120724) padding-box,
+    conic-gradient(from var(--mug-a, 0deg), #ffd36b, #ff9a3d, #fff2b0, #ffb020, #ffd36b) border-box;
+  animation: mug-spin 6s linear infinite;
+}
+
+@property --mug-a {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes mug-spin {
+  to {
+    --mug-a: 360deg;
+  }
+}
+
+/* ---------------------------------------------------------------- photo + booking board */
+
+.mug__photo {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 17px 17px 0 0;
+  background:
+    repeating-linear-gradient(180deg, transparent 0 18%, rgba(255, 255, 255, 0.06) 18% calc(18% + 1px)),
+    linear-gradient(180deg, #241240, #160a2a);
+}
+
+.mug__photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: scale 0.5s var(--fx-ease, ease);
+}
+
+.mug:hover .mug__photo img,
+.mug:focus-visible .mug__photo img {
+  scale: 1.05;
+}
+
+/* bottom shade so the board reads on any portrait */
+.mug__photo::after {
+  content: "";
+  position: absolute;
+  inset: 55% 0 0;
+  background: linear-gradient(180deg, transparent, rgba(10, 2, 20, 0.85));
+  pointer-events: none;
+}
+
+.mug__board {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  bottom: 9%;
+  display: grid;
+  justify-items: center;
+  min-width: 70%;
+  padding: 6px 12px 7px;
+  translate: -50% 0;
+  border: 2px solid #f6f2fb;
+  border-radius: 6px;
+  background: #0d0716;
+  color: #f6f2fb;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.55);
+  line-height: 1.1;
+  text-align: center;
+}
+
+.mug__pd {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  opacity: 0.7;
+  text-transform: uppercase;
+}
+
+.mug__board strong {
+  color: var(--rc);
+  font-family: var(--font-display);
+  font-size: clamp(17px, 1.8vw, 24px);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-shadow: 0 0 8px color-mix(in srgb, var(--rc) calc(20% + var(--r) * 10%), transparent);
+}
+
+.mug__no {
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------- classified (no portrait yet) */
+
+.mug__shade {
+  position: absolute;
+  inset: 4% 0 0;
+  width: 100%;
+  height: 96%;
+}
+
+
+/* ---------------------------------------------------------------- who + numbers */
+
+.mug__id {
+  padding: 14px 16px 4px;
+}
+
+.mug__id h3 {
+  margin: 0;
+  font-size: clamp(17px, 1.5vw, 20px);
+  line-height: 1.2;
+}
+
+.mug--classified .mug__id h3 {
+  color: var(--rc);
+  letter-spacing: 0.2em;
+}
+
+.mug__id p {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.mug__stats {
+  display: grid;
+  gap: 6px;
+  margin: auto 0 0;
+  padding: 10px 16px 16px;
+}
+
+.mug__stats div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  font-size: 13px;
+}
+
+.mug__stats dt {
+  color: var(--muted);
+}
+
+.mug__stats dd {
+  margin: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------- reveal: cards rise in rarity order */
+
+.fx-ready [data-fx="lineup"]:not(.is-in) .mug {
+  opacity: 0;
+  translate: 0 32px;
+}
+
+.fx-ready [data-fx="lineup"].is-in .mug {
+  animation: mug-in 0.8s var(--fx-ease, ease) both;
+  animation-delay: calc(0.2s + var(--r) * 0.14s);
+}
+
+@keyframes mug-in {
+  from {
+    opacity: 0;
+    translate: 0 32px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+/* ---------------------------------------------------------------- tablets and phones: swipe the lineup */
+
+@media (max-width: 960px) {
+  .mugs__row {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(200px, 42vw);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding: 0 16px;
+    padding-bottom: 12px;
+    scrollbar-width: none;
+  }
+
+  .mugs__row::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mug {
+    scroll-snap-align: start;
+  }
+}
+
+@media (max-width: 520px) {
+  .mugs__row {
+    grid-auto-columns: 72vw;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mug--legend {
+    animation: none;
+  }
+
+  .fx-ready [data-fx="lineup"] .mug {
+    animation: none;
+    opacity: 1;
+    translate: none;
+  }
+}

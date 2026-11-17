@@ -228,8 +228,9 @@ export const CHARACTERS: Character[] = [
     flavor: "Smokes, rides, collects. In that order.",
     img: "/characters/rare",
   },
-  { rarity: 3, nick: "El Silencio", title: "Cartel Lieutenant", gang: "Sangre Azul", flavor: "Never raises his voice. Never needs to." },
-  { rarity: 4, nick: "The Don", title: "Kingpin", gang: "Old Money", flavor: "Owns the docks, the cops and the sunset." },
+  // Epic and Legendary stay a surprise (shadow + "???") until their portraits are added here
+  { rarity: 3, nick: "???", title: "Identity unknown", gang: "Classified", flavor: "Nobody knows who he works for. Yet." },
+  { rarity: 4, nick: "???", title: "Identity unknown", gang: "Classified", flavor: "The city whispers his name. Nobody says it." },
 ];
 
 export const characterOf = (rarity: number): Character => CHARACTERS[rarity] ?? CHARACTERS[0];

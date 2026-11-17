@@ -1,6 +1,6 @@
 import { useId, useState } from "react";
 import { RARITIES, characterOf } from "../../config/game";
-import { archetypeOf, type Archetype } from "../../mock";
+import { type Archetype } from "../../mock";
 
 const INK = "#1a0a24";
 
@@ -20,8 +20,6 @@ export default function GangsterToy({
   bare?: boolean;
   animate?: boolean;
 }) {
-  const a = archetypeOf(gangsterId);
-  const [failed, setFailed] = useState(false);
   const [portraitFailed, setPortraitFailed] = useState(false);
   const ch = characterOf(rarity);
 
@@ -41,17 +39,40 @@ export default function GangsterToy({
       />
     );
   }
-  const src = `/gangsters/${slug(a.title)}-${RARITIES[rarity].name.toLowerCase()}.webp`;
-
-  if (!failed && !bare) {
-    return <img className="toy toy--img" src={src} alt={`${a.title} (${RARITIES[rarity].name})`} onError={() => setFailed(true)} />;
-  }
-  return <ToySvg a={a} rarity={rarity} bare={bare} animate={animate} />;
+  // no portrait yet (Epic, Legendary): a shadow in the rarity's colour, kept as a surprise
+  return <ShadowToy rarity={rarity} bare={bare} gangsterId={gangsterId} />;
 }
 
-const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+function ShadowToy({ rarity, bare, gangsterId }: { rarity: number; bare: boolean; gangsterId: number }) {
+  const uid = useId().replace(/:/g, "");
+  const rc = RARITIES[rarity].color;
+  return (
+    <svg viewBox="0 0 200 240" className="toy toy--shadow" role="img" aria-label={`${RARITIES[rarity].name} gangster #${gangsterId}: identity unknown`}>
+      <defs>
+        <radialGradient id={`${uid}-bg`} cx="50%" cy="45%" r="75%">
+          <stop offset="0" stopColor={rc} stopOpacity=".35" />
+          <stop offset=".6" stopColor="#1a0b2e" />
+          <stop offset="1" stopColor="#09050f" />
+        </radialGradient>
+        <linearGradient id={`${uid}-fig`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={rc} stopOpacity=".5" />
+          <stop offset="1" stopColor={rc} stopOpacity=".1" />
+        </linearGradient>
+      </defs>
+      {!bare && <rect width="200" height="240" fill={`url(#${uid}-bg)`} />}
+      <path
+        d="M100 50c-27 0-46 21-46 49 0 20 9 37 22 46-34 9-56 34-60 95h168c-4-61-26-86-60-95 13-9 22-26 22-46 0-28-19-49-46-49z"
+        fill={`url(#${uid}-fig)`}
+      />
+      <text x="100" y="112" textAnchor="middle" fill={rc} fontSize="44" fontWeight="800" opacity=".9">
+        ?
+      </text>
+    </svg>
+  );
+}
 
-function ToySvg({ a, rarity, bare, animate }: { a: Archetype; rarity: number; bare: boolean; animate: boolean }) {
+/** The old drawn vinyl figure (kept for reference; not shown anymore). */
+export function ToySvg({ a, rarity, bare, animate }: { a: Archetype; rarity: number; bare: boolean; animate: boolean }) {
   const uid = useId().replace(/:/g, "");
   const rc = RARITIES[rarity].color;
   const legendary = rarity === 4;
