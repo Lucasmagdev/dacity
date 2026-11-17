@@ -163,7 +163,7 @@ function Stars() {
 export type SceneBackdrop = { src: string; blur?: number };
 
 /** Every in-game page (the dimmed scene) sits on the hero key art, blurred so the panels stay readable. */
-const GAME_BACKDROP: SceneBackdrop = { src: "/hero/keyart.jpg", blur: 6 };
+const GAME_BACKDROP: SceneBackdrop = { src: KEYART_POSTER, blur: 6 };
 
 function Backdrop({ src, blur = 0 }: SceneBackdrop) {
   const [loaded, setLoaded] = useState(false);
