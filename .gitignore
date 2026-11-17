@@ -17,3 +17,6 @@ vídeocapa.mp4
 
 # build cache
 *.tsbuildinfo
+
+.vercel
+.env*.local
