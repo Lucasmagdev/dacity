@@ -90,7 +90,7 @@ Environment variables: only the `VITE_*` ones from `web/.env.example` (public va
 = the Railway URL. Routing is hash-based (`#/…`), so no rewrites are needed.
 
 **Payment server → Railway** (from GitHub): Root Directory `server` (uses `server/railway.json`: build
-`npm ci && npm run build`, start `npm start`, health check `/health`). Variables: everything in
+`npm run build`, start `npm start`, health check `/health`). Variables: everything in
 `server/.env.example`, including the wallet secret keys and `SUPABASE_SECRET_KEY` (Railway only, never Vercel).
 Set `WEB_ORIGINS` to the site's domain(s). Several replicas are safe: each background job takes a lease in
 the database, and withdrawals/burns are recorded before they're sent, so nothing runs or pays twice.
