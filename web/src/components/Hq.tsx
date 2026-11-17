@@ -15,6 +15,7 @@ import { ammoFor, fmtUsd, useAmmoPrice } from "../price";
 import { WITHDRAW_FEE_NOTE } from "../solana";
 import { LIVE, usePendingWithdrawals } from "../backend/live";
 import ReferralPanel from "./ReferralPanel";
+import { AccountLoading, useAccountLoading } from "./AccountGate";
 import {
   MAX_BOXES_PER_TX,
   MOCK,
@@ -81,6 +82,8 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
   const q = totals.claimAll;
   const fusable = totals.fusable;
 
+  const accountLoading = useAccountLoading();
+  if (!s.gang && accountLoading) return <AccountLoading onBack={onBack} />;
   if (!s.gang) {
     return (
       <div className="page select">

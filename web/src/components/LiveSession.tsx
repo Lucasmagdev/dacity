@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { LIVE, endSession, startSession, useLiveStatus } from "../backend/live";
 import { shortAddr } from "../solana";
@@ -9,7 +9,8 @@ import { setWalletBridge } from "../backend/wallet";
  * when it disconnects, and shows a small status pill while signing in or if something went wrong.
  */
 export default function LiveSession() {
-  const { publicKey, signMessage, signIn, connected, sendTransaction, signTransaction } = useWallet();
+  const { publicKey, signMessage, signIn, connected, connecting, sendTransaction, signTransaction } = useWallet();
+  const wasConnected = useRef(false);
   const status = useLiveStatus();
 
   // let deposits / withdrawals use the connected wallet
@@ -17,11 +18,18 @@ export default function LiveSession() {
     setWalletBridge(connected && publicKey ? { publicKey, sendTransaction, signTransaction } : null);
   }, [connected, publicKey, sendTransaction, signTransaction]);
 
+  // On page load the wallet takes a moment to reconnect: that is NOT a disconnect, and signing out then would
+  // force a new signature and show "choose your boss" meanwhile. Only a real connected -> disconnected change ends it.
   useEffect(() => {
     if (!LIVE) return;
-    if (connected && publicKey && (signIn || signMessage)) startSession({ publicKey, signMessage, signIn: signIn as never });
-    if (!connected) endSession();
-  }, [connected, publicKey, signMessage, signIn]);
+    if (connected && publicKey && (signIn || signMessage)) {
+      wasConnected.current = true;
+      startSession({ publicKey, signMessage, signIn: signIn as never });
+    } else if (!connected && !connecting && wasConnected.current) {
+      wasConnected.current = false;
+      endSession();
+    }
+  }, [connected, connecting, publicKey, signMessage, signIn]);
 
   if (!LIVE) return null;
   if (connected && publicKey && !signMessage && !signIn) {

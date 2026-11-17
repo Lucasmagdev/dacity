@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Scene from "./Scene";
 import Nav from "./Nav";
 import ConnectCTA from "./ConnectCTA";
@@ -8,6 +8,8 @@ import { MOCK, useMock } from "../mock";
 import { game } from "../game";
 import { useWalletAddress } from "./Wallet";
 import { refCode, useInviter } from "../referral";
+import { AccountLoading, useAccountLoading } from "./AccountGate";
+import { LIVE, refresh } from "../backend/live";
 
 const MIN_NAME = 3;
 const MAX_NAME = 24;
@@ -31,6 +33,12 @@ export default function CharacterSelect({ onBack, onEnterHq }: { onBack: () => v
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const accountLoading = useAccountLoading();
+  // live: this wallet already has a gang (loaded from the database) -> straight to the HQ
+  useEffect(() => {
+    if (LIVE && existing && !accountLoading) onEnterHq();
+  }, [existing, accountLoading, onEnterHq]);
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!canSubmit || !picked || busy) return;
@@ -40,12 +48,20 @@ export default function CharacterSelect({ onBack, onEnterHq }: { onBack: () => v
       await game.createGang(picked, trimmed);
       onEnterHq();
     } catch (err) {
-      setError((err as Error).message);
+      const msg = (err as Error).message;
+      // the gang exists already (e.g. founded in another tab): load it and go to the HQ instead of erroring
+      if (/already founded/i.test(msg)) {
+        await refresh().catch(() => {});
+        onEnterHq();
+        return;
+      }
+      setError(msg);
     } finally {
       setBusy(false);
     }
   }
 
+  if (!existing && accountLoading) return <AccountLoading onBack={onBack} />;
   if (existing) {
     const p = PROTAGONISTS.find((x) => x.id === existing.protagonist) ?? PROTAGONISTS[0];
     return (

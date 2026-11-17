@@ -6,6 +6,7 @@ import Fusion from "./Fusion";
 import { RARITIES, TOKEN, fmt, recipeFrom, characterOf } from "../config/game";
 import AmmoIcon from "./art/AmmoIcon";
 import { farmedOf, fusionCandidates, isFarming, isRetired, isShot, statsOf, useMock, type MockGangster } from "../mock";
+import { AccountLoading, useAccountLoading } from "./AccountGate";
 
 function useNow(ms = 1000) {
   const [now, setNow] = useState(Date.now());
@@ -28,6 +29,8 @@ export default function FusionPage({ onBack, onFound }: { onBack: () => void; on
     return () => clearTimeout(t);
   }, [toast]);
 
+  const accountLoading = useAccountLoading();
+  if (!s.gang && accountLoading) return <AccountLoading onBack={onBack} />;
   if (!s.gang) {
     return (
       <div className="page select">

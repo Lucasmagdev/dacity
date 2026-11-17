@@ -9,6 +9,7 @@ import { ItemIcon, LoadoutRow } from "./Armory";
 import { game } from "../game";
 import { RARITIES, SHOT_CHANCE_PER_DAY, STORE_NAME, VEST, WEAPONS, fmt, type WeaponId, characterOf } from "../config/game";
 import { isBoxReady, isRetired, isShot, statsOf, useMock, type MockGangster } from "../mock";
+import { AccountLoading, useAccountLoading } from "./AccountGate";
 
 type Tab = "gangsters" | "boxes" | "items";
 
@@ -53,6 +54,8 @@ export default function Inventory({ onBack, onFound }: { onBack: () => void; onF
     }
   };
 
+  const accountLoading = useAccountLoading();
+  if (!s.gang && accountLoading) return <AccountLoading onBack={onBack} />;
   if (!s.gang) {
     return (
       <div className="page select">

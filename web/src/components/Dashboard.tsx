@@ -6,6 +6,7 @@ import { DACITY_PER_USDC, RARITIES, TOKEN, WEAPONS, fmt } from "../config/game";
 import AmmoIcon from "./art/AmmoIcon";
 import { usePlatform } from "../mock/platform";
 import { MOCK, MOCK_DAY_MS, farmedOf, isFarming, isShot, pendingOf, rateOf, statsOf, useMock, weaponDaysLeft, type MockTx, type TxType } from "../mock";
+import { AccountLoading, useAccountLoading } from "./AccountGate";
 
 const PERIODS = [
   { label: "Per hour", days: 1 / 24 },
@@ -135,6 +136,8 @@ export default function Dashboard({ onBack, onFound }: { onBack: () => void; onF
     return { ratePerDay, pending, lifetime, remaining, active, shot, fused, nextRetire, byRarity, periods: PERIODS.map((p) => ({ ...p, dc: earnIn(p.days) })) };
   }, [s.gangsters, s.stats.claimed, now]);
 
+  const accountLoading = useAccountLoading();
+  if (!s.gang && accountLoading) return <AccountLoading onBack={onBack} />;
   if (!s.gang) {
     return (
       <div className="page select">

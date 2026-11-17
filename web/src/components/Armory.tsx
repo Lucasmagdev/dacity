@@ -9,6 +9,7 @@ import AmmoVault from "./AmmoVault";
 import { usePlatform } from "../mock/platform";
 import { game } from "../game";
 import { hasVest, isRetired, isShot, rateOf, statsOf, useMock, weaponDaysLeft, type MockGangster } from "../mock";
+import { AccountLoading, useAccountLoading } from "./AccountGate";
 
 type ItemId = WeaponId | "vest" | "medkit";
 
@@ -63,6 +64,8 @@ export default function Armory({ onBack, onFound }: { onBack: () => void; onFoun
     }
   };
 
+  const accountLoading = useAccountLoading();
+  if (!s.gang && accountLoading) return <AccountLoading onBack={onBack} />;
   if (!s.gang) {
     return (
       <div className="page select">

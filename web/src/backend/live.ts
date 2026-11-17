@@ -36,11 +36,13 @@ const setPending = (p: PendingWithdrawal[]) => {
 export const LIVE = !MOCK && !!supabase;
 
 export type LivePhase = "off" | "disconnected" | "signing" | "ready" | "error";
-let status: { phase: LivePhase; error: string | null; wallet: string | null; isAdmin: boolean } = {
+let status: { phase: LivePhase; error: string | null; wallet: string | null; isAdmin: boolean; loaded: boolean } = {
   phase: LIVE ? "disconnected" : "off",
   error: null,
   wallet: null,
   isAdmin: false,
+  /** the player's data has been loaded at least once for this wallet (until then: don't assume "no gang") */
+  loaded: false,
 };
 const listeners = new Set<() => void>();
 const setStatus = (next: Partial<typeof status>) => {
@@ -211,11 +213,16 @@ type WalletLike = {
 const SIGN_IN_URL = () => `${window.location.origin}/`;
 const SIGN_IN_STATEMENT = "Sign in to Audacity Game";
 
+/** The wallet the saved Supabase session belongs to (from its Web3 identity, or the sign-in claims). */
 const sessionWallet = async () => {
   const { data } = await supabase!.auth.getSession();
   const u = data.session?.user;
-  const claims = (u?.user_metadata?.custom_claims ?? {}) as { address?: string };
-  return u ? claims.address ?? null : null;
+  if (!u) return null;
+  const fromIdentity = u.identities
+    ?.map((i) => /^web3:solana:([1-9A-HJ-NP-Za-km-z]{32,44})$/.exec((i as { provider_id?: string }).provider_id ?? "")?.[1])
+    .find(Boolean);
+  const claims = (u.user_metadata?.custom_claims ?? {}) as { address?: string };
+  return fromIdentity ?? claims.address ?? null;
 };
 
 let pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -228,9 +235,10 @@ export async function startSession(wallet: WalletLike) {
   if (starting === address || (status.phase === "ready" && status.wallet === address)) return;
   starting = address;
   try {
+    if (status.wallet !== address) setStatus({ loaded: false });
     if ((await sessionWallet()) !== address) {
       await supabase.auth.signOut();
-      setStatus({ phase: "signing", error: null, wallet: address });
+      setStatus({ phase: "signing", error: null, wallet: address, loaded: false });
       // prefer the wallet's own Sign In with Solana; fall back to signing the message ourselves
       const solanaWallet = wallet.signIn
         ? { publicKey: wallet.publicKey, signIn: wallet.signIn }
@@ -249,6 +257,7 @@ export async function startSession(wallet: WalletLike) {
     setStatus({ phase: "ready", error: null, wallet: address, isAdmin: !!isAdmin });
     await Promise.all([refreshWalletBalances(address), refreshPlatform()]);
     await refresh();
+    setStatus({ loaded: true });
     if (pollTimer) clearInterval(pollTimer);
     let tick = 0;
     pollTimer = setInterval(() => {
@@ -271,7 +280,7 @@ export async function endSession() {
   await supabase.auth.signOut();
   setLiveState(emptyState());
   setPending([]);
-  setStatus({ phase: "disconnected", error: null, wallet: null, isAdmin: false });
+  setStatus({ phase: "disconnected", error: null, wallet: null, isAdmin: false, loaded: false });
 }
 
 // platform data is public: load it right away, even before a wallet connects
