@@ -2,14 +2,20 @@ import { useEffect } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { LIVE, endSession, startSession, useLiveStatus } from "../backend/live";
 import { shortAddr } from "../solana";
+import { setWalletBridge } from "../backend/wallet";
 
 /**
  * Live mode only: signs the player in to Supabase with their Solana wallet when it connects, signs out
  * when it disconnects, and shows a small status pill while signing in or if something went wrong.
  */
 export default function LiveSession() {
-  const { publicKey, signMessage, signIn, connected } = useWallet();
+  const { publicKey, signMessage, signIn, connected, sendTransaction, signTransaction } = useWallet();
   const status = useLiveStatus();
+
+  // let deposits / withdrawals use the connected wallet
+  useEffect(() => {
+    setWalletBridge(connected && publicKey ? { publicKey, sendTransaction, signTransaction } : null);
+  }, [connected, publicKey, sendTransaction, signTransaction]);
 
   useEffect(() => {
     if (!LIVE) return;

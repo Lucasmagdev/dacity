@@ -14,6 +14,24 @@ import { MOCK, MOCK_REVEAL_MS, setDayMs, setLiveState, type MockBox, type MockGa
 import { setPlatformLive, type Announcement } from "../mock/platform";
 import { RPC_URL, USDC_MINT, NETWORK } from "../solana";
 import { TOKEN, type WeaponId } from "../config/game";
+import { pendingWithdrawals, type PendingWithdrawal } from "./payments";
+
+// ------------------------------------------------------------------ withdrawals waiting for the player's approval
+let pending: PendingWithdrawal[] = [];
+const pendingListeners = new Set<() => void>();
+export function usePendingWithdrawals() {
+  return useSyncExternalStore(
+    (cb) => {
+      pendingListeners.add(cb);
+      return () => pendingListeners.delete(cb);
+    },
+    () => pending,
+  );
+}
+const setPending = (p: PendingWithdrawal[]) => {
+  pending = p;
+  pendingListeners.forEach((l) => l());
+};
 
 export const LIVE = !MOCK && !!supabase;
 
@@ -99,12 +117,14 @@ const toTx = (r: Row): MockTx => ({
 /** Reload the signed-in player's state from the database. */
 export async function refresh() {
   if (!supabase || status.phase !== "ready") return;
-  const [p, g, b, t] = await Promise.all([
+  const [p, g, b, t, pw] = await Promise.all([
     supabase.from("players").select("*").maybeSingle(),
     supabase.from("gangsters").select("*").is("consumed_at", null).order("id", { ascending: false }),
     supabase.from("boxes").select("id, ready_at").is("opened_at", null).order("id"),
     supabase.from("player_transactions").select("*").order("at", { ascending: false }).limit(300),
+    pendingWithdrawals().catch(() => pending),
   ]);
+  setPending(pw);
   const err = p.error || g.error || b.error || t.error;
   if (err) throw new Error(err.message);
   const pl = (p.data ?? {}) as Row;
@@ -247,6 +267,7 @@ export async function endSession() {
   pollTimer = null;
   await supabase.auth.signOut();
   setLiveState(emptyState());
+  setPending([]);
   setStatus({ phase: "disconnected", error: null, wallet: null, isAdmin: false });
 }
 

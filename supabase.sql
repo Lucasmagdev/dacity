@@ -292,6 +292,23 @@ create table if not exists public.admin_log (
   detail  text not null default ''
 );
 
+-- Payment server bookkeeping (columns added after the first version, see section 10a).
+alter table public.withdrawals add column if not exists reference text unique;
+alter table public.withdrawals add column if not exists tx_base64 text;
+alter table public.withdrawals add column if not exists tx_last_valid_height bigint;
+alter table public.withdrawals add column if not exists issued_at timestamptz;
+alter table public.burn_batches add column if not exists status text not null default 'confirmed'
+  check (status in ('pending', 'confirmed', 'failed'));
+alter table public.burn_batches add column if not exists last_valid_height bigint;
+
+-- One worker of each kind at a time, even with several server instances running.
+create table if not exists public.worker_leases (
+  name        text primary key,
+  holder      text not null,
+  expires_at  timestamptz not null
+);
+
+
 
 -- -----------------------------------------------------------------------------------------------------
 -- 4. ROW LEVEL SECURITY
@@ -316,6 +333,7 @@ alter table public.player_transactions  enable row level security;
 alter table public.deposits             enable row level security;
 alter table public.withdrawals          enable row level security;
 alter table public.admin_log            enable row level security;
+alter table public.worker_leases        enable row level security;
 
 -- public, read only
 drop policy if exists "public read" on public.game_config;
@@ -335,7 +353,7 @@ create policy "public read" on public.platform_state for select to anon, authent
 drop policy if exists "public read" on public.token_price_samples;
 create policy "public read" on public.token_price_samples for select to anon, authenticated using (true);
 drop policy if exists "public read" on public.burn_batches;
-create policy "public read" on public.burn_batches for select to anon, authenticated using (true);
+create policy "public read" on public.burn_batches for select to anon, authenticated using (status = 'confirmed');
 drop policy if exists "live announcements" on public.announcements;
 create policy "live announcements" on public.announcements for select to anon, authenticated
   using (active and (expires_at is null or expires_at > now()));
@@ -354,7 +372,7 @@ create policy "own rows" on public.deposits for select to authenticated using (u
 drop policy if exists "own rows" on public.withdrawals;
 create policy "own rows" on public.withdrawals for select to authenticated using (user_id = auth.uid());
 
--- box_seeds, admins, admin_log: no policies on purpose (only functions and service_role).
+-- box_seeds, admins, admin_log, worker_leases: no policies on purpose (only functions and service_role).
 
 
 -- -----------------------------------------------------------------------------------------------------
@@ -1269,6 +1287,68 @@ end $$;
 
 
 -- -----------------------------------------------------------------------------------------------------
+-- 10a. PAYMENT SERVER (Railway) · bookkeeping that keeps withdrawals and burns from ever running twice
+-- -----------------------------------------------------------------------------------------------------
+
+-- Withdrawals: the server builds the transfer (player pays the network fee), pre-signs it as the sender
+-- and hands it to the player to sign and send. Every withdrawal has its own reference key inside its
+-- transfer, so the server can always find out whether it landed. A new transaction is only issued once
+-- the previous one has expired (tx_last_valid_height passed) and is confirmed not to have landed.
+
+-- Burns: a batch is recorded as 'pending' (with its signature) BEFORE it is sent, so a crash between
+-- sending and recording can never cause the same AMMO to be burned twice.
+
+
+create or replace function public.acquire_lease(p_name text, p_holder text, p_ttl_seconds int)
+returns boolean language plpgsql security definer set search_path = public, pg_temp
+as $$
+declare v_holder text;
+begin
+  insert into public.worker_leases (name, holder, expires_at)
+  values (p_name, p_holder, now() + make_interval(secs => p_ttl_seconds))
+  on conflict (name) do update
+     set holder = excluded.holder, expires_at = excluded.expires_at
+   where public.worker_leases.holder = excluded.holder or public.worker_leases.expires_at < now()
+  returning holder into v_holder;
+  return coalesce(v_holder = p_holder, false);
+end $$;
+
+-- Reserve spent AMMO for an on-chain burn that is about to be sent.
+create or replace function public.start_burn(p_amount numeric, p_signature text, p_last_valid_height bigint)
+returns public.burn_batches language plpgsql security definer set search_path = public, pg_temp
+as $$
+declare v_b public.burn_batches;
+begin
+  if p_amount is null or p_amount <= 0 then raise exception 'Amount must be positive'; end if;
+  if exists (select 1 from public.burn_batches where status = 'pending') then raise exception 'A burn is already in flight'; end if;
+  update public.platform_state set ammo_pending_burn = ammo_pending_burn - p_amount, updated_at = now()
+   where id = 1 and ammo_pending_burn >= p_amount;
+  if not found then raise exception 'Not that much AMMO waiting to be burned'; end if;
+  insert into public.burn_batches (amount, signature, status, last_valid_height)
+  values (p_amount, p_signature, 'pending', p_last_valid_height)
+  returning * into v_b;
+  return v_b;
+end $$;
+
+-- The burn confirmed on-chain (p_ok) or definitely didn't land (expired / failed): settle the counters.
+create or replace function public.finish_burn(p_signature text, p_ok boolean)
+returns void language plpgsql security definer set search_path = public, pg_temp
+as $$
+declare v_b public.burn_batches;
+begin
+  select * into v_b from public.burn_batches where signature = p_signature for update;
+  if v_b.id is null then raise exception 'Unknown burn'; end if;
+  if v_b.status <> 'pending' then return; end if;                       -- idempotent
+  update public.burn_batches set status = case when p_ok then 'confirmed' else 'failed' end where id = v_b.id;
+  if p_ok then
+    update public.platform_state set ammo_burned_onchain = ammo_burned_onchain + v_b.amount, updated_at = now() where id = 1;
+  else
+    update public.platform_state set ammo_pending_burn = ammo_pending_burn + v_b.amount, updated_at = now() where id = 1;
+  end if;
+end $$;
+
+
+-- -----------------------------------------------------------------------------------------------------
 -- 10b. PUBLIC $AMMO STATS (for the token page: totals and an anonymous burn feed, no private data)
 -- -----------------------------------------------------------------------------------------------------
 
@@ -1307,7 +1387,8 @@ as $$
                                            else left(wallet, 4) || '…' || right(wallet, 4) end as who
                                  from spends order by at desc limit 30) r),
     'burns',          (select coalesce(jsonb_agg(b order by b.created_at desc), '[]'::jsonb)
-                         from (select amount, signature, created_at from public.burn_batches order by created_at desc limit 20) b)
+                         from (select amount, signature, created_at from public.burn_batches where status = 'confirmed'
+                                order by created_at desc limit 20) b)
   )
 $$;
 
@@ -1366,7 +1447,8 @@ begin
          'create_deposit_intent', 'request_withdrawal_usdc', 'request_withdrawal_ammo', 'assert_admin',
          'admin_set_maintenance', 'admin_announce', 'admin_clear_announcement', 'admin_grant_dc',
          'admin_grant_boxes', 'admin_recent_log', 'link_wallet', 'confirm_deposit', 'mark_withdrawal',
-         'record_price', 'record_burn', 'handle_new_user', 'handle_new_identity', 'wallet_of', 'ammo_stats')
+         'record_price', 'record_burn', 'handle_new_user', 'handle_new_identity', 'wallet_of', 'ammo_stats',
+         'acquire_lease', 'start_burn', 'finish_burn')
   loop
     execute format('revoke all on function %s from public, anon, authenticated', f.sig);
     execute format('grant execute on function %s to service_role', f.sig);

@@ -98,8 +98,8 @@ export const TOKEN = {
   totalSupply: 1_000_000_000,
   /** pump.fun token page, set once the token is live. Empty = link hidden. */
   buyUrl: "",
-  /** Token mint address, set once launched. Empty = shown as "announced at launch". */
-  address: "",
+  /** Token mint address (VITE_AMMO_MINT), set once launched. Empty = shown as "announced at launch". */
+  address: (import.meta.env.VITE_AMMO_MINT as string | undefined)?.trim() || "",
 };
 
 /**

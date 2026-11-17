@@ -9,14 +9,30 @@ import { MOCK, getState, mock, type MockGangster } from "./mock";
 import { platform, type Announcement } from "./mock/platform";
 import { rpc } from "./backend/supabase";
 import { refresh, refreshPlatform } from "./backend/live";
+import * as pay from "./backend/payments";
 import type { WeaponId } from "./config/game";
 
 type Item = WeaponId | "vest" | "medkit";
 type Row = Record<string, unknown>;
 const num = (v: unknown) => Number(v ?? 0);
 
-/** Deposits move real money: they only go live with the payment server that confirms them on-chain. */
-const DEPOSITS_SOON = "Deposits open soon: the payment server that confirms transfers on Solana isn't live yet.";
+/** The deposit went through but the credit is still confirming: shown as the toast. */
+const STILL_CONFIRMING = "Deposit sent. It shows up in your balance as soon as Solana confirms it (a few seconds).";
+
+/** Withdrawal saved in the database, but the player didn't approve the transfer in their wallet. */
+const approveLater = (e: unknown) =>
+  new Error(`${(e as Error).message || "Not approved"}. Your withdrawal is saved: finish it from "Pending withdrawals" in the HQ.`);
+
+async function withdrawLive(fn: string, args: Record<string, unknown>) {
+  const w = await rpc<Row>(fn, args);
+  try {
+    await pay.finishWithdrawal(num(w.id));
+  } catch (e) {
+    await refresh();
+    throw approveLater(e);
+  }
+  await refresh();
+}
 
 async function live<T>(fn: () => Promise<T>): Promise<T> {
   const out = await fn();
@@ -34,22 +50,26 @@ export const game = {
 
   async deposit(usdc: number) {
     if (MOCK) return void mock.deposit(usdc);
-    throw new Error(DEPOSITS_SOON);
+    const r = await pay.deposit("usdc", usdc);
+    await refresh();
+    if (r.pending) throw new Error(STILL_CONFIRMING);
   },
 
   async withdraw(dc: number) {
     if (MOCK) return void mock.withdraw(dc);
-    await live(() => rpc("request_withdrawal_usdc", { p_amount_dc: dc }));
+    await withdrawLive("request_withdrawal_usdc", { p_amount_dc: dc });
   },
 
   async depositAmmo(amount: number) {
     if (MOCK) return void mock.depositAmmo(amount);
-    throw new Error(DEPOSITS_SOON);
+    const r = await pay.deposit("ammo", amount);
+    await refresh();
+    if (r.pending) throw new Error(STILL_CONFIRMING);
   },
 
   async withdrawAmmo(amount: number) {
     if (MOCK) return void mock.withdrawAmmo(amount);
-    await live(() => rpc("request_withdrawal_ammo", { p_amount: amount }));
+    await withdrawLive("request_withdrawal_ammo", { p_amount: amount });
   },
 
   async buyBoxes(count: number): Promise<{ totalDc: number; savedDc: number }> {
@@ -116,6 +136,23 @@ export const game = {
   async equipVest(id: number) {
     if (MOCK) return void mock.equipVest(id);
     await live(() => rpc("equip_vest", { p_gangster_id: id }));
+  },
+
+  /** Live only: approve (again) or cancel a withdrawal that is still waiting. */
+  async finishWithdrawal(id: number) {
+    try {
+      await pay.finishWithdrawal(id);
+    } finally {
+      await refresh();
+    }
+  },
+
+  async cancelWithdrawal(id: number) {
+    try {
+      await pay.cancelWithdrawal(id);
+    } finally {
+      await refresh();
+    }
   },
 
   // ---------------------------------------------------------------- admin (the database checks the admin list)

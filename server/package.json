@@ -1,0 +1,26 @@
+{
+  "name": "dacity-server",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Audacity Game payment server: $AMMO price feed, deposits, withdrawals and burns on Solana.",
+  "engines": {
+    "node": ">=20.6"
+  },
+  "scripts": {
+    "build": "tsc -p .",
+    "start": "node dist/index.js",
+    "dev": "tsc -p . && node --env-file=.env dist/index.js",
+    "typecheck": "tsc -p . --noEmit"
+  },
+  "dependencies": {
+    "@solana/spl-token": "^0.4.15",
+    "@solana/web3.js": "^1.99.0",
+    "@supabase/supabase-js": "^2.119.0",
+    "bs58": "^6.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1908,3 +1908,38 @@
     bottom: 96px;
   }
 }
+
+/* ------------------------------------------------------------------ live: withdrawals waiting for wallet approval */
+.pendingw {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border: 1px solid rgba(47, 180, 255, 0.45);
+  border-radius: 14px;
+  background: rgba(47, 180, 255, 0.08);
+}
+
+.pendingw ul {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.pendingw li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pendingw__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.pendingw__actions .btn {
+  padding: 8px 14px;
+  font-size: 0.85rem;
+}

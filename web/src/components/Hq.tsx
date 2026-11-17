@@ -13,6 +13,7 @@ import { game } from "../game";
 import { WITHDRAW_COOLDOWN_HOURS, WITHDRAW_FEE_PCT, withdrawQuote } from "../config/game";
 import { ammoFor, fmtUsd, useAmmoPrice } from "../price";
 import { WITHDRAW_FEE_NOTE } from "../solana";
+import { LIVE, usePendingWithdrawals } from "../backend/live";
 import {
   MAX_BOXES_PER_TX,
   MOCK,
@@ -189,6 +190,8 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
         </header>
 
         {/* ------------------------------------------------------------ vault + shop */}
+        {LIVE && <PendingWithdrawals run={run} />}
+
         <div className="hq__grid">
           <Vault
             usdc={s.usdc}
@@ -729,5 +732,34 @@ function GangsterCard({
         </button>
       </div>
     </li>
+  );
+}
+
+/** Live mode: withdrawals the player asked for but hasn't approved in their wallet yet. */
+function PendingWithdrawals({ run }: { run: (fn: () => unknown, msg: string) => unknown }) {
+  const list = usePendingWithdrawals();
+  if (!list.length) return null;
+  return (
+    <section className="pendingw" aria-label="Pending withdrawals">
+      <p className="eyebrow">Pending withdrawals</p>
+      <ul>
+        {list.map((w) => (
+          <li key={w.id}>
+            <span>
+              #{w.id} · <b>{w.asset === "usdc" ? `${fmtUsdc(w.amount_out)} USDC` : `${fmt(w.amount_out)} ${TOKEN.ticker}`}</b> waiting for your
+              approval
+            </span>
+            <span className="pendingw__actions">
+              <button type="button" className="btn btn--cyan" onClick={() => run(() => game.finishWithdrawal(w.id), `Withdrawal #${w.id} sent to your wallet`)}>
+                Approve in wallet
+              </button>
+              <button type="button" className="btn" onClick={() => run(() => game.cancelWithdrawal(w.id), `Withdrawal #${w.id} cancelled and refunded`)}>
+                Cancel
+              </button>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

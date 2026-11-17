@@ -83,6 +83,32 @@ npm run dev             # http://localhost:5317
 
 Protagonist art: drop `web/public/characters/nina.webp` and `rico.webp` (4:5 portrait). Without them a placeholder neon silhouette is shown.
 
+## Deploy
+
+**Site → Vercel** (from GitHub): Root Directory `web`, framework Vite, build `npm run build`, output `dist`.
+Environment variables: only the `VITE_*` ones from `web/.env.example` (public values). Add `VITE_API_URL`
+= the Railway URL. Routing is hash-based (`#/…`), so no rewrites are needed.
+
+**Payment server → Railway** (from GitHub): Root Directory `server` (uses `server/railway.json`: build
+`npm ci && npm run build`, start `npm start`, health check `/health`). Variables: everything in
+`server/.env.example`, including the wallet secret keys and `SUPABASE_SECRET_KEY` (Railway only, never Vercel).
+Set `WEB_ORIGINS` to the site's domain(s). Several replicas are safe: each background job takes a lease in
+the database, and withdrawals/burns are recorded before they're sent, so nothing runs or pays twice.
+
+| Job | Every | What it does |
+|---|---|---|
+| price | 30 s | $AMMO USD price (DexScreener → Jupiter) into the database (10-min average is what players pay) |
+| deposits | 15 s | finds USDC / AMMO transfers by their reference key and credits what actually arrived |
+| withdrawals | 20 s | marks withdrawals the players sent as `sent` |
+| burns | 5 min | burns the spent AMMO on-chain from the AMMO wallet (keep ~0.05 SOL in it for fees) |
+
+Withdrawals: the server builds the transfer signed by the game wallet, the player's wallet signs it as fee
+payer and sends it (the player pays the network fee). Optional Helius webhook → `POST /webhooks/helius`
+with `HELIUS_WEBHOOK_SECRET` as the Authorization header, so deposits are credited the moment they land.
+
+**Supabase**: rerun `supabase.sql` after every update. Authentication → URL Configuration: Site URL = the
+domain, Redirect URLs = `https://yourdomain.com/**` (Sign in with Solana checks the domain).
+
 ## Handoff: o que já está feito e por onde continuar
 
 Resumo para o próximo dev. Tudo roda local com `npm run dev` em `web/`; os contratos têm testes em `contracts/test`.
