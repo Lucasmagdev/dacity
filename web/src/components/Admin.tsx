@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { NavWallet } from "./Wallet";
 import { SIM_MARKET_CAPS, ammoFor, fmtCap, fmtTokenPrice, fmtUsd, setSimMarketCap, useAmmoPrice } from "../price";
-import { MEDKIT_PRICE_USD, TOKEN, WEAPONS } from "../config/game";
+import { MEDKIT_PRICE_USD, TOKEN, VEST, WEAPONS, type WeaponId } from "../config/game";
+import { ItemIcon } from "./Armory";
 import Scene from "./Scene";
 import Nav from "./Nav";
 import Coin from "./art/Coin";
@@ -171,6 +172,7 @@ function AdminConsole({ me, onBack }: { me: string; onBack: () => void }) {
         <div className="admin__grid">
           <SendCoins me={me} run={run} />
           <SendBoxes me={me} run={run} />
+          <SendItems me={me} run={run} />
           <MaintenanceCard me={me} run={run} />
           <TokenPriceCard me={me} run={run} />
           <AnnouncementForm me={me} run={run} />
@@ -319,6 +321,79 @@ function SendBoxes({ me, run }: CardProps) {
             await game.grantBoxes(to, count);
             platform.log(me, "Sent boxes", `${count} box${count > 1 ? "es" : ""} → ${shortAddr(to)}`);
           }, `Sent ${count} box${count > 1 ? "es" : ""} to ${shortAddr(to)}`)
+        }
+      />
+    </section>
+  );
+}
+
+const GIFT_ITEMS: { id: WeaponId | "vest" | "medkit"; name: string }[] = [
+  { id: "pistol", name: WEAPONS.pistol.name },
+  { id: "smg", name: WEAPONS.smg.name },
+  { id: "rifle", name: WEAPONS.rifle.name },
+  { id: "vest", name: VEST.name },
+  { id: "medkit", name: "Med kit" },
+];
+const MAX_ITEMS_GRANT = 100;
+
+function SendItems({ me, run }: CardProps) {
+  const [to, setTo] = useState("");
+  const [item, setItem] = useState<(typeof GIFT_ITEMS)[number]["id"]>("pistol");
+  const [count, setCount] = useState(1);
+  const ok = isAddress(to);
+  const name = GIFT_ITEMS.find((i) => i.id === item)!.name;
+  const what = `${count} × ${name}`;
+  return (
+    <section className="panel admin__card">
+      <div className="admin__card-head">
+        <span className="admin__icon admin__icon--item">
+          <ItemIcon id={item} size={128} />
+        </span>
+        <div>
+          <p className="eyebrow">Armory</p>
+          <h2>Send items</h2>
+        </div>
+      </div>
+      <Recipient value={to} onChange={setTo} me={me} />
+      <div className="field">
+        <span>Item (goes straight to their stock, nothing is burned)</span>
+        <div className="admin__items" role="radiogroup" aria-label="Item">
+          {GIFT_ITEMS.map((i) => (
+            <button key={i.id} type="button" role="radio" aria-checked={item === i.id} onClick={() => setItem(i.id)}>
+              <ItemIcon id={i.id} size={128} />
+              <span>{i.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+      <label className="field">
+        <span>Quantity</span>
+        <div className="stepper">
+          <button type="button" onClick={() => setCount((c) => Math.max(1, c - 1))} aria-label="Fewer">
+            −
+          </button>
+          <output>{count}</output>
+          <button type="button" onClick={() => setCount((c) => Math.min(MAX_ITEMS_GRANT, c + 1))} aria-label="More">
+            +
+          </button>
+        </div>
+      </label>
+      <div className="chips">
+        {[1, 5, 10, 25].map((v) => (
+          <button key={v} type="button" onClick={() => setCount(v)}>
+            {v}
+          </button>
+        ))}
+      </div>
+      <ConfirmButton
+        disabled={!ok}
+        label={`Send ${what}`}
+        confirmLabel={`Confirm: ${what} → ${ok ? shortAddr(to) : ""}`}
+        onConfirm={() =>
+          run(async () => {
+            await game.grantItem(to, item, count);
+            platform.log(me, "Sent items", `${what} → ${shortAddr(to)}`);
+          }, `Sent ${what} to ${shortAddr(to)}`)
         }
       />
     </section>

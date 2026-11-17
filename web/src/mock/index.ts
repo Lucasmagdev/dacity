@@ -461,6 +461,14 @@ export const mock = {
     );
   },
 
+  /** Admin: put Armory items straight into the player's stock (free, nothing burned). */
+  grantItem(item: WeaponId | "vest" | "medkit", count: number) {
+    if (!Number.isInteger(count) || count < 1) throw new Error("Count must be a whole number ≥ 1");
+    const name = item === "medkit" ? "Med kit" : item === "vest" ? VEST.name : WEAPONS[item].name;
+    const next = item === "medkit" ? { ...state, medkits: state.medkits + count } : { ...state, inventory: { ...state.inventory, [item]: state.inventory[item] + count } };
+    set(withTx(next, { type: "gift", title: "Received items", detail: `${count} × ${name} sent by an admin` }));
+  },
+
   /** Test AMMO into the wallet (mock only; in production players buy it on pump.fun). */
   ammoFaucet() {
     set(withTx({ ...state, walletAmmo: state.walletAmmo + ammoFor(FAUCET_USD) }, { type: "ammo", title: "Test AMMO", detail: `${fmtUsd(FAUCET_USD)} of AMMO to your wallet (mock only)` }));

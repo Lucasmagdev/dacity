@@ -175,6 +175,11 @@ export const game = {
     await rpc("admin_grant_boxes", { p_wallet: wallet, p_count: count });
   },
 
+  async grantItem(wallet: string, item: Item, count: number) {
+    if (MOCK) return void mock.grantItem(item, count);
+    await rpc("admin_grant_items", { p_wallet: wallet, p_item: item, p_count: count });
+  },
+
   async setMaintenance(on: boolean, message: string, by: string) {
     if (MOCK) return void platform.setMaintenance(on, message, by);
     await rpc("admin_set_maintenance", { p_on: on, p_message: message });

@@ -1253,6 +1253,31 @@ begin
   insert into public.admin_log (wallet, action, detail) values (v_who, 'Sent boxes', p_count || ' → ' || p_wallet);
 end $$;
 
+-- Gift Armory items (weapons, vests, med kits) straight into a player's stock. Nothing is paid or burned.
+create or replace function public.admin_grant_items(p_wallet text, p_item text, p_count int)
+returns void language plpgsql security definer set search_path = public, pg_temp
+as $$
+declare
+  v_who text := public.assert_admin();
+  v_user uuid;
+  v_name text;
+begin
+  if p_count is null or p_count < 1 or p_count > 100 then raise exception 'Count must be 1 to 100'; end if;
+  select name into v_name from public.item_prices where item = p_item;
+  if v_name is null then raise exception 'Unknown item'; end if;
+  select user_id into v_user from public.players where wallet = p_wallet for update;
+  if v_user is null then raise exception 'No player with that wallet'; end if;
+  update public.players
+     set medkits = medkits + case when p_item = 'medkit' then p_count else 0 end,
+         vests   = vests   + case when p_item = 'vest'   then p_count else 0 end,
+         pistols = pistols + case when p_item = 'pistol' then p_count else 0 end,
+         smgs    = smgs    + case when p_item = 'smg'    then p_count else 0 end,
+         rifles  = rifles  + case when p_item = 'rifle'  then p_count else 0 end
+   where user_id = v_user;
+  perform public.log_tx(v_user, 'gift', 'Received items', format('%s × %s sent by an admin', p_count, v_name));
+  insert into public.admin_log (wallet, action, detail) values (v_who, 'Sent items', format('%s × %s → %s', p_count, v_name, p_wallet));
+end $$;
+
 -- Admin read access to the log and the withdrawal queue.
 create or replace function public.admin_recent_log(p_limit int default 50)
 returns setof public.admin_log language plpgsql stable security definer set search_path = public, pg_temp
@@ -1590,7 +1615,7 @@ begin
          'open_box', 'deploy', 'claim', 'claim_all', 'fuse', 'buy_item', 'heal', 'equip_weapon', 'equip_vest',
          'create_deposit_intent', 'request_withdrawal_usdc', 'request_withdrawal_ammo', 'assert_admin',
          'admin_set_maintenance', 'admin_announce', 'admin_clear_announcement', 'admin_grant_dc',
-         'admin_grant_boxes', 'admin_recent_log', 'link_wallet', 'confirm_deposit', 'mark_withdrawal',
+         'admin_grant_boxes', 'admin_grant_items', 'admin_recent_log', 'link_wallet', 'confirm_deposit', 'mark_withdrawal',
          'record_price', 'record_burn', 'handle_new_user', 'handle_new_identity', 'wallet_of', 'ammo_stats',
          'acquire_lease', 'start_burn', 'finish_burn', 'ref_code', 'my_referrals', 'referral_lookup')
   loop
@@ -1634,6 +1659,7 @@ grant execute on function public.admin_announce(text, text, text, timestamptz) t
 grant execute on function public.admin_clear_announcement() to authenticated;
 grant execute on function public.admin_grant_dc(text, numeric) to authenticated;
 grant execute on function public.admin_grant_boxes(text, int) to authenticated;
+grant execute on function public.admin_grant_items(text, text, int) to authenticated;
 grant execute on function public.admin_recent_log(int) to authenticated;
 
 -- tables and views: reads go through RLS; no direct writes for app users
