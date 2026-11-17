@@ -114,9 +114,10 @@ const toTx = (r: Row): MockTx => ({
   ammo: r.ammo === null ? undefined : num(r.ammo),
 });
 
-/** Reload the signed-in player's state from the database. */
-export async function refresh() {
+/** Reload the signed-in player's state; `wallet: true` also re-reads their wallet's USDC / AMMO on Solana. */
+export async function refresh(opts: { wallet?: boolean } = {}) {
   if (!supabase || status.phase !== "ready") return;
+  if (opts.wallet && status.wallet) await refreshWalletBalances(status.wallet);
   const [p, g, b, t, pw] = await Promise.all([
     supabase.from("players").select("*").maybeSingle(),
     supabase.from("gangsters").select("*").is("consumed_at", null).order("id", { ascending: false }),
@@ -249,9 +250,11 @@ export async function startSession(wallet: WalletLike) {
     await Promise.all([refreshWalletBalances(address), refreshPlatform()]);
     await refresh();
     if (pollTimer) clearInterval(pollTimer);
+    let tick = 0;
     pollTimer = setInterval(() => {
       refreshPlatform().catch(() => {});
-      refresh().catch(() => {});
+      // wallet balances come from Solana (RPC credits): every 3rd tick = once a minute
+      refresh({ wallet: ++tick % 3 === 0 }).catch(() => {});
     }, 20_000);
   } catch (e) {
     setStatus({ phase: "error", error: (e as Error).message, wallet: address });

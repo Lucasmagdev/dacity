@@ -28,10 +28,10 @@ async function withdrawLive(fn: string, args: Record<string, unknown>) {
   try {
     await pay.finishWithdrawal(num(w.id));
   } catch (e) {
-    await refresh();
+    await refresh({ wallet: true });
     throw approveLater(e);
   }
-  await refresh();
+  await refresh({ wallet: true });
 }
 
 async function live<T>(fn: () => Promise<T>): Promise<T> {
@@ -51,7 +51,7 @@ export const game = {
   async deposit(usdc: number) {
     if (MOCK) return void mock.deposit(usdc);
     const r = await pay.deposit("usdc", usdc);
-    await refresh();
+    await refresh({ wallet: true });
     if (r.pending) throw new Error(STILL_CONFIRMING);
   },
 
@@ -63,7 +63,7 @@ export const game = {
   async depositAmmo(amount: number) {
     if (MOCK) return void mock.depositAmmo(amount);
     const r = await pay.deposit("ammo", amount);
-    await refresh();
+    await refresh({ wallet: true });
     if (r.pending) throw new Error(STILL_CONFIRMING);
   },
 
@@ -143,7 +143,7 @@ export const game = {
     try {
       await pay.finishWithdrawal(id);
     } finally {
-      await refresh();
+      await refresh({ wallet: true });
     }
   },
 
