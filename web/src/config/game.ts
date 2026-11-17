@@ -119,7 +119,7 @@ export const CREATOR_REWARDS_LABEL = "pump.fun creator rewards";
 export const CLAIM_ALL_FEE_USD = 0.05;
 
 /** Season start shown in the hero countdown. Override with VITE_SEASON_START (ISO date). */
-export const SEASON_START = new Date(import.meta.env.VITE_SEASON_START || "2026-12-12T20:00:00Z");
+export const SEASON_START = new Date(import.meta.env.VITE_SEASON_START || "2026-11-18T11:00:00Z");
 
 /** Social links (nav, footer, token page). Empty url = shown greyed out as "coming soon". */
 export const SOCIALS: { label: string; url: string; icon: "x" | "telegram" | "tiktok" }[] = [
