@@ -7,6 +7,7 @@ import { PROTAGONISTS } from "../config/game";
 import { MOCK, useMock } from "../mock";
 import { game } from "../game";
 import { useWalletAddress } from "./Wallet";
+import { refCode, useInviter } from "../referral";
 
 const MIN_NAME = 3;
 const MAX_NAME = 24;
@@ -15,6 +16,7 @@ const byteLength = (s: string) => new TextEncoder().encode(s).length;
 export default function CharacterSelect({ onBack, onEnterHq }: { onBack: () => void; onEnterHq: () => void }) {
   const { connected } = useWalletAddress();
   const [picked, setPicked] = useState<1 | 2 | null>(null);
+  const inviter = useInviter();
   const [name, setName] = useState("");
 
   // Until the Supabase backend exists the gang lives in the browser mock.
@@ -119,8 +121,18 @@ export default function CharacterSelect({ onBack, onEnterHq }: { onBack: () => v
             autoComplete="off"
           />
           <p className="hint">
-            {MIN_NAME} to {MAX_NAME} characters · {nameLen}/{MAX_NAME}
+            {MIN_NAME} to {MAX_NAME} characters · {nameLen}/{MAX_NAME} · must be unique
           </p>
+          {refCode(trimmed).length >= 3 && (
+            <p className="hint found__ref">
+              Your invite link: <b>{window.location.host}/?ref={refCode(trimmed)}</b>
+            </p>
+          )}
+          {inviter && (
+            <p className="found__invited">
+              🤝 Invited by <b>{inviter.gang}</b>
+            </p>
+          )}
 
           {MOCK || connected ? (
             <button type="submit" className="cta cta--block" disabled={!canSubmit}>

@@ -1948,3 +1948,131 @@
 .toy--portrait {
   object-position: 50% 20%;
 }
+
+/* ------------------------------------------------------------------ referrals (HQ) */
+.refer {
+  margin: 0 0 18px;
+  padding: 20px 22px;
+  border: 1px solid rgba(255, 46, 136, 0.35);
+  background:
+    radial-gradient(80% 120% at 100% 0%, rgba(255, 46, 136, 0.14), transparent 60%),
+    radial-gradient(70% 120% at 0% 100%, rgba(34, 228, 255, 0.1), transparent 60%),
+    var(--panel, #160a28);
+}
+
+.refer__head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 16px 28px;
+}
+
+.refer__head > div {
+  flex: 1 1 360px;
+}
+
+.refer h2 {
+  margin: 2px 0 6px;
+}
+
+.refer__stats {
+  display: flex;
+  gap: 12px;
+  margin: 0;
+}
+
+.refer__stats div {
+  min-width: 120px;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.refer__stats dt {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.refer__stats dd {
+  margin: 4px 0 0;
+  font-family: var(--font-display);
+  font-size: 22px;
+}
+
+.refer__stats small {
+  display: block;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.refer__link {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.refer__link code {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  padding: 12px 14px;
+  border: 1px dashed rgba(255, 255, 255, 0.22);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  color: #fff;
+  font-size: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.refer__link .btn {
+  flex: none;
+}
+
+.refer__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.refer__list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 14px;
+}
+
+.refer__list b {
+  color: var(--sun, #ffd36b);
+}
+
+@media (max-width: 560px) {
+  .refer__link {
+    flex-direction: column;
+  }
+}
+
+/* gang form: who invited you + your future link */
+.found__invited {
+  margin: 10px 0 0;
+  padding: 10px 14px;
+  border: 1px solid rgba(61, 220, 132, 0.45);
+  border-radius: 12px;
+  background: rgba(61, 220, 132, 0.1);
+  font-size: 14px;
+}
+
+.found__ref b {
+  color: #fff;
+}

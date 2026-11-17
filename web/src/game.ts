@@ -10,6 +10,7 @@ import { platform, type Announcement } from "./mock/platform";
 import { rpc } from "./backend/supabase";
 import { refresh, refreshPlatform } from "./backend/live";
 import * as pay from "./backend/payments";
+import { clearStoredRef, storedRef } from "./referral";
 import type { WeaponId } from "./config/game";
 
 type Item = WeaponId | "vest" | "medkit";
@@ -44,8 +45,14 @@ const findGangster = (id: number) => getState().gangsters.find((g) => g.id === i
 
 export const game = {
   async createGang(protagonist: 1 | 2, name: string) {
-    if (MOCK) return void mock.createGang(protagonist, name);
-    await live(() => rpc("found_gang", { p_protagonist: protagonist, p_name: name }));
+    if (MOCK) {
+      mock.createGang(protagonist, name);
+      clearStoredRef();
+      return;
+    }
+    // the invite code (if they came through a link) is bound by the database, once, right here
+    await live(() => rpc("found_gang", { p_protagonist: protagonist, p_name: name, p_ref: storedRef() }));
+    clearStoredRef();
   },
 
   async deposit(usdc: number) {

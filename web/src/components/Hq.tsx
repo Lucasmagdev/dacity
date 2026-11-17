@@ -14,6 +14,7 @@ import { WITHDRAW_COOLDOWN_HOURS, WITHDRAW_FEE_PCT, withdrawQuote } from "../con
 import { ammoFor, fmtUsd, useAmmoPrice } from "../price";
 import { WITHDRAW_FEE_NOTE } from "../solana";
 import { LIVE, usePendingWithdrawals } from "../backend/live";
+import ReferralPanel from "./ReferralPanel";
 import {
   MAX_BOXES_PER_TX,
   MOCK,
@@ -211,6 +212,8 @@ export default function Hq({ onBack, onFound }: { onBack: () => void; onFound: (
             }}
           />
         </div>
+
+        <ReferralPanel />
 
         {/* ------------------------------------------------------------ crew */}
         <section className="panel">

@@ -23,6 +23,7 @@ const TX_FILTERS: { label: string; types: TxType[] | null }[] = [
   { label: "Medical", types: ["medkit", "heal"] },
   { label: "Armory", types: ["shop", "equip"] },
   { label: "AMMO", types: ["ammo", "ammoDeposit", "ammoWithdraw"] },
+  { label: "Referrals", types: ["referral"] },
   { label: "Other", types: ["gang", "gift", "deploy"] },
 ];
 
@@ -45,6 +46,7 @@ const TX_ICON: Record<TxType, string> = {
   ammo: "🔥",
   ammoDeposit: "↓",
   ammoWithdraw: "↑",
+  referral: "🤝",
 };
 
 const PAGE = 25;

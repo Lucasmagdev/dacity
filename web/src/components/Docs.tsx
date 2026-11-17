@@ -501,6 +501,34 @@ const SECTIONS: Section[] = [
     ),
   },
   {
+    id: "referrals",
+    group: "Gameplay",
+    title: "Referrals: invite & earn 5%",
+    body: () => (
+      <>
+        <p>
+          Your gang name is your invite link: a gang called <b>Los Neon</b> gets <code>audacitygame.xyz/?ref=los-neon</code>. That's why
+          gang names are unique. Find your link in the HQ, under <b>Invite &amp; earn</b>.
+        </p>
+        <ul>
+          <li>
+            <b>You earn 5% of every USDC deposit</b> your recruits make, for as long as they play. It's credited to you in DC the moment
+            their deposit confirms on Solana.
+          </li>
+          <li>
+            <b>Who counts as your recruit:</b> a player who opens your link and then founds their gang. The link is remembered on their device
+            until they sign up, and the referrer is locked in when the gang is founded. It can't be changed or added later.
+          </li>
+          <li>$AMMO deposits don't pay referral rewards, only USDC deposits.</li>
+          <li>
+            Fair play: you can't refer yourself, a code that doesn't exist is ignored, and deposits sent from the referrer's own wallet don't
+            pay a reward. Every reward is tied to one confirmed deposit and can never be paid twice.
+          </li>
+        </ul>
+      </>
+    ),
+  },
+  {
     id: "black-market",
     group: "Gameplay",
     title: "Black Market (soon)",
@@ -617,6 +645,7 @@ const SECTIONS: Section[] = [
           ["Deposit USDC", "1 USDC = 100 DC, no limit", "USDC", "Vault"],
           ["Withdraw DC → USDC", `100 DC = 1 USDC, once every ${WITHDRAW_COOLDOWN_HOURS}h per wallet`, "DC", "Your wallet"],
           ["Withdrawal fee", `${WITHDRAW_FEE_PCT}% of every DC → USDC withdrawal`, "USDC", "Stays in the Reward Pool"],
+          ["Referral reward", "5% of each USDC deposit by your recruits", "DC", "The referrer (paid by the game)"],
           ["Deposit / withdraw $AMMO", "Free (Solana network fee only)", "$AMMO", "Your in-game balance"],
           ["Solana network fee", "~0.00001 SOL per deposit or withdrawal, paid by you", "SOL", "Solana validators"],
           ["Claim one gangster", "Free", "—", "—"],

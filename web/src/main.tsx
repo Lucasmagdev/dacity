@@ -1,4 +1,5 @@
 import "./polyfills";
+import "./referral"; // remember ?ref= invite links before anything routes
 import React, { useMemo } from "react";
 import ReactDOM from "react-dom/client";
 import { ConnectionProvider, WalletProvider } from "@solana/wallet-adapter-react";

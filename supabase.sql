@@ -85,6 +85,9 @@ create table if not exists public.bulk_tiers (
 -- columns added after the first version (the table may already exist)
 alter table public.game_config add column if not exists withdraw_fee_pct numeric not null default 10
   check (withdraw_fee_pct >= 0 and withdraw_fee_pct < 100);
+-- referrals: the referrer earns this % of every USDC deposit their recruits make (credited in DC)
+alter table public.game_config add column if not exists referral_pct numeric not null default 5
+  check (referral_pct >= 0 and referral_pct <= 50);
 
 insert into public.game_config (id) values (1) on conflict (id) do nothing;
 -- launch sale raised from 250 to 500 boxes (only touches a row still on the old default)
@@ -301,6 +304,32 @@ alter table public.burn_batches add column if not exists status text not null de
   check (status in ('pending', 'confirmed', 'failed'));
 alter table public.burn_batches add column if not exists last_valid_height bigint;
 
+-- Referrals. referral_code = the gang name as a link slug ("Los Neon" -> los-neon), unique.
+-- referred_by is set ONCE, when the player founds their gang, and never changes.
+alter table public.players add column if not exists referral_code text;
+alter table public.players add column if not exists referred_by uuid references public.players(user_id) on delete set null;
+alter table public.players add column if not exists referred_at timestamptz;
+alter table public.players add column if not exists referral_earned_dc numeric not null default 0;
+create unique index if not exists players_referral_code_key on public.players (referral_code);
+create index if not exists players_referred_by_idx on public.players (referred_by) where referred_by is not null;
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'players_no_self_referral') then
+    alter table public.players add constraint players_no_self_referral check (referred_by is null or referred_by <> user_id);
+  end if;
+end $$;
+
+-- One reward per confirmed deposit, ever (deposit_id unique): a deposit can never pay a referrer twice.
+create table if not exists public.referral_rewards (
+  id           bigint generated always as identity primary key,
+  referrer     uuid        not null references public.players(user_id) on delete cascade,
+  referee      uuid        not null references public.players(user_id) on delete cascade,
+  deposit_id   bigint      not null unique references public.deposits(id) on delete cascade,
+  amount_usdc  numeric     not null check (amount_usdc > 0),
+  amount_dc    numeric     not null check (amount_dc > 0),
+  created_at   timestamptz not null default now()
+);
+create index if not exists referral_rewards_referrer_idx on public.referral_rewards (referrer, created_at desc);
+
 -- One worker of each kind at a time, even with several server instances running.
 create table if not exists public.worker_leases (
   name        text primary key,
@@ -334,6 +363,7 @@ alter table public.deposits             enable row level security;
 alter table public.withdrawals          enable row level security;
 alter table public.admin_log            enable row level security;
 alter table public.worker_leases        enable row level security;
+alter table public.referral_rewards     enable row level security;
 
 -- public, read only
 drop policy if exists "public read" on public.game_config;
@@ -371,6 +401,8 @@ drop policy if exists "own rows" on public.deposits;
 create policy "own rows" on public.deposits for select to authenticated using (user_id = auth.uid());
 drop policy if exists "own rows" on public.withdrawals;
 create policy "own rows" on public.withdrawals for select to authenticated using (user_id = auth.uid());
+drop policy if exists "own rewards" on public.referral_rewards;
+create policy "own rewards" on public.referral_rewards for select to authenticated using (referrer = auth.uid());
 
 -- box_seeds, admins, admin_log, worker_leases: no policies on purpose (only functions and service_role).
 
@@ -425,6 +457,11 @@ begin
   end if;
   return v_p;
 end $$;
+
+-- Gang name -> referral link code: lowercase letters/digits, anything else becomes one dash.
+create or replace function public.ref_code(p_name text)
+returns text language sql immutable
+as $$ select btrim(regexp_replace(lower(coalesce(p_name, '')), '[^a-z0-9]+', '-', 'g'), '-') $$;
 
 -- Game closed for maintenance (admins keep access).
 create or replace function public.assert_open()
@@ -622,23 +659,53 @@ begin
   return v_p;
 end $$;
 
-create or replace function public.found_gang(p_protagonist int, p_name text)
+-- found_gang changed signature (referral code); drop the old one so calls aren't ambiguous
+drop function if exists public.found_gang(int, text);
+
+-- Found the gang. The gang name is unique and becomes the player's referral link. p_ref = the code of
+-- the link they arrived with: it binds their referrer once, here, and can never be changed. A bad,
+-- unknown or own code is ignored (a broken link must never stop anyone from playing).
+create or replace function public.found_gang(p_protagonist int, p_name text, p_ref text default null)
 returns public.players language plpgsql security definer set search_path = public, pg_temp
 as $$
 declare
   v_p public.players;
   v_name text := btrim(p_name);
+  v_code text := public.ref_code(btrim(p_name));
+  v_ref public.players;
+  v_referrer uuid;
 begin
   perform public.assert_open();
   v_p := public.lock_me();
   if v_p.gang_name is not null then raise exception 'You already founded a gang'; end if;
   if p_protagonist not in (1, 2) then raise exception 'Pick a boss'; end if;
   if v_name is null or octet_length(v_name) not between 3 and 24 then raise exception 'Gang name must be 3 to 24 characters'; end if;
-  update public.players
-     set gang_name = v_name, protagonist = p_protagonist, gang_founded_at = now()
-   where user_id = v_p.user_id
-  returning * into v_p;
-  perform public.log_tx(v_p.user_id, 'gang', 'Gang founded', v_name);
+  if char_length(v_code) < 3 then raise exception 'Gang name needs at least 3 letters or numbers'; end if;
+  if exists (select 1 from public.players where referral_code = v_code) then
+    raise exception 'That gang name is taken. Pick another one';
+  end if;
+
+  if nullif(btrim(coalesce(p_ref, '')), '') is not null then
+    select * into v_ref from public.players where referral_code = public.ref_code(p_ref) and gang_name is not null;
+    if v_ref.user_id is not null and v_ref.user_id <> v_p.user_id and v_ref.wallet is distinct from v_p.wallet then
+      v_referrer := v_ref.user_id;
+    end if;
+  end if;
+
+  begin
+    update public.players
+       set gang_name = v_name, protagonist = p_protagonist, gang_founded_at = now(), referral_code = v_code,
+           referred_by = v_referrer, referred_at = case when v_referrer is not null then now() end
+     where user_id = v_p.user_id
+    returning * into v_p;
+  exception when unique_violation then
+    raise exception 'That gang name is taken. Pick another one';
+  end;
+  perform public.log_tx(v_p.user_id, 'gang', 'Gang founded',
+    v_name || case when v_referrer is not null then ' · recruited by ' || v_ref.gang_name else '' end);
+  if v_referrer is not null then
+    perform public.log_tx(v_referrer, 'referral', 'New recruit', v_name || ' joined with your link');
+  end if;
   return v_p;
 end $$;
 
@@ -1212,6 +1279,10 @@ as $$
 declare
   c public.game_config := public.cfg();
   v_d public.deposits;
+  v_referrer uuid;
+  v_referrer_wallet text;
+  v_referee_gang text;
+  v_bonus numeric;
 begin
   select * into v_d from public.deposits where reference = p_reference for update;
   if v_d.id is null then raise exception 'Unknown deposit reference'; end if;
@@ -1226,6 +1297,23 @@ begin
        set dc = dc + p_amount * c.dacity_per_usdc, total_deposited_usdc = total_deposited_usdc + p_amount
      where user_id = v_d.user_id;
     perform public.log_tx(v_d.user_id, 'deposit', 'Deposit', 'Vault: USDC → DC', p_amount * c.dacity_per_usdc, -p_amount);
+
+    -- referral: the referrer earns referral_pct of this deposit, in DC. Not when the money came from the
+    -- referrer's own wallet (that's them funding their own recruit). One reward per deposit, ever.
+    select p.referred_by, r.wallet, p.gang_name into v_referrer, v_referrer_wallet, v_referee_gang
+      from public.players p left join public.players r on r.user_id = p.referred_by
+     where p.user_id = v_d.user_id;
+    v_bonus := round(p_amount * c.dacity_per_usdc * c.referral_pct / 100, 2);
+    if v_referrer is not null and v_bonus > 0 and (p_sender is null or p_sender is distinct from v_referrer_wallet) then
+      insert into public.referral_rewards (referrer, referee, deposit_id, amount_usdc, amount_dc)
+      values (v_referrer, v_d.user_id, v_d.id, p_amount, v_bonus)
+      on conflict (deposit_id) do nothing;
+      if found then
+        update public.players set dc = dc + v_bonus, referral_earned_dc = referral_earned_dc + v_bonus where user_id = v_referrer;
+        perform public.log_tx(v_referrer, 'referral', 'Referral bonus',
+          format('%s%% of a %s USDC deposit by %s', c.referral_pct, p_amount, coalesce(v_referee_gang, 'a recruit')), v_bonus);
+      end if;
+    end if;
   else
     update public.players set ammo = ammo + p_amount where user_id = v_d.user_id;
     perform public.log_tx(v_d.user_id, 'ammoDeposit', 'Deposit AMMO', 'Wallet → game', null, null, p_amount);
@@ -1349,6 +1437,57 @@ end $$;
 
 
 -- -----------------------------------------------------------------------------------------------------
+-- 10c. REFERRALS (player + public reads)
+-- -----------------------------------------------------------------------------------------------------
+
+-- The caller's referral link code, how many joined with it and what it earned.
+create or replace function public.my_referrals()
+returns jsonb language plpgsql stable security definer set search_path = public, pg_temp
+as $$
+declare v_uid uuid := auth.uid();
+begin
+  if v_uid is null then raise exception 'Not signed in'; end if;
+  return (
+    select jsonb_build_object(
+      'code', p.referral_code,
+      'pct', (public.cfg()).referral_pct,
+      'earned_dc', p.referral_earned_dc,
+      'recruits', (select count(*) from public.players r where r.referred_by = v_uid),
+      'depositors', (select count(distinct referee) from public.referral_rewards w where w.referrer = v_uid),
+      'list', (select coalesce(jsonb_agg(x order by x.joined_at desc), '[]'::jsonb) from (
+                 select r.gang_name as gang, r.referred_at as joined_at,
+                        coalesce((select sum(amount_dc) from public.referral_rewards w where w.referrer = v_uid and w.referee = r.user_id), 0) as earned_dc
+                   from public.players r where r.referred_by = v_uid
+                  order by r.referred_at desc limit 100) x)
+    )
+    from public.players p where p.user_id = v_uid
+  );
+end $$;
+
+-- Who owns a referral code (the landing shows "invited by <gang>"). Gang names are public anyway.
+create or replace function public.referral_lookup(p_code text)
+returns text language sql stable security definer set search_path = public, pg_temp
+as $$ select gang_name from public.players where referral_code = public.ref_code(p_code) and gang_name is not null $$;
+
+-- Gangs founded before referrals existed get their code now (first come keeps the plain name).
+do $$
+declare r record; v_code text; n int;
+begin
+  for r in select user_id, gang_name from public.players
+            where gang_name is not null and referral_code is null order by gang_founded_at nulls last
+  loop
+    v_code := public.ref_code(r.gang_name);
+    if char_length(v_code) < 3 then v_code := 'gang-' || left(r.user_id::text, 8); end if;
+    n := 1;
+    while exists (select 1 from public.players where referral_code = case when n = 1 then v_code else v_code || '-' || n end) loop
+      n := n + 1;
+    end loop;
+    update public.players set referral_code = case when n = 1 then v_code else v_code || '-' || n end where user_id = r.user_id;
+  end loop;
+end $$;
+
+
+-- -----------------------------------------------------------------------------------------------------
 -- 10b. PUBLIC $AMMO STATS (for the token page: totals and an anonymous burn feed, no private data)
 -- -----------------------------------------------------------------------------------------------------
 
@@ -1448,7 +1587,7 @@ begin
          'admin_set_maintenance', 'admin_announce', 'admin_clear_announcement', 'admin_grant_dc',
          'admin_grant_boxes', 'admin_recent_log', 'link_wallet', 'confirm_deposit', 'mark_withdrawal',
          'record_price', 'record_burn', 'handle_new_user', 'handle_new_identity', 'wallet_of', 'ammo_stats',
-         'acquire_lease', 'start_burn', 'finish_burn')
+         'acquire_lease', 'start_burn', 'finish_burn', 'ref_code', 'my_referrals', 'referral_lookup')
   loop
     execute format('revoke all on function %s from public, anon, authenticated', f.sig);
     execute format('grant execute on function %s to service_role', f.sig);
@@ -1466,7 +1605,10 @@ grant execute on function public.ammo_stats() to anon, authenticated;
 
 -- player actions
 grant execute on function public.ensure_player() to authenticated;
-grant execute on function public.found_gang(int, text) to authenticated;
+grant execute on function public.found_gang(int, text, text) to authenticated;
+grant execute on function public.my_referrals() to authenticated;
+grant execute on function public.referral_lookup(text) to anon, authenticated;
+grant execute on function public.ref_code(text) to anon, authenticated;
 grant execute on function public.buy_boxes(int) to authenticated;
 grant execute on function public.open_box(bigint, text) to authenticated;
 grant execute on function public.deploy(bigint[]) to authenticated;
