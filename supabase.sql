@@ -1672,3 +1672,256 @@ grant select on public.my_gangsters, public.token_price to anon, authenticated;
 -- 13. ADMINS · add your admin wallet(s) here (Solana addresses), then run this line again when needed
 -- -----------------------------------------------------------------------------------------------------
 -- insert into public.admins (wallet) values ('YOUR_SOLANA_WALLET_ADDRESS') on conflict do nothing;
+
+
+-- -----------------------------------------------------------------------------------------------------
+-- 14. AUDACITY JACKPOT · slot with bets in DC (jackpot subdomain)
+-- -----------------------------------------------------------------------------------------------------
+-- The payment server decides every round: slot_begin() takes the bet and hands it the round's seeds,
+-- the server plays the round (server/src/slot/engine.ts, provably fair: HMAC-SHA256 of the seeds), then
+-- slot_finish() pays the win. If the server dies in between, the round stays 'open' and the server
+-- settles it later from the same seeds (same result). Players can't call begin/finish: service role only.
+-- OFF by default: set slot_config.enabled = true once the licence, geo-blocking and age checks are live.
+
+create table if not exists public.slot_config (
+  id                 int primary key default 1 check (id = 1),
+  enabled            boolean   not null default false,
+  bets               numeric[] not null default '{10,20,50,100,200,500,1000}',  -- DC (100 DC = 1 USDC)
+  buy_enabled        boolean   not null default true,
+  buy_cost_x         numeric   not null default 58 check (buy_cost_x > 0),     -- Buy the Heist = this x bet
+  max_win_x          numeric   not null default 5000 check (max_win_x > 0),    -- cap per round (pot share on top)
+  pot_rate           numeric   not null default 0.01 check (pot_rate >= 0 and pot_rate < 0.1)  -- of every bet → GRAND pot
+);
+insert into public.slot_config (id) values (1) on conflict (id) do nothing;
+
+create table if not exists public.slot_state (
+  id          int primary key default 1 check (id = 1),
+  pot         numeric     not null default 0 check (pot >= 0),   -- progressive GRAND pot, DC
+  rounds      bigint      not null default 0,
+  wagered     numeric     not null default 0,
+  paid        numeric     not null default 0,
+  updated_at  timestamptz not null default now()
+);
+insert into public.slot_state (id) values (1) on conflict (id) do nothing;
+
+-- The player's current seed pair. Secret (RLS, no policy): players see the hash through slot_seed_info().
+create table if not exists public.slot_seeds (
+  user_id           uuid primary key references public.players(user_id) on delete cascade,
+  server_seed       text        not null,
+  server_seed_hash  text        not null,
+  client_seed       text        not null,
+  nonce             bigint      not null default 0,
+  created_at        timestamptz not null default now()
+);
+
+-- Seeds already used and revealed (after a rotation): the player can replay those rounds.
+create table if not exists public.slot_revealed_seeds (
+  id                bigint generated always as identity primary key,
+  user_id           uuid        not null references public.players(user_id) on delete cascade,
+  server_seed       text        not null,
+  server_seed_hash  text        not null,
+  client_seed       text        not null,
+  last_nonce        bigint      not null,
+  revealed_at       timestamptz not null default now()
+);
+create index if not exists slot_revealed_user_idx on public.slot_revealed_seeds (user_id, revealed_at desc);
+
+create table if not exists public.slot_rounds (
+  id                bigint generated always as identity primary key,
+  user_id           uuid        not null references public.players(user_id) on delete cascade,
+  at                timestamptz not null default now(),
+  kind              text        not null check (kind in ('spin', 'buy')),
+  status            text        not null default 'open' check (status in ('open', 'settled')),
+  bet               numeric     not null check (bet > 0),
+  cost              numeric     not null check (cost > 0),
+  server_seed_hash  text        not null,
+  client_seed       text        not null,
+  nonce             bigint      not null,
+  win_x             numeric,
+  payout            numeric,
+  pot_paid          numeric     not null default 0,
+  jackpot           text,
+  summary           jsonb,
+  settled_at        timestamptz
+);
+create index if not exists slot_rounds_user_idx on public.slot_rounds (user_id, at desc);
+create index if not exists slot_rounds_open_idx on public.slot_rounds (at) where status = 'open';
+
+alter table public.slot_config          enable row level security;
+alter table public.slot_state           enable row level security;
+alter table public.slot_seeds           enable row level security;
+alter table public.slot_revealed_seeds  enable row level security;
+alter table public.slot_rounds          enable row level security;
+drop policy if exists "public read" on public.slot_config;
+create policy "public read" on public.slot_config for select to anon, authenticated using (true);
+drop policy if exists "public read" on public.slot_state;
+create policy "public read" on public.slot_state for select to anon, authenticated using (true);
+drop policy if exists "own rows" on public.slot_revealed_seeds;
+create policy "own rows" on public.slot_revealed_seeds for select to authenticated using (user_id = auth.uid());
+drop policy if exists "own rows" on public.slot_rounds;
+create policy "own rows" on public.slot_rounds for select to authenticated using (user_id = auth.uid());
+
+create or replace function public.slot_random_seed()
+returns text language sql volatile
+as $$ select encode(sha256(convert_to(gen_random_uuid()::text || gen_random_uuid()::text || clock_timestamp()::text, 'UTF8')), 'hex') $$;
+
+-- The player's current seed row (created on first use), locked.
+create or replace function public.slot_seed_row(p_user uuid)
+returns public.slot_seeds language plpgsql security definer set search_path = public, pg_temp
+as $$
+declare v_s public.slot_seeds; v_seed text := public.slot_random_seed();
+begin
+  insert into public.slot_seeds (user_id, server_seed, server_seed_hash, client_seed)
+  values (p_user, v_seed, encode(sha256(convert_to(v_seed, 'UTF8')), 'hex'), substr(public.slot_random_seed(), 1, 16))
+  on conflict (user_id) do nothing;
+  select * into v_s from public.slot_seeds where user_id = p_user for update;
+  return v_s;
+end $$;
+
+-- What the player may see before playing: the hash of the server seed, never the seed.
+create or replace function public.slot_seed_info()
+returns jsonb language plpgsql security definer set search_path = public, pg_temp
+as $$
+declare v_p public.players; v_s public.slot_seeds;
+begin
+  v_p := public.lock_me();
+  v_s := public.slot_seed_row(v_p.user_id);
+  return jsonb_build_object('server_seed_hash', v_s.server_seed_hash, 'client_seed', v_s.client_seed, 'nonce', v_s.nonce);
+end $$;
+
+-- Reveal the current server seed and start a new pair (optionally with the player's own client seed).
+create or replace function public.slot_rotate_seed(p_client_seed text default null)
+returns jsonb language plpgsql security definer set search_path = public, pg_temp
+as $$
+declare
+  v_p public.players;
+  v_s public.slot_seeds;
+  v_client text := nullif(btrim(coalesce(p_client_seed, '')), '');
+  v_seed text := public.slot_random_seed();
+begin
+  v_p := public.lock_me();
+  if v_client is not null and (char_length(v_client) > 64 or v_client !~ '^[A-Za-z0-9_-]+$') then
+    raise exception 'Client seed: up to 64 letters, digits, - or _';
+  end if;
+  v_s := public.slot_seed_row(v_p.user_id);
+  if exists (select 1 from public.slot_rounds where user_id = v_p.user_id and status = 'open') then
+    raise exception 'A round is still being settled, try again in a moment';
+  end if;
+  insert into public.slot_revealed_seeds (user_id, server_seed, server_seed_hash, client_seed, last_nonce)
+  values (v_p.user_id, v_s.server_seed, v_s.server_seed_hash, v_s.client_seed, v_s.nonce);
+  update public.slot_seeds
+     set server_seed = v_seed, server_seed_hash = encode(sha256(convert_to(v_seed, 'UTF8')), 'hex'),
+         client_seed = coalesce(v_client, substr(public.slot_random_seed(), 1, 16)), nonce = 0, created_at = now()
+   where user_id = v_p.user_id
+  returning * into v_s;
+  return jsonb_build_object(
+    'revealed', (select to_jsonb(r) - 'user_id' from public.slot_revealed_seeds r where r.user_id = v_p.user_id order by r.id desc limit 1),
+    'server_seed_hash', v_s.server_seed_hash, 'client_seed', v_s.client_seed, 'nonce', v_s.nonce);
+end $$;
+
+-- SERVER ONLY. Takes the bet and opens a round; returns the seeds the server plays it with.
+create or replace function public.slot_begin(p_user uuid, p_bet numeric, p_buy boolean default false)
+returns jsonb language plpgsql security definer set search_path = public, pg_temp
+as $$
+declare
+  c public.slot_config;
+  v_p public.players;
+  v_s public.slot_seeds;
+  v_cost numeric;
+  v_round bigint;
+begin
+  select * into c from public.slot_config where id = 1;
+  if (select maintenance_on from public.platform_state where id = 1) then raise exception 'The game is under maintenance'; end if;
+  if not c.enabled then raise exception 'The jackpot is closed right now'; end if;
+  if p_bet is null or not (p_bet = any (c.bets)) then raise exception 'Pick one of the listed bets'; end if;
+  if p_buy and not c.buy_enabled then raise exception 'Buying the Heist is off right now'; end if;
+
+  select * into v_p from public.players where user_id = p_user for update;
+  if v_p.user_id is null then raise exception 'Player not found'; end if;
+  if exists (select 1 from public.slot_rounds where user_id = p_user and status = 'open') then
+    raise exception 'Your last round is still being settled';
+  end if;
+  v_cost := p_bet * case when p_buy then c.buy_cost_x else 1 end;
+  if v_cost > v_p.dc then raise exception 'Not enough DC: this costs % DC', v_cost; end if;
+
+  v_s := public.slot_seed_row(p_user);
+  update public.slot_seeds set nonce = nonce + 1 where user_id = p_user returning * into v_s;
+  update public.players set dc = dc - v_cost where user_id = p_user;
+  update public.slot_state
+     set pot = pot + round(v_cost * c.pot_rate, 4), rounds = rounds + 1, wagered = wagered + v_cost, updated_at = now()
+   where id = 1;
+  insert into public.slot_rounds (user_id, kind, bet, cost, server_seed_hash, client_seed, nonce)
+  values (p_user, case when p_buy then 'buy' else 'spin' end, p_bet, v_cost, v_s.server_seed_hash, v_s.client_seed, v_s.nonce)
+  returning id into v_round;
+  return jsonb_build_object('round_id', v_round, 'server_seed', v_s.server_seed, 'server_seed_hash', v_s.server_seed_hash,
+                            'client_seed', v_s.client_seed, 'nonce', v_s.nonce, 'cost', v_cost, 'max_win_x', c.max_win_x);
+end $$;
+
+-- SERVER ONLY. Pays a played round. GRAND also pays a share of the pot: bet / biggest bet (all of it at max bet).
+create or replace function public.slot_finish(p_round bigint, p_win_x numeric, p_jackpot text, p_summary jsonb)
+returns jsonb language plpgsql security definer set search_path = public, pg_temp
+as $$
+declare
+  c public.slot_config;
+  v_r public.slot_rounds;
+  v_st public.slot_state;
+  v_pay numeric;
+  v_pot numeric := 0;
+  v_dc numeric;
+begin
+  select * into c from public.slot_config where id = 1;
+  select * into v_r from public.slot_rounds where id = p_round for update;
+  if v_r.id is null then raise exception 'Round not found'; end if;
+  if v_r.status = 'settled' then raise exception 'Round already settled'; end if;
+  if p_win_x is null or p_win_x < 0 or p_win_x > c.max_win_x then raise exception 'Bad win'; end if;
+  if p_jackpot is not null and p_jackpot not in ('GRAND', 'MAJOR', 'MINOR', 'MINI') then raise exception 'Bad jackpot'; end if;
+  perform 1 from public.players where user_id = v_r.user_id for update;
+  select * into v_st from public.slot_state where id = 1 for update;
+
+  v_pay := floor(v_r.bet * p_win_x * 100) / 100;
+  if p_jackpot = 'GRAND' then
+    v_pot := floor(v_st.pot * least(1, v_r.bet / (select max(b) from unnest(c.bets) b)) * 100) / 100;
+  end if;
+  update public.slot_state set pot = pot - v_pot, paid = paid + v_pay + v_pot, updated_at = now() where id = 1;
+  update public.players set dc = dc + v_pay + v_pot where user_id = v_r.user_id returning dc into v_dc;
+  update public.slot_rounds
+     set status = 'settled', win_x = p_win_x, payout = v_pay, pot_paid = v_pot, jackpot = p_jackpot,
+         summary = p_summary, settled_at = now()
+   where id = v_r.id;
+  perform public.log_tx(v_r.user_id, 'jackpot',
+    case when p_jackpot is not null then 'Jackpot: ' || p_jackpot when v_r.kind = 'buy' then 'Jackpot: bought the Heist' else 'Jackpot spin' end,
+    format('Round #%s · bet %s DC · won %s DC', v_r.id, v_r.cost, v_pay + v_pot), v_pay + v_pot - v_r.cost);
+  return jsonb_build_object('payout', v_pay, 'pot_paid', v_pot, 'balance', v_dc, 'pot', v_st.pot - v_pot);
+end $$;
+
+-- SERVER ONLY. Rounds opened but never settled (crash, deploy): the server settles them from the same seeds.
+create or replace function public.slot_open_rounds(p_older_than_seconds int default 60)
+returns table (round_id bigint, kind text, server_seed text, client_seed text, nonce bigint, max_win_x numeric)
+language sql security definer set search_path = public, pg_temp
+as $$
+  select r.id, r.kind, s.server_seed, r.client_seed, r.nonce, (select max_win_x from public.slot_config where id = 1)
+    from public.slot_rounds r
+    join public.slot_seeds s on s.user_id = r.user_id and s.server_seed_hash = r.server_seed_hash
+   where r.status = 'open' and r.at < now() - make_interval(secs => p_older_than_seconds)
+   order by r.at
+   limit 50
+$$;
+
+do $$
+declare f record;
+begin
+  for f in
+    select p.oid::regprocedure as sig from pg_proc p
+     where p.pronamespace = 'public'::regnamespace
+       and p.proname in ('slot_random_seed', 'slot_seed_row', 'slot_seed_info', 'slot_rotate_seed', 'slot_begin', 'slot_finish', 'slot_open_rounds')
+  loop
+    execute format('revoke all on function %s from public, anon, authenticated', f.sig);
+    execute format('grant execute on function %s to service_role', f.sig);
+  end loop;
+end $$;
+grant execute on function public.slot_seed_info() to authenticated;
+grant execute on function public.slot_rotate_seed(text) to authenticated;
+revoke insert, update, delete, truncate on public.slot_config, public.slot_state, public.slot_seeds,
+  public.slot_revealed_seeds, public.slot_rounds from anon, authenticated;
+revoke select on public.slot_seeds from anon, authenticated;
+grant select on public.slot_config, public.slot_state, public.slot_revealed_seeds, public.slot_rounds to anon, authenticated;

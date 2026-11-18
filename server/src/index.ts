@@ -5,6 +5,7 @@
  *   deposits     every 15s   find USDC / AMMO transfers on Solana and credit them (+ instantly on request)
  *   withdrawals  every 20s   mark withdrawals the players sent as 'sent'
  *   burns        every 5min  burn the AMMO spent in the game, on-chain
+ *   slot         every 30s   settle Audacity Jackpot rounds a crash left open (replayed from their seeds)
  *   + the HTTP API the web app uses for deposits and withdrawals
  */
 import { env } from "./env.js";
@@ -17,6 +18,7 @@ import { priceTick } from "./jobs/price.js";
 import { depositsTick } from "./jobs/deposits.js";
 import { withdrawalsTick } from "./jobs/withdrawals.js";
 import { burnsTick } from "./jobs/burns.js";
+import { settleOpenRounds } from "./slot/play.js";
 
 log.info("boot", "starting", {
   instance: INSTANCE,
@@ -34,6 +36,7 @@ if (env.workers) {
   every("deposits", 15_000, depositsTick);
   every("withdrawals", 20_000, withdrawalsTick);
   every("burns", 5 * 60_000, burnsTick);
+  every("slot", 30_000, settleOpenRounds);
 }
 
 const shutdown = (sig: string) => {

@@ -7,6 +7,7 @@
  *   POST /withdrawals/tx      {id}        the transaction for the player to sign
  *   POST /withdrawals/submitted {id}      the player sent it: confirm and mark it sent
  *   POST /withdrawals/cancel  {id}        refund a withdrawal that was never sent
+ *   POST /slot/spin           {bet, buy}  Audacity Jackpot: take the bet in DC, play the round, pay it
  *   POST /webhooks/helius                 Helius saw a transfer to a game wallet: check deposits now
  */
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
@@ -17,6 +18,7 @@ import { log } from "./log.js";
 import { checkDepositByReference, depositsTick } from "./jobs/deposits.js";
 import { HttpError, cancelWithdrawal, withdrawalSubmitted, withdrawalTx } from "./jobs/withdrawals.js";
 import { jobStatus } from "./jobs/runner.js";
+import { spinRound } from "./slot/play.js";
 
 const MAX_BODY = 64 * 1024;
 
@@ -120,6 +122,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
   if (path === "/withdrawals/tx") return send(res, 200, await withdrawalTx(await player(req), idOf(body)));
   if (path === "/withdrawals/submitted") return send(res, 200, await withdrawalSubmitted(await player(req), idOf(body)));
   if (path === "/withdrawals/cancel") return send(res, 200, await cancelWithdrawal(await player(req), idOf(body)));
+  if (path === "/slot/spin") return send(res, 200, await spinRound(await player(req), body));
   throw new HttpError(404, "Not found");
 }
 

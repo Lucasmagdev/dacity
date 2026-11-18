@@ -130,7 +130,7 @@ export type MockState = {
   inventory: { pistol: number; smg: number; rifle: number; vest: number };
 };
 
-export type TxType = "gang" | "deposit" | "withdraw" | "faucet" | "buy" | "open" | "claim" | "claimAll" | "fuse" | "gift" | "medkit" | "heal" | "shop" | "equip" | "ammo" | "ammoDeposit" | "ammoWithdraw" | "deploy" | "referral";
+export type TxType = "gang" | "deposit" | "withdraw" | "faucet" | "buy" | "open" | "claim" | "claimAll" | "fuse" | "gift" | "medkit" | "heal" | "shop" | "equip" | "ammo" | "ammoDeposit" | "ammoWithdraw" | "deploy" | "referral" | "jackpot";
 
 export type MockTx = {
   id: string;

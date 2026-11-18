@@ -3,5 +3,8 @@
   "framework": "vite",
   "installCommand": "cd web && npm ci",
   "buildCommand": "cd web && npm run build",
-  "outputDirectory": "web/dist"
+  "outputDirectory": "web/dist",
+  "rewrites": [
+    { "source": "/", "has": [{ "type": "host", "value": "jackpot\\..*" }], "destination": "/jackpot.html" }
+  ]
 }
