@@ -208,12 +208,23 @@ export default function Shell() {
           <div className="aj-logo"><img className="aj-emb" src="/jackpot/logo-a.png" alt="" /><span className="a">VICECITY</span><span className="j">CASINO</span></div>
           <div className="aj-tools">
             <span className="aj-pill demo" title="Free play credits: not real money"><b>{fmt(balance)}</b> CREDITS</span>
-            <button className="aj-tb" type="button" onClick={() => setHowOpen(true)}>HOW TO PLAY</button>
             <button className="aj-tb" type="button" onClick={() => { demoStore.bal = DEMO_START; void refreshBalance(); }}>REFILL</button>
+            {/* demo wallet: only reads the address to show it. Nothing is signed, sent or charged. */}
+            {w.connected && w.publicKey ? (
+              <button className="aj-tb" type="button" title="Demo: the wallet is only used to show your address" onClick={() => void w.disconnect()}>
+                {short(w.publicKey.toBase58())} · DISCONNECT
+              </button>
+            ) : (
+              <button className="aj-tb gold" type="button" onClick={() => setVisible(true)}>
+                {w.connecting ? "CONNECTING…" : "CONNECT WALLET"}
+              </button>
+            )}
           </div>
         </header>
-        <p className="aj-demo-note"><b>FREE PLAY DEMO</b> · play-money credits only. Nothing here is real money, nothing can be bought, won or withdrawn.</p>
-        {howOpen && <HowToPlay cfg={cfgNow} onClose={() => setHowOpen(false)} />}
+        <p className="aj-demo-note">
+          <b>FREE PLAY DEMO</b> · play-money credits only. Nothing here is real money, nothing can be bought, won or withdrawn.
+          {w.connected && " Your wallet is only connected to show your address: nothing is signed or charged."}
+        </p>
         {adult ? <div ref={slotEl} /> : (
           <div className="aj-gate" role="dialog" aria-modal="true" aria-labelledby="aj-gate-t">
             <h2 id="aj-gate-t">18+ only</h2>
