@@ -2,11 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import Scene from "./Scene";
 import Nav from "./Nav";
 import Coin from "./art/Coin";
-import { DACITY_PER_USDC, RARITIES, TOKEN, WEAPONS, fmt } from "../config/game";
+import { DACITY_PER_USDC, PROTAGONISTS, RARITIES, TOKEN, WEAPONS, fmt } from "../config/game";
 import AmmoIcon from "./art/AmmoIcon";
 import { usePlatform } from "../mock/platform";
 import { MOCK, MOCK_DAY_MS, farmedOf, isFarming, isShot, pendingOf, rateOf, statsOf, useMock, weaponDaysLeft, type MockTx, type TxType } from "../mock";
 import { AccountLoading, useAccountLoading } from "./AccountGate";
+import ShareFarm from "./ShareFarm";
+import { refCode, refLink } from "../referral";
+import type { VaultCamData } from "../share/vaultCam";
 
 const PERIODS = [
   { label: "Per hour", days: 1 / 24 },
@@ -79,6 +82,7 @@ export default function Dashboard({ onBack, onFound }: { onBack: () => void; onF
   const now = useNow();
   const [filter, setFilter] = useState(0);
   const [shown, setShown] = useState(PAGE);
+  const [share, setShare] = useState<VaultCamData | null>(null);
 
   const farm = useMemo(() => {
     let ratePerDay = 0;
@@ -184,9 +188,36 @@ export default function Dashboard({ onBack, onFound }: { onBack: () => void; onF
               <p className="eyebrow">Dashboard · {s.gang.name}</p>
               <h2>Farm output</h2>
             </div>
-            <span className="dash__live">
-              <i /> {fmt(farm.active)} of {fmt(s.gangsters.length)} gangsters farming
-            </span>
+            <div className="dash__headright">
+              <span className="dash__live">
+                <i /> {fmt(farm.active)} of {fmt(s.gangsters.length)} gangsters farming
+              </span>
+              <button
+                type="button"
+                className="btn btn--cyan dash__share"
+                onClick={() => {
+                  const gang = s.gang!;
+                  const boss = PROTAGONISTS.find((p) => p.id === gang.protagonist) ?? PROTAGONISTS[0];
+                  setShare({
+                    gang: gang.name,
+                    boss: boss.name,
+                    bossImage: boss.image,
+                    bossLift: boss.variant === "nina" ? 0.12 : 0.02,
+                    farmed: farm.lifetime,
+                    ratePerDay: farm.ratePerDay,
+                    crew: s.gangsters.length,
+                    farming: farm.active,
+                    day: Math.max(1, Math.floor((Date.now() - gang.createdAt) / MOCK_DAY_MS) + 1),
+                    link: refLink(refCode(gang.name)),
+                  });
+                }}
+              >
+                <svg viewBox="0 0 24 24" width={16} height={16} fill="currentColor" aria-hidden>
+                  <path d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.66l-5.21-6.82-5.97 6.82H1.67l7.73-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.13H5.12l11.96 15.64Z" />
+                </svg>
+                Share
+              </button>
+            </div>
           </div>
           <ul className="dash__rates">
             {farm.periods.map((p) => (
@@ -212,6 +243,8 @@ export default function Dashboard({ onBack, onFound }: { onBack: () => void; onF
             )}
           </p>
         </section>
+
+        {share && <ShareFarm data={share} onClose={() => setShare(null)} />}
 
         {/* ------------------------------------------------------------ status */}
         <dl className="dash__stats">
