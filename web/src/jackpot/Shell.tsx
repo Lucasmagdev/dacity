@@ -19,7 +19,7 @@ type Phase = "disconnected" | "signing" | "ready" | "error";
 const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const short = (a: string) => `${a.slice(0, 4)}…${a.slice(-4)}`;
 
-const CLOSED: SlotConfig = { enabled: false, bets: [10, 20, 50, 100, 200, 500, 1000], buyEnabled: false, buyCostX: 58, maxWinX: 5000 };
+const CLOSED: SlotConfig = { enabled: false, bets: [10, 20, 50, 100], buyEnabled: false, buyCostX: 58, maxWinX: 2500 };
 
 /**
  * LOCAL DEMO (VITE_MOCK not "0", or no Supabase): the same engine runs in the browser with play-money DC

@@ -21,7 +21,7 @@ console.log("rng ok");
 
 // 3) RTP
 const N = Number(process.argv[2] || 300000);
-const MAXW = 5000;
+const MAXW = 2500; // slot_config.max_win_x
 let paid = 0, hits = 0, heists = 0, heistPaid = 0, big = 0, cap = 0;
 const jp: Record<string, number> = {};
 for (let i = 0; i < N; i++) {

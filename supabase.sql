@@ -1686,13 +1686,16 @@ grant select on public.my_gangsters, public.token_price to anon, authenticated;
 create table if not exists public.slot_config (
   id                 int primary key default 1 check (id = 1),
   enabled            boolean   not null default false,
-  bets               numeric[] not null default '{10,20,50,100,200,500,1000}',  -- DC (100 DC = 1 USDC)
+  bets               numeric[] not null default '{10,20,50,100}',  -- DC (100 DC = 1 USDC) · launch limits, raise with the pool
   buy_enabled        boolean   not null default true,
   buy_cost_x         numeric   not null default 58 check (buy_cost_x > 0),     -- Buy the Heist = this x bet
-  max_win_x          numeric   not null default 5000 check (max_win_x > 0),    -- cap per round (pot share on top)
+  max_win_x          numeric   not null default 2500 check (max_win_x >= 2000), -- cap per round (pot share on top); GRAND alone pays 2000x
   pot_rate           numeric   not null default 0.01 check (pot_rate >= 0 and pot_rate < 0.1)  -- of every bet → GRAND pot
 );
 insert into public.slot_config (id) values (1) on conflict (id) do nothing;
+-- launch limits (max bet 100 DC, max win 2500x): only touches a row still on the first defaults
+update public.slot_config set bets = '{10,20,50,100}', max_win_x = 2500
+ where id = 1 and bets = '{10,20,50,100,200,500,1000}' and max_win_x = 5000;
 
 create table if not exists public.slot_state (
   id          int primary key default 1 check (id = 1),
