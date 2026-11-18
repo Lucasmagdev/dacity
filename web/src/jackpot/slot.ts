@@ -43,6 +43,8 @@ const NAME = (s: string) => (s === "S" ? "Bank" : s === "V" ? "Vault" : PAYS[s a
 const JP_X: Record<JackpotId, number> = { GRAND: 2000, MAJOR: 500, MINOR: 100, MINI: 20 };
 /** Money unit shown on the slot: play credits on the standalone free-play site, DC in Audacity Game. */
 const UNIT = (import.meta.env.VITE_CASINO_DEMO as string | undefined) === "1" ? "$CASINO" : "DC";
+/** Name on the win screens. */
+const BRAND = (import.meta.env.VITE_CASINO_DEMO as string | undefined) === "1" ? "VICECITY CASINO" : "AUDACITY GAME";
 const TIERS: [number, string][] = [[10, "BIG WIN"], [25, "MEGA WIN"], [50, "EPIC WIN"], [100, "LEGENDARY WIN"]];
 
 const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -313,13 +315,13 @@ export function mountSlot(root: HTMLElement, opts: SlotOptions): SlotHandle {
     });
   }
   async function banner(t: string, s: string, img: string, ms: number) {
-    showOv({ t, s, img, k: "AUDACITY GAME" }); fxStart(1); snd.scatter();
+    showOv({ t, s, img, k: BRAND }); fxStart(1); snd.scatter();
     await hold(auto > 0 ? T(ms) : ms + 1500);
   }
   async function celebrate(win: number, b: number) {
     let top = 0; TIERS.forEach((t, i) => { if (win >= t[0] * b) top = i; });
     let cur = -1;
-    showOv({ t: TIERS[0][1], k: "AUDACITY GAME", a: fmt(0) }); fxStart(1);
+    showOv({ t: TIERS[0][1], k: BRAND, a: fmt(0) }); fxStart(1);
     await countUp(win, 1800 + top * 900, (v) => {
       let i = -1; TIERS.forEach((t, k) => { if (v >= t[0] * b) i = k; });
       if (i > cur && i >= 0) { cur = i; setTitle(TIERS[i][1]); snd.tier(); rate = 1 + i * 2; }

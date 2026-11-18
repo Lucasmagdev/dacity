@@ -50,7 +50,7 @@ export type Round = {
 
 /** Pays x bet for 8-9 / 10-11 / 12+ of a kind anywhere on the grid, and the weight on the reels. */
 export const PAYS: Record<PayId, { name: string; pay: [number, number, number]; w: number }> = {
-  coin: { name: "$AMMO", pay: [5.45, 13.5, 36], w: 3 },
+  coin: { name: "$CASINO", pay: [5.45, 13.5, 36], w: 3 },
   red: { name: "Red Ash", pay: [1.35, 3.6, 11], w: 5 },
   papa: { name: "Papa Krown", pay: [0.9, 2.25, 6.35], w: 7 },
   lil: { name: "Lil Blinds", pay: [0.7, 1.35, 4.55], w: 9 },
