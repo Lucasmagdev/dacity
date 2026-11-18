@@ -8,7 +8,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { supabase, rpc } from "../backend/supabase";
 import { api } from "../backend/api";
-import { playRound, seededRandom, sha256Hex } from "../../../server/src/slot/engine";
+import { PAYS, RULES, playRound, seededRandom, sha256Hex } from "../../../server/src/slot/engine";
 import { mountSlot, type SlotConfig, type SlotHandle, type SpinResponse } from "./slot";
 
 const LICENCE = (import.meta.env.VITE_JACKPOT_LICENCE as string | undefined)?.trim() || "";
@@ -90,6 +90,8 @@ export default function Shell() {
   const [balance, setBalance] = useState(0);
   const [adult, setAdult] = useState(() => { try { return localStorage.getItem("aj.adult") === "1"; } catch { return false; } });
   const [fairOpen, setFairOpen] = useState(false);
+  const [howOpen, setHowOpen] = useState(false);
+  const [cfgNow, setCfgNow] = useState<SlotConfig>(DEMO ? DEMO_CFG : CLOSED);
   const slotEl = useRef<HTMLDivElement>(null);
   const slot = useRef<SlotHandle | null>(null);
   const phaseRef = useRef(phase);
@@ -111,42 +113,60 @@ export default function Shell() {
     slot.current?.setBalance(dc);
   }, []);
 
-  // sign in when a wallet connects (reuses the session if it's the same wallet)
+  // Sign in once per connected wallet. The wallet adapter re-creates its functions on every state change, so
+  // they live in a ref and never re-trigger this: one signature request at a time, no loop. A rejected
+  // request is NOT retried by itself; the player taps "Sign in" again.
+  const walletRef = useRef(w);
+  walletRef.current = w;
+  const signingFor = useRef<string | null>(null);
+  const address = w.connected && w.publicKey ? w.publicKey.toBase58() : null;
+
+  const signIn = useCallback(async () => {
+    if (DEMO || !supabase) return;
+    const cur = walletRef.current;
+    if (!cur.connected || !cur.publicKey) return;
+    const addr = cur.publicKey.toBase58();
+    if (signingFor.current === addr) return;
+    signingFor.current = addr;
+    setError(null);
+    try {
+      if ((await sessionWallet()) !== addr) {
+        await supabase.auth.signOut();
+        setPhase("signing");
+        const solanaWallet = cur.signIn
+          ? { publicKey: cur.publicKey, signIn: cur.signIn }
+          : { publicKey: cur.publicKey, signMessage: cur.signMessage };
+        const { error: e } = await supabase.auth.signInWithWeb3({
+          chain: "solana",
+          statement: "Sign in to Audacity Game",
+          wallet: solanaWallet as never,
+          options: { url: `${window.location.origin}/` },
+        });
+        if (e) throw new Error(e.message);
+      }
+      await rpc("ensure_player");
+      if (walletRef.current.publicKey?.toBase58() !== addr) return; // switched wallets meanwhile
+      setPhase("ready");
+      await refreshBalance();
+    } catch (e) {
+      if (walletRef.current.publicKey?.toBase58() !== addr) return;
+      setPhase("error");
+      const m = (e as Error).message || "Sign-in failed";
+      setError(/reject|denied|cancel/i.test(m) ? "You cancelled the signature. Tap SIGN IN to try again." : `Sign-in failed: ${m}`);
+    } finally {
+      if (signingFor.current === addr) signingFor.current = null;
+    }
+  }, [refreshBalance]);
+
   useEffect(() => {
     if (DEMO || !supabase) return;
-    if (!w.connected || !w.publicKey) {
+    if (!address) {
       setPhase("disconnected");
+      setError(null);
       return;
     }
-    const address = w.publicKey.toBase58();
-    let cancelled = false;
-    (async () => {
-      try {
-        if ((await sessionWallet()) !== address) {
-          await supabase.auth.signOut();
-          setPhase("signing");
-          const solanaWallet = w.signIn
-            ?{ publicKey: w.publicKey, signIn: w.signIn }
-            : { publicKey: w.publicKey, signMessage: w.signMessage };
-          const { error: e } = await supabase.auth.signInWithWeb3({
-            chain: "solana",
-            statement: "Sign in to Audacity Game",
-            wallet: solanaWallet as never,
-            options: { url: `${window.location.origin}/` },
-          });
-          if (e) throw new Error(e.message);
-        }
-        await rpc("ensure_player");
-        if (cancelled) return;
-        setPhase("ready");
-        setError(null);
-        await refreshBalance();
-      } catch (e) {
-        if (!cancelled) { setPhase("error"); setError((e as Error).message); }
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [w.connected, w.publicKey, w.signIn, w.signMessage, w.wallet, refreshBalance]);
+    void signIn();
+  }, [address, signIn]);
 
   // the slot itself (plain DOM)
   useEffect(() => {
@@ -155,6 +175,7 @@ export default function Shell() {
     const el = slotEl.current;
     loadConfig().then(({ cfg, pot }) => {
       if (!alive) return;
+      setCfgNow(cfg);
       slot.current = mountSlot(el, {
         config: cfg,
         balance: 0,
@@ -173,7 +194,7 @@ export default function Shell() {
       refreshBalance().catch(() => undefined);
     });
     const t = setInterval(() => {
-      loadConfig().then(({ cfg, pot }) => { slot.current?.setConfig(cfg); slot.current?.setPot(pot); }).catch(() => undefined);
+      loadConfig().then(({ cfg, pot }) => { setCfgNow(cfg); slot.current?.setConfig(cfg); slot.current?.setPot(pot); }).catch(() => undefined);
       if (phaseRef.current === "ready" && !DEMO) refreshBalance().catch(() => undefined);
     }, 20_000);
     return () => { alive = false; clearInterval(t); slot.current?.destroy(); slot.current = null; };
@@ -189,9 +210,11 @@ export default function Shell() {
           <div className="aj-tools">
             <span className="aj-pill demo">LOCAL DEMO · PLAY-MONEY DC</span>
             <span className="aj-pill"><b>{fmt(balance)}</b> DC</span>
+            <button className="aj-tb" type="button" onClick={() => setHowOpen(true)}>HOW TO PLAY</button>
             <button className="aj-tb" type="button" onClick={() => { demoStore.bal = DEMO_START; void refreshBalance(); }}>REFILL DEMO</button>
           </div>
         </header>
+        {howOpen && <HowToPlay cfg={cfgNow} onClose={() => setHowOpen(false)} />}
         {adult ? <div ref={slotEl} /> : (
           <div className="aj-gate" role="dialog" aria-modal="true" aria-labelledby="aj-gate-t">
             <h2 id="aj-gate-t">18+ only</h2>
@@ -215,17 +238,23 @@ export default function Shell() {
             </span>
           )}
           <a className="aj-tb" href={`${MAIN_SITE}/`} target="_blank" rel="noreferrer">DEPOSIT DC</a>
-          <button className="aj-tb" type="button" onClick={() => setFairOpen(true)} disabled={phase !== "ready"}>PROVABLY FAIR</button>
+          <button className="aj-tb" type="button" onClick={() => setHowOpen(true)}>HOW TO PLAY</button>
+          <button className="aj-tb" type="button" onClick={() => setFairOpen(true)}>PROVABLY FAIR</button>
           {w.connected && w.publicKey ? (
-            <button className="aj-tb" type="button" onClick={() => { void w.disconnect(); void supabase!.auth.signOut(); }}>
-              {phase === "signing" ? "SIGN IN IN YOUR WALLET…" : short(w.publicKey.toBase58())} · DISCONNECT
-            </button>
+            <>
+              {phase === "error" && (
+                <button className="aj-tb gold" type="button" onClick={() => void signIn()}>SIGN IN</button>
+              )}
+              <button className="aj-tb" type="button" onClick={() => { void w.disconnect(); void supabase!.auth.signOut(); }}>
+                {phase === "signing" ? "APPROVE IN YOUR WALLET…" : short(w.publicKey.toBase58())} · DISCONNECT
+              </button>
+            </>
           ) : (
             <button className="aj-tb gold" type="button" onClick={() => setVisible(true)}>CONNECT WALLET</button>
           )}
         </div>
       </header>
-      {error && <p className="aj-err">Sign-in failed: {error}</p>}
+      {error && <p className="aj-err">{error}</p>}
 
       {adult ? (
         <div ref={slotEl} />
@@ -242,11 +271,12 @@ export default function Shell() {
 
       <footer className="aj-foot">
         {LICENCE && <span>{LICENCE}</span>}
-        <span>18+ · Bets and wins in DC (100 DC = 1 USDC) · Theoretical RTP ≈ 89% plus the progressive GRAND pot (≈ 90% in all) · Max win {CLOSED.maxWinX.toLocaleString("en-US")}× bet</span>
+        <span>18+ · Bets and wins in DC (100 DC = 1 USDC) · Theoretical RTP ≈ 89% plus the progressive GRAND pot (≈ 90% in all) · Max win {cfgNow.maxWinX.toLocaleString("en-US")}× bet</span>
         <span>Every round is decided by the server from your seeds and can be verified under Provably fair. Gamble responsibly.</span>
       </footer>
 
-      {fairOpen && <Fairness onClose={() => setFairOpen(false)} />}
+      {fairOpen && <Fairness signedIn={phase === "ready"} onClose={() => setFairOpen(false)} />}
+      {howOpen && <HowToPlay cfg={cfgNow} onClose={() => setHowOpen(false)} />}
     </div>
   );
 }
@@ -255,7 +285,7 @@ type SeedInfo = { server_seed_hash: string; client_seed: string; nonce: number }
 type RoundRow = { id: number; at: string; kind: "spin" | "buy"; status: string; bet: number; cost: number; server_seed_hash: string; client_seed: string; nonce: number; win_x: number | null; payout: number | null; pot_paid: number; jackpot: string | null };
 type Revealed = { server_seed: string; server_seed_hash: string; client_seed: string; last_nonce: number };
 
-function Fairness({ onClose }: { onClose: () => void }) {
+function Fairness({ signedIn, onClose }: { signedIn: boolean; onClose: () => void }) {
   const [info, setInfo] = useState<SeedInfo | null>(null);
   const [rounds, setRounds] = useState<RoundRow[]>([]);
   const [revealed, setRevealed] = useState<Revealed[]>([]);
@@ -268,6 +298,7 @@ function Fairness({ onClose }: { onClose: () => void }) {
   const load = useCallback(async () => {
     const { cfg } = await loadConfig();
     setMaxWinX(cfg.maxWinX);
+    if (!signedIn) return;
     const [i, r, v] = await Promise.all([
       rpc<SeedInfo>("slot_seed_info"),
       supabase!.from("slot_rounds").select("*").order("id", { ascending: false }).limit(20),
@@ -276,7 +307,7 @@ function Fairness({ onClose }: { onClose: () => void }) {
     setInfo(i);
     setRounds((r.data as RoundRow[]) ?? []);
     setRevealed((v.data as Revealed[]) ?? []);
-  }, []);
+  }, [signedIn]);
   useEffect(() => { load().catch((e) => setNote((e as Error).message)); }, [load]);
 
   const rotate = async () => {
@@ -303,14 +334,21 @@ function Fairness({ onClose }: { onClose: () => void }) {
     <div className="aj-modal" role="dialog" aria-modal="true" aria-labelledby="aj-fair-t" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="aj-mbox">
         <h2 id="aj-fair-t">PROVABLY FAIR <button className="aj-tb" type="button" onClick={onClose}>CLOSE</button></h2>
-        <p className="aj-mnote">Each round = HMAC-SHA256(server seed, "client seed:nonce:cursor"). You see the server seed's hash before you bet. Rotate to reveal it, then verify any round played with it.</p>
-        {info && (
+        <p className="aj-mnote">The result of every round is fixed before you bet, and nobody can change it afterwards: not the game, not you.</p>
+        <ol className="aj-steps">
+          <li><b>Before you bet</b> you see the <b>hash</b> of the server seed (a fingerprint of a secret number). The secret itself stays hidden, so nobody can predict the next round.</li>
+          <li><b>Each round</b> = HMAC-SHA256(server seed, "client seed:nonce:cursor"). The client seed is yours (you can pick it) and the nonce counts your rounds: 1, 2, 3…</li>
+          <li><b>Rotate &amp; reveal</b> shows the old server seed and starts a new pair. Check it matches the hash you saw, then press <b>Verify</b> on any round played with it: your browser replays it with the same engine and must get the exact same win.</li>
+        </ol>
+        {!signedIn && <p className="aj-mnote"><b>Connect your wallet</b> to see your seeds and verify your own rounds.</p>}
+        {signedIn && info && (
           <dl className="aj-seeds">
             <dt>Server seed hash</dt><dd><code>{info.server_seed_hash}</code></dd>
             <dt>Client seed</dt><dd><code>{info.client_seed}</code></dd>
             <dt>Next nonce</dt><dd><code>{Number(info.nonce) + 1}</code></dd>
           </dl>
         )}
+        {signedIn && <>
         <div className="aj-rot">
           <label htmlFor="aj-client">New client seed (optional)</label>
           <input id="aj-client" value={client} maxLength={64} onChange={(e) => setClient(e.target.value.replace(/[^A-Za-z0-9_-]/g, ""))} placeholder="leave empty for a random one" />
@@ -339,6 +377,97 @@ function Fairness({ onClose }: { onClose: () => void }) {
             </tbody>
           </table>
         </div>
+        </>}
+      </div>
+    </div>
+  );
+}
+
+const SYM_ORDER = ["coin", "red", "papa", "lil", "rifle", "smg", "pistol", "vest", "medkit"] as const;
+const xs = (n: number) => `${n.toLocaleString("en-US", { maximumFractionDigits: 2 })}×`;
+
+/** The rules, read from the engine and the live config, so the numbers here are always the real ones. */
+function HowToPlay({ cfg, onClose }: { cfg: SlotConfig; onClose: () => void }) {
+  const jackpots = [...RULES.jackpots].sort((a, b) => b.min - a.min);
+  const minBet = Math.min(...cfg.bets);
+  const maxBet = Math.max(...cfg.bets);
+  const mults = RULES.multVals;
+  return (
+    <div className="aj-modal" role="dialog" aria-modal="true" aria-labelledby="aj-how-t" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="aj-mbox">
+        <h2 id="aj-how-t">HOW TO PLAY <button className="aj-tb" type="button" onClick={onClose}>CLOSE</button></h2>
+
+        <h3>THE BASICS</h3>
+        <ul className="aj-steps">
+          <li>Connect your wallet and sign in once (free, no transaction). You play with your <b>DC from Audacity Game</b>: 100 DC = 1 USDC. Need more? <b>Deposit DC</b> on the main site.</li>
+          <li>Pick your bet with <b>−</b> / <b>+</b> ({minBet} to {maxBet} DC) and press <b>SPIN</b> (or the space bar).</li>
+          <li>The grid is 6 × 5. <b>8 or more of the same symbol anywhere</b> pays: no lines, no order.</li>
+          <li>Winning symbols explode and new ones <b>tumble</b> in. Every new win pays too, until nothing else lines up.</li>
+        </ul>
+
+        <h3>PAYTABLE · × YOUR BET</h3>
+        <div className="aj-tablewrap">
+          <table className="aj-table">
+            <thead><tr><th>Symbol</th><th>8–9</th><th>10–11</th><th>12+</th></tr></thead>
+            <tbody>
+              {SYM_ORDER.map((id) => (
+                <tr key={id}><td>{PAYS[id].name}</td><td>{xs(PAYS[id].pay[0])}</td><td>{xs(PAYS[id].pay[1])}</td><td>{xs(PAYS[id].pay[2])}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <h3>MULTIPLIERS</h3>
+        <ul className="aj-steps">
+          <li>Multipliers from {xs(mults[0])} up to {xs(mults[mults.length - 1])} can land on any spin. When the tumbles end, if the spin won, every multiplier on the grid is <b>added up</b> and multiplies the win.</li>
+        </ul>
+
+        <h3>THE HEIST · FREE SPINS</h3>
+        <ul className="aj-steps">
+          <li><b>4 or more Gangster Boxes</b> anywhere start <b>The Heist</b>: {RULES.heistSpins} free spins. The boxes also pay {xs(RULES.scatterPay[4])} (4), {xs(RULES.scatterPay[5])} (5) or {xs(RULES.scatterPay[6])} (6+) your bet.</li>
+          <li><b>Heat stacks</b> during The Heist: every multiplier that lands on a winning spin is added to the Heat, and each win is multiplied by the total Heat so far. It only resets when The Heist ends.</li>
+          <li><b>3 or more Gangster Boxes</b> during The Heist give <b>+{RULES.retrigger} free spins</b>.</li>
+        </ul>
+
+        <h3>BUY THE HEIST · BONUS BUY</h3>
+        <ul className="aj-steps">
+          {cfg.buyEnabled ? (
+            <li>Don't want to wait for the boxes? <b>Buy the Heist</b> starts it right away for <b>{cfg.buyCostX}× your bet</b> ({xs(cfg.buyCostX)} {minBet} DC = {(cfg.buyCostX * minBet).toLocaleString("en-US")} DC at the smallest bet). Tap once to arm it, again to confirm. Same rules as a Heist you trigger.</li>
+          ) : (
+            <li>Buying the Heist is turned off right now.</li>
+          )}
+        </ul>
+
+        <h3>VAULT JACKPOTS</h3>
+        <div className="aj-tablewrap">
+          <table className="aj-table">
+            <thead><tr><th>Jackpot</th><th>Vaults on the grid</th><th>Pays</th></tr></thead>
+            <tbody>
+              {jackpots.map((j) => (
+                <tr key={j.id}><td>{j.id}</td><td>{j.min}{j.id === "GRAND" ? "+" : ""}</td><td>{xs(j.x)} your bet{j.id === "GRAND" ? " + the GRAND pot" : ""}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <ul className="aj-steps">
+          <li>What counts is the number of <b>Vaults left on the grid</b> after the tumbles (the counter on the left shows it). One jackpot per spin: the biggest one reached. Free spins can hit jackpots too.</li>
+          <li>The <b>GRAND pot</b> grows with 1% of every bet. GRAND pays a share of it: your bet ÷ {maxBet} DC (the biggest bet), so the whole pot at the biggest bet.</li>
+        </ul>
+
+        <h3>BUTTONS</h3>
+        <ul className="aj-steps">
+          <li><b>AUTO 25</b>: plays 25 spins in a row at your bet. Press it again (or STOP) to stop any time. It also stops if your balance runs out.</li>
+          <li><b>TURBO</b>: faster animations. The results are exactly the same.</li>
+          <li><b>SOUND</b>: music and effects on or off.</li>
+          <li><b>PROVABLY FAIR</b>: your seeds, and a check of any round you played.</li>
+        </ul>
+
+        <h3>LIMITS &amp; ODDS</h3>
+        <ul className="aj-steps">
+          <li>Max win per round: <b>{xs(cfg.maxWinX)} your bet</b> (the GRAND pot share comes on top).</li>
+          <li>Theoretical return to player (RTP): about <b>89%</b>, plus about 1% back through the GRAND pot (≈ 90% in all). It's an average over a huge number of rounds: any session can end up or down.</li>
+          <li>18+ only. Play only with money you can afford to lose.</li>
+        </ul>
       </div>
     </div>
   );
