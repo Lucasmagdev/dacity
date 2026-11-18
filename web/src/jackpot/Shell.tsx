@@ -28,11 +28,12 @@ const CLOSED: SlotConfig = { enabled: false, bets: [10, 20, 50, 100], buyEnabled
  */
 /** Standalone free-play site (its own Vercel project): VITE_CASINO_DEMO=1 at build time. No wallet, no database. */
 const STANDALONE_DEMO = (import.meta.env.VITE_CASINO_DEMO as string | undefined) === "1";
-const UNIT = STANDALONE_DEMO ? "credits" : "DC";
+const UNIT = STANDALONE_DEMO ? "$CASINO" : "DC";
 const DEMO = STANDALONE_DEMO || (import.meta.env.DEV && ((import.meta.env.VITE_MOCK as string | undefined) !== "0" || !supabase));
 const DEMO_CFG: SlotConfig = { ...CLOSED, enabled: true, buyEnabled: true };
 const DEMO_START = 10_000;
-const demoStore = { bal: DEMO_START, pot: 0, nonce: 0 };
+// the standalone site opens with an empty balance (0 $CASINO); REFILL tops it up with play money
+const demoStore = { bal: STANDALONE_DEMO ? 0 : DEMO_START, pot: 0, nonce: 0 };
 const randHex = (n: number) => Array.from(crypto.getRandomValues(new Uint8Array(n)), (x) => x.toString(16).padStart(2, "0")).join("");
 
 async function demoSpin(bet: number, buy: boolean, c: SlotConfig = DEMO_CFG): Promise<SpinResponse> {
@@ -87,7 +88,8 @@ export default function Shell() {
   const [phase, setPhase] = useState<Phase>("disconnected");
   const [error, setError] = useState<string | null>(null);
   const [balance, setBalance] = useState(0);
-  const [adult, setAdult] = useState(() => { try { return localStorage.getItem("aj.adult") === "1"; } catch { return false; } });
+  // the standalone free-play site has no entry screen
+  const [adult, setAdult] = useState(() => { if (STANDALONE_DEMO) return true; try { return localStorage.getItem("aj.adult") === "1"; } catch { return false; } });
   const [fairOpen, setFairOpen] = useState(false);
   const [howOpen, setHowOpen] = useState(false);
   const [cfgNow, setCfgNow] = useState<SlotConfig>(DEMO ? DEMO_CFG : CLOSED);
@@ -207,7 +209,7 @@ export default function Shell() {
         <header className="aj-top">
           <div className="aj-logo"><img className="aj-emb" src="/jackpot/logo-a.png" alt="" /><span className="a">VICECITY</span><span className="j">CASINO</span></div>
           <div className="aj-tools">
-            <span className="aj-pill demo" title="Free play credits: not real money"><b>{fmt(balance)}</b> CREDITS</span>
+            <span className="aj-pill demo" title="Play money: no real value"><b>{fmt(balance)}</b> $CASINO</span>
             <button className="aj-tb" type="button" onClick={() => { demoStore.bal = DEMO_START; void refreshBalance(); }}>REFILL</button>
             {/* demo wallet: only reads the address to show it. Nothing is signed, sent or charged. */}
             {w.connected && w.publicKey ? (
@@ -222,7 +224,7 @@ export default function Shell() {
           </div>
         </header>
         <p className="aj-demo-note">
-          <b>FREE PLAY DEMO</b> · play-money credits only. Nothing here is real money, nothing can be bought, won or withdrawn.
+          <b>FREE PLAY DEMO</b> · the $CASINO balance here is play money with no value. Nothing can be bought, won or withdrawn.
           {w.connected && " Your wallet is only connected to show your address: nothing is signed or charged."}
         </p>
         {adult ? <div ref={slotEl} /> : (
@@ -413,7 +415,7 @@ function HowToPlay({ cfg, onClose }: { cfg: SlotConfig; onClose: () => void }) {
         <h3>THE BASICS</h3>
         <ul className="aj-steps">
           {STANDALONE_DEMO ? (
-            <li>This is a <b>free demo</b>: you start with 10,000 play credits (no real value). Ran out? Press <b>REFILL</b>. Bets and wins below are in credits.</li>
+            <li>This is a <b>free demo</b>: balances are play money with no real value. Press <b>REFILL</b> to get play $CASINO.</li>
           ) : (
             <li>Connect your wallet and sign in once (free, no transaction). You play with your <b>DC from Audacity Game</b>: 100 DC = 1 USDC. Need more? <b>Deposit DC</b> on the main site.</li>
           )}

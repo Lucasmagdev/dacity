@@ -42,7 +42,7 @@ const IMG: Record<string, string> = {
 const NAME = (s: string) => (s === "S" ? "Bank" : s === "V" ? "Vault" : PAYS[s as PayId]?.name ?? s);
 const JP_X: Record<JackpotId, number> = { GRAND: 2000, MAJOR: 500, MINOR: 100, MINI: 20 };
 /** Money unit shown on the slot: play credits on the standalone free-play site, DC in Audacity Game. */
-const UNIT = (import.meta.env.VITE_CASINO_DEMO as string | undefined) === "1" ? "CREDITS" : "DC";
+const UNIT = (import.meta.env.VITE_CASINO_DEMO as string | undefined) === "1" ? "$CASINO" : "DC";
 const TIERS: [number, string][] = [[10, "BIG WIN"], [25, "MEGA WIN"], [50, "EPIC WIN"], [100, "LEGENDARY WIN"]];
 
 const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
