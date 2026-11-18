@@ -41,6 +41,8 @@ const IMG: Record<string, string> = {
 };
 const NAME = (s: string) => (s === "S" ? "Bank" : s === "V" ? "Vault" : PAYS[s as PayId]?.name ?? s);
 const JP_X: Record<JackpotId, number> = { GRAND: 2000, MAJOR: 500, MINOR: 100, MINI: 20 };
+/** Money unit shown on the slot: play credits on the standalone free-play site, DC in Audacity Game. */
+const UNIT = (import.meta.env.VITE_CASINO_DEMO as string | undefined) === "1" ? "CREDITS" : "DC";
 const TIERS: [number, string][] = [[10, "BIG WIN"], [25, "MEGA WIN"], [50, "EPIC WIN"], [100, "LEGENDARY WIN"]];
 
 const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -68,14 +70,14 @@ const TEMPLATE = `
 </section>
 <section class="aj-deck">
   <div class="aj-stats">
-    <div class="aj-stat"><span class="k">BALANCE · DC</span><span class="v" data-id="bal">0</span></div>
+    <div class="aj-stat"><span class="k">BALANCE · ${UNIT}</span><span class="v" data-id="bal">0</span></div>
     <div class="aj-stat w"><span class="k" data-id="wk">WIN</span><span class="v" data-id="win">0.00</span></div>
   </div>
   <button class="aj-spin" data-id="spin" type="button" aria-label="Spin">SPIN</button>
   <div class="aj-right">
     <div class="aj-betc">
       <button class="aj-rb" data-id="bm" type="button" aria-label="Lower bet">−</button>
-      <div class="aj-stat"><span class="k">BET · DC</span><span class="v" data-id="bet">0</span></div>
+      <div class="aj-stat"><span class="k">BET · ${UNIT}</span><span class="v" data-id="bet">0</span></div>
       <button class="aj-rb" data-id="bp" type="button" aria-label="Raise bet">+</button>
     </div>
     <button class="aj-tb" data-id="auto" type="button" aria-pressed="false">AUTO 25</button>
@@ -225,7 +227,7 @@ export function mountSlot(root: HTMLElement, opts: SlotOptions): SlotHandle {
     const b = bet(), maxBet = Math.max(...cfg.bets);
     q("bal").textContent = fmt(balance);
     q("bet").textContent = fmt(b);
-    q("buyc").textContent = `${cfg.buyCostX}× BET · ${fmt(cfg.buyCostX * b)} DC`;
+    q("buyc").textContent = `${cfg.buyCostX}× BET · ${fmt(cfg.buyCostX * b)} ${UNIT}`;
     root.querySelectorAll<HTMLElement>("[data-jp]").forEach((e) => {
       const id = e.dataset.jp as JackpotId;
       e.textContent = fmt(JP_X[id] * b + (id === "GRAND" ? pot * Math.min(1, b / maxBet) : 0));
@@ -419,8 +421,8 @@ export function mountSlot(root: HTMLElement, opts: SlotOptions): SlotHandle {
       await hold(auto > 0 ? 1800 : 3500);
       fs = false; heat = 0; fsLeft = 0;
     }
-    if (round.capped) msg(`MAX WIN REACHED · <b>${fmt(total)} DC</b>`);
-    else if (Math.abs(total - shown) > 0.01 && total > 0) msg(`ROUND PAID <b>${fmt(total)} DC</b>`);
+    if (round.capped) msg(`MAX WIN REACHED · <b>${fmt(total)} ${UNIT}</b>`);
+    else if (Math.abs(total - shown) > 0.01 && total > 0) msg(`ROUND PAID <b>${fmt(total)} ${UNIT}</b>`);
     setWin(total, round.triggered ? "ROUND WIN" : "WIN");
   }
 
@@ -429,7 +431,7 @@ export function mountSlot(root: HTMLElement, opts: SlotOptions): SlotHandle {
     if (busy || destroyed) return;
     const b = bet(), cost = buy ? cfg.buyCostX * b : b;
     if (!cfg.enabled) { msg("THE JACKPOT IS CLOSED RIGHT NOW"); return; }
-    if (balance < cost) { msg(`NOT ENOUGH DC · THIS COSTS <b>${fmt(cost)}</b>`); auto = 0; upd(); return; }
+    if (balance < cost) { msg(`NOT ENOUGH ${UNIT} · THIS COSTS <b>${fmt(cost)}</b>`); auto = 0; upd(); return; }
     busy = true; balance -= cost; setWin(0); upd();
     let res: SpinResponse | null = null;
     try {

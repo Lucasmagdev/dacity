@@ -8,11 +8,14 @@ export default defineConfig({
   server: { port: 5317, strictPort: true, fs: { allow: [".."] } },
   build: {
     rollupOptions: {
-      input: {
-        main: resolve(__dirname, "index.html"),
-        // jackpot subdomain (vercel.json sends jackpot.* there)
-        jackpot: resolve(__dirname, "jackpot.html"),
-      },
+      // CASINO_ONLY=1: build just the casino page (the standalone free-play site), nothing of the main game
+      input: process.env.CASINO_ONLY === "1"
+        ? { jackpot: resolve(__dirname, "jackpot.html") }
+        : {
+            main: resolve(__dirname, "index.html"),
+            // jackpot subdomain (vercel.json sends jackpot.* there)
+            jackpot: resolve(__dirname, "jackpot.html"),
+          },
     },
   },
 });

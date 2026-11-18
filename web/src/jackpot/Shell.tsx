@@ -26,7 +26,10 @@ const CLOSED: SlotConfig = { enabled: false, bets: [10, 20, 50, 100], buyEnabled
  * with test DC that resets on every reload, so the screen can be checked without the server. Never in a
  * production build: there every round goes through the server.
  */
-const DEMO = import.meta.env.DEV && ((import.meta.env.VITE_MOCK as string | undefined) !== "0" || !supabase);
+/** Standalone free-play site (its own Vercel project): VITE_CASINO_DEMO=1 at build time. No wallet, no database. */
+const STANDALONE_DEMO = (import.meta.env.VITE_CASINO_DEMO as string | undefined) === "1";
+const UNIT = STANDALONE_DEMO ? "credits" : "DC";
+const DEMO = STANDALONE_DEMO || (import.meta.env.DEV && ((import.meta.env.VITE_MOCK as string | undefined) !== "0" || !supabase));
 const DEMO_CFG: SlotConfig = { ...CLOSED, enabled: true, buyEnabled: true };
 const DEMO_START = 10_000;
 const demoStore = { bal: DEMO_START, pot: 0, nonce: 0 };
@@ -204,21 +207,24 @@ export default function Shell() {
         <header className="aj-top">
           <div className="aj-logo"><img className="aj-emb" src="/jackpot/logo-a.png" alt="" /><span className="a">VICECITY</span><span className="j">CASINO</span></div>
           <div className="aj-tools">
-            <span className="aj-pill"><b>{fmt(balance)}</b> CASINO <i>≈ ${fmt(balance / DC_PER_USD)}</i></span>
-                      </div>
+            <span className="aj-pill demo" title="Free play credits: not real money"><b>{fmt(balance)}</b> CREDITS</span>
+            <button className="aj-tb" type="button" onClick={() => setHowOpen(true)}>HOW TO PLAY</button>
+            <button className="aj-tb" type="button" onClick={() => { demoStore.bal = DEMO_START; void refreshBalance(); }}>REFILL</button>
+          </div>
         </header>
+        <p className="aj-demo-note"><b>FREE PLAY DEMO</b> · play-money credits only. Nothing here is real money, nothing can be bought, won or withdrawn.</p>
         {howOpen && <HowToPlay cfg={cfgNow} onClose={() => setHowOpen(false)} />}
         {adult ? <div ref={slotEl} /> : (
           <div className="aj-gate" role="dialog" aria-modal="true" aria-labelledby="aj-gate-t">
             <h2 id="aj-gate-t">18+ only</h2>
-            <p>Audacity Jackpot is a real-money game: bets and wins are in DC (100 DC = 1 USDC) and DC can be withdrawn.</p>
-            <p>Enter only if you are of legal gambling age where you live and online gambling is legal there. Play with money you can afford to lose.</p>
-            <button className="aj-tb gold" type="button" onClick={() => { try { localStorage.setItem("aj.adult", "1"); } catch { /* ignore */ } setAdult(true); }}>I'M OF LEGAL AGE · ENTER</button>
+            <p>This is a free demo of a casino-style slot, played with credits that have no value. No real money is involved.</p>
+            <p>The content is meant for adults only.</p>
+            <button className="aj-tb gold" type="button" onClick={() => { try { localStorage.setItem("aj.adult", "1"); } catch { /* ignore */ } setAdult(true); }}>I'M 18+ · ENTER</button>
           </div>
         )}
         <footer className="aj-foot">
-          <span>18+ · Bets and wins in DC (100 DC = 1 USDC) · Theoretical RTP ≈ 89% plus the progressive GRAND pot (≈ 90% in all) · Max win {cfgNow.maxWinX.toLocaleString("en-US")}× bet</span>
-          <span>Every round is decided by the server from your seeds and can be verified under Provably fair. Gamble responsibly.</span>
+          <span>18+ · Free play demo with credits that have no value · Theoretical RTP ≈ 89% plus the progressive GRAND pot (≈ 90% in all) · Max win {cfgNow.maxWinX.toLocaleString("en-US")}× bet</span>
+          <span>Results come from the same provably-fair engine as a real round, run in your browser.</span>
         </footer>
       </div>
     );
@@ -395,8 +401,12 @@ function HowToPlay({ cfg, onClose }: { cfg: SlotConfig; onClose: () => void }) {
 
         <h3>THE BASICS</h3>
         <ul className="aj-steps">
-          <li>Connect your wallet and sign in once (free, no transaction). You play with your <b>DC from Audacity Game</b>: 100 DC = 1 USDC. Need more? <b>Deposit DC</b> on the main site.</li>
-          <li>Pick your bet with <b>−</b> / <b>+</b> ({minBet} to {maxBet} DC) and press <b>SPIN</b> (or the space bar).</li>
+          {STANDALONE_DEMO ? (
+            <li>This is a <b>free demo</b>: you start with 10,000 play credits (no real value). Ran out? Press <b>REFILL</b>. Bets and wins below are in credits.</li>
+          ) : (
+            <li>Connect your wallet and sign in once (free, no transaction). You play with your <b>DC from Audacity Game</b>: 100 DC = 1 USDC. Need more? <b>Deposit DC</b> on the main site.</li>
+          )}
+          <li>Pick your bet with <b>−</b> / <b>+</b> ({minBet} to {maxBet} {UNIT}) and press <b>SPIN</b> (or the space bar).</li>
           <li>The grid is 6 × 5. <b>8 or more of the same symbol anywhere</b> pays: no lines, no order.</li>
           <li>Winning symbols explode and new ones <b>tumble</b> in. Every new win pays too, until nothing else lines up.</li>
         </ul>
@@ -428,7 +438,7 @@ function HowToPlay({ cfg, onClose }: { cfg: SlotConfig; onClose: () => void }) {
         <h3>BUY THE HEIST · BONUS BUY</h3>
         <ul className="aj-steps">
           {cfg.buyEnabled ? (
-            <li>Don't want to wait for the banks? <b>Buy the Heist</b> starts it right away for <b>{cfg.buyCostX}× your bet</b> ({xs(cfg.buyCostX)} {minBet} DC = {(cfg.buyCostX * minBet).toLocaleString("en-US")} DC at the smallest bet). Tap once to arm it, again to confirm. Same rules as a Heist you trigger.</li>
+            <li>Don't want to wait for the banks? <b>Buy the Heist</b> starts it right away for <b>{cfg.buyCostX}× your bet</b> ({xs(cfg.buyCostX)} {minBet} {UNIT} = {(cfg.buyCostX * minBet).toLocaleString("en-US")} {UNIT} at the smallest bet). Tap once to arm it, again to confirm. Same rules as a Heist you trigger.</li>
           ) : (
             <li>Buying the Heist is turned off right now.</li>
           )}
@@ -447,7 +457,7 @@ function HowToPlay({ cfg, onClose }: { cfg: SlotConfig; onClose: () => void }) {
         </div>
         <ul className="aj-steps">
           <li>What counts is the number of <b>Vaults left on the grid</b> after the tumbles (the counter on the left shows it). One jackpot per spin: the biggest one reached. Free spins can hit jackpots too.</li>
-          <li>The <b>GRAND pot</b> grows with 1% of every bet. GRAND pays a share of it: your bet ÷ {maxBet} DC (the biggest bet), so the whole pot at the biggest bet.</li>
+          <li>The <b>GRAND pot</b> grows with 1% of every bet. GRAND pays a share of it: your bet ÷ {maxBet} {UNIT} (the biggest bet), so the whole pot at the biggest bet.</li>
         </ul>
 
         <h3>BUTTONS</h3>

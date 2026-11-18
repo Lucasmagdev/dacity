@@ -188,3 +188,6 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .aj-mode .aj-tb { border-radius: 0; }
 .aj-mode .aj-tb:first-child { border-radius: 10px 0 0 10px; }
 .aj-mode .aj-tb:last-child { border-radius: 0 10px 10px 0; margin-left: -2px; }
+.aj-pill.demo { border-color: rgba(255, 211, 107, 0.6); color: var(--gold); letter-spacing: 0.12em; }
+.aj-demo-note { margin: 0; padding: 8px 12px; border: 1px dashed var(--gold); border-radius: 10px; color: var(--mute); font: 600 13px/1.45 var(--body); }
+.aj-demo-note b { color: var(--gold); }
