@@ -22,20 +22,26 @@ const short = (a: string) => `${a.slice(0, 4)}…${a.slice(-4)}`;
 const CLOSED: SlotConfig = { enabled: false, bets: [10, 20, 50, 100], buyEnabled: false, buyCostX: 58, maxWinX: 2500 };
 
 /**
- * LOCAL DEV ONLY (`npm run dev` with VITE_MOCK not "0", or no Supabase): the same engine runs in the browser
- * with test DC that resets on every reload, so the screen can be checked without the server. Never in a
- * production build: there every round goes through the server.
+ * LOCAL DEMO (VITE_MOCK not "0", or no Supabase): the same engine runs in the browser with play-money DC
+ * kept in localStorage. For trying the game locally only; the real game always goes through the server.
  */
-const DEMO = import.meta.env.DEV && ((import.meta.env.VITE_MOCK as string | undefined) !== "0" || !supabase);
+const DEMO = (import.meta.env.VITE_MOCK as string | undefined) !== "0" || !supabase;
 const DEMO_CFG: SlotConfig = { ...CLOSED, enabled: true, buyEnabled: true };
 const DEMO_START = 10_000;
-const demoStore = { bal: DEMO_START, pot: 0, nonce: 0 };
+const demoStore = {
+  get bal() { try { return Number(localStorage.getItem("aj.demo.bal") ?? DEMO_START); } catch { return DEMO_START; } },
+  set bal(v: number) { try { localStorage.setItem("aj.demo.bal", String(v)); } catch { /* private mode */ } },
+  pot: 0,
+  nonce: 0,
+};
 const randHex = (n: number) => Array.from(crypto.getRandomValues(new Uint8Array(n)), (x) => x.toString(16).padStart(2, "0")).join("");
+/** Demo mode always plays: same bets, Buy price and max win as the real game, but open even when the real one is closed. */
+const demoCfgFrom = (live: SlotConfig): SlotConfig => ({ ...live, enabled: true, buyEnabled: true });
 
 async function demoSpin(bet: number, buy: boolean, c: SlotConfig = DEMO_CFG): Promise<SpinResponse> {
   const cost = buy ? bet * c.buyCostX : bet;
   let bal = demoStore.bal;
-  if (cost > bal) throw new Error("Not enough DC");
+  if (cost > bal) throw new Error("Not enough demo DC: tap Refill");
   bal -= cost;
   demoStore.pot += cost * 0.01;
   const serverSeed = randHex(32), clientSeed = randHex(8), nonce = ++demoStore.nonce;
@@ -88,13 +94,21 @@ export default function Shell() {
   const [fairOpen, setFairOpen] = useState(false);
   const [howOpen, setHowOpen] = useState(false);
   const [cfgNow, setCfgNow] = useState<SlotConfig>(DEMO ? DEMO_CFG : CLOSED);
+  // Demo mode on the real site: play money in this browser, same engine and limits, nothing touches real DC.
+  const [practice, setPractice] = useState(() => { try { return localStorage.getItem("aj.practice") === "1"; } catch { return false; } });
+  const practiceRef = useRef(practice);
+  practiceRef.current = practice;
+  const setDemoMode = (on: boolean) => {
+    try { localStorage.setItem("aj.practice", on ? "1" : "0"); } catch { /* private mode */ }
+    setPractice(on);
+  };
   const slotEl = useRef<HTMLDivElement>(null);
   const slot = useRef<SlotHandle | null>(null);
   const phaseRef = useRef(phase);
   phaseRef.current = phase;
 
   const refreshBalance = useCallback(async () => {
-    if (DEMO) {
+    if (DEMO || practiceRef.current) {
       setBalance(demoStore.bal);
       slot.current?.setBalance(demoStore.bal);
       return;
@@ -169,15 +183,17 @@ export default function Shell() {
     if (!adult || !slotEl.current) return;
     let alive = true;
     const el = slotEl.current;
+    const shown = (cfg: SlotConfig) => (practice ? demoCfgFrom(cfg) : cfg);
     loadConfig().then(({ cfg, pot }) => {
       if (!alive) return;
       setCfgNow(cfg);
       slot.current = mountSlot(el, {
-        config: cfg,
+        config: shown(cfg),
         balance: 0,
-        pot,
+        pot: practice ? demoStore.pot : pot,
         spin: async (bet, buy) => {
           if (DEMO) return demoSpin(bet, buy);
+          if (practice) return demoSpin(bet, buy, demoCfgFrom(cfg));
           if (phaseRef.current !== "ready") {
             setVisible(true);
             throw new Error("Connect your wallet to play");
@@ -190,11 +206,11 @@ export default function Shell() {
       refreshBalance().catch(() => undefined);
     });
     const t = setInterval(() => {
-      loadConfig().then(({ cfg, pot }) => { setCfgNow(cfg); slot.current?.setConfig(cfg); slot.current?.setPot(pot); }).catch(() => undefined);
-      if (phaseRef.current === "ready" && !DEMO) refreshBalance().catch(() => undefined);
+      loadConfig().then(({ cfg, pot }) => { setCfgNow(cfg); slot.current?.setConfig(shown(cfg)); if (!practice) slot.current?.setPot(pot); }).catch(() => undefined);
+      if (phaseRef.current === "ready" && !DEMO && !practice) refreshBalance().catch(() => undefined);
     }, 20_000);
     return () => { alive = false; clearInterval(t); slot.current?.destroy(); slot.current = null; };
-  }, [adult, refreshBalance, setVisible]);
+  }, [adult, practice, refreshBalance, setVisible]);
 
   if (!supabase && !DEMO) return <div className="aj-page"><p className="aj-note">The jackpot isn't configured (VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY).</p></div>;
 
@@ -202,24 +218,23 @@ export default function Shell() {
     return (
       <div className="aj-page">
         <header className="aj-top">
-          <div className="aj-logo"><img className="aj-emb" src="/jackpot/logo-a.png" alt="" /><span className="a">VICECITY</span><span className="j">CASINO</span></div>
+          <div className="aj-logo"><span className="a">● AUDACITY</span><span className="j">JACKPOT</span></div>
           <div className="aj-tools">
-            <span className="aj-pill"><b>{fmt(balance)}</b> CASINO <i>≈ ${fmt(balance / DC_PER_USD)}</i></span>
-                      </div>
+            <span className="aj-pill demo">LOCAL DEMO · PLAY-MONEY DC</span>
+            <span className="aj-pill"><b>{fmt(balance)}</b> DC</span>
+            <button className="aj-tb" type="button" onClick={() => setHowOpen(true)}>HOW TO PLAY</button>
+            <button className="aj-tb" type="button" onClick={() => { demoStore.bal = DEMO_START; void refreshBalance(); }}>REFILL DEMO</button>
+          </div>
         </header>
         {howOpen && <HowToPlay cfg={cfgNow} onClose={() => setHowOpen(false)} />}
         {adult ? <div ref={slotEl} /> : (
           <div className="aj-gate" role="dialog" aria-modal="true" aria-labelledby="aj-gate-t">
             <h2 id="aj-gate-t">18+ only</h2>
-            <p>Audacity Jackpot is a real-money game: bets and wins are in DC (100 DC = 1 USDC) and DC can be withdrawn.</p>
-            <p>Enter only if you are of legal gambling age where you live and online gambling is legal there. Play with money you can afford to lose.</p>
+            <p>Local demo with play-money DC. The live jackpot on the subdomain uses real DC.</p>
             <button className="aj-tb gold" type="button" onClick={() => { try { localStorage.setItem("aj.adult", "1"); } catch { /* ignore */ } setAdult(true); }}>I'M OF LEGAL AGE · ENTER</button>
           </div>
         )}
-        <footer className="aj-foot">
-          <span>18+ · Bets and wins in DC (100 DC = 1 USDC) · Theoretical RTP ≈ 89% plus the progressive GRAND pot (≈ 90% in all) · Max win {cfgNow.maxWinX.toLocaleString("en-US")}× bet</span>
-          <span>Every round is decided by the server from your seeds and can be verified under Provably fair. Gamble responsibly.</span>
-        </footer>
+        <footer className="aj-foot"><span>Local demo: results come from the same engine as the server, but run in this browser. Set VITE_MOCK=0 and Supabase to play against the real server.</span></footer>
       </div>
     );
   }
@@ -227,15 +242,25 @@ export default function Shell() {
   return (
     <div className="aj-page">
       <header className="aj-top">
-        <div className="aj-logo"><img className="aj-emb" src="/jackpot/logo-a.png" alt="" /><span className="a">VICECITY</span><span className="j">CASINO</span></div>
+        <div className="aj-logo"><span className="a">● AUDACITY</span><span className="j">JACKPOT</span></div>
         <div className="aj-tools">
-          {phase === "ready" && (
+          <div className="aj-mode" role="group" aria-label="Play mode">
+            <button type="button" className="aj-tb" aria-pressed={!practice} onClick={() => setDemoMode(false)}>REAL DC</button>
+            <button type="button" className="aj-tb" aria-pressed={practice} onClick={() => setDemoMode(true)}>DEMO</button>
+          </div>
+          {practice ? (
+            <>
+              <span className="aj-pill demo" title="Play money: not real DC, can't be withdrawn"><b>{fmt(balance)}</b> DEMO DC</span>
+              <button className="aj-tb" type="button" onClick={() => { demoStore.bal = DEMO_START; void refreshBalance(); }}>REFILL</button>
+            </>
+          ) : phase === "ready" && (
             <span className="aj-pill" title="100 DC = 1 USDC">
-              <b>{fmt(balance)}</b> CASINO <i>≈ ${fmt(balance / DC_PER_USD)}</i>
+              <b>{fmt(balance)}</b> DC <i>≈ ${fmt(balance / DC_PER_USD)}</i>
             </span>
           )}
-          <a className="aj-tb" href={`${MAIN_SITE}/`} target="_blank" rel="noreferrer">DEPOSIT DC</a>
-                    <button className="aj-tb" type="button" onClick={() => setFairOpen(true)}>PROVABLY FAIR</button>
+          {!practice && <a className="aj-tb" href={`${MAIN_SITE}/`} target="_blank" rel="noreferrer">DEPOSIT DC</a>}
+          <button className="aj-tb" type="button" onClick={() => setHowOpen(true)}>HOW TO PLAY</button>
+          <button className="aj-tb" type="button" onClick={() => setFairOpen(true)}>PROVABLY FAIR</button>
           {w.connected && w.publicKey ? (
             <>
               {phase === "error" && (
@@ -250,7 +275,12 @@ export default function Shell() {
           )}
         </div>
       </header>
-      {error && <p className="aj-err">{error}</p>}
+      {error && !practice && <p className="aj-err">{error}</p>}
+      {practice && (
+        <p className="aj-demo-note">
+          <b>DEMO MODE</b> · play money in this browser, same rules and odds as the real game. Nothing here is real DC and it can't be withdrawn. Switch to <b>REAL DC</b> to play for real.
+        </p>
+      )}
 
       {adult ? (
         <div ref={slotEl} />
@@ -420,15 +450,15 @@ function HowToPlay({ cfg, onClose }: { cfg: SlotConfig; onClose: () => void }) {
 
         <h3>THE HEIST · FREE SPINS</h3>
         <ul className="aj-steps">
-          <li><b>4 or more Banks</b> anywhere start <b>The Heist</b>: {RULES.heistSpins} free spins. The banks also pay {xs(RULES.scatterPay[4])} (4), {xs(RULES.scatterPay[5])} (5) or {xs(RULES.scatterPay[6])} (6+) your bet.</li>
+          <li><b>4 or more Gangster Boxes</b> anywhere start <b>The Heist</b>: {RULES.heistSpins} free spins. The boxes also pay {xs(RULES.scatterPay[4])} (4), {xs(RULES.scatterPay[5])} (5) or {xs(RULES.scatterPay[6])} (6+) your bet.</li>
           <li><b>Heat stacks</b> during The Heist: every multiplier that lands on a winning spin is added to the Heat, and each win is multiplied by the total Heat so far. It only resets when The Heist ends.</li>
-          <li><b>3 or more Banks</b> during The Heist give <b>+{RULES.retrigger} free spins</b>.</li>
+          <li><b>3 or more Gangster Boxes</b> during The Heist give <b>+{RULES.retrigger} free spins</b>.</li>
         </ul>
 
         <h3>BUY THE HEIST · BONUS BUY</h3>
         <ul className="aj-steps">
           {cfg.buyEnabled ? (
-            <li>Don't want to wait for the banks? <b>Buy the Heist</b> starts it right away for <b>{cfg.buyCostX}× your bet</b> ({xs(cfg.buyCostX)} {minBet} DC = {(cfg.buyCostX * minBet).toLocaleString("en-US")} DC at the smallest bet). Tap once to arm it, again to confirm. Same rules as a Heist you trigger.</li>
+            <li>Don't want to wait for the boxes? <b>Buy the Heist</b> starts it right away for <b>{cfg.buyCostX}× your bet</b> ({xs(cfg.buyCostX)} {minBet} DC = {(cfg.buyCostX * minBet).toLocaleString("en-US")} DC at the smallest bet). Tap once to arm it, again to confirm. Same rules as a Heist you trigger.</li>
           ) : (
             <li>Buying the Heist is turned off right now.</li>
           )}
