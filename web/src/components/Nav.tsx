@@ -24,7 +24,21 @@ const ICONS = {
   ),
   dashboard: <path d="M3 21h18M6 17v-5M11 17V6M16 17v-8M21 17V3" />,
   docs: <path d="M3 4h6a3 3 0 0 1 3 3v14a2 2 0 0 0-2-2H3zM21 4h-6a3 3 0 0 0-3 3v14a2 2 0 0 1 2-2h7z" />,
+  jackpot: (
+    <>
+      <path d="M3 5h18v15H3zM3 10h18" />
+      <circle cx="12" cy="15" r="2.5" />
+      <path d="M12 12.5V10M7 7.5h2M15 7.5h2" />
+    </>
+  ),
 };
+
+/** The Audacity Jackpot lives on its own subdomain (jackpot.html in local dev). */
+export const JACKPOT_URL =
+  (import.meta.env.VITE_JACKPOT_URL as string | undefined)?.trim() ||
+  (typeof window !== "undefined" && /^(localhost|127\.|\[::1\])/.test(window.location.hostname)
+    ? "/jackpot.html"
+    : "https://jackpot.audacitygame.xyz");
 
 function Ico({ name }: { name: keyof typeof ICONS }) {
   return (
@@ -87,6 +101,16 @@ function GameNav() {
         <AmmoIcon size={16} />
         $AMMO
       </a>
+      <a
+        href={JACKPOT_URL}
+        target="_blank"
+        rel="noopener"
+        className="gamenav__item gamenav__item--jackpot"
+        title="Audacity Jackpot: spin with your DC (opens in a new tab)"
+      >
+        <Ico name="jackpot" />
+        Jackpot
+      </a>
       <a {...tab("#/docs", route.startsWith("/docs"))}>
         <Ico name="docs" />
         Docs
@@ -126,6 +150,7 @@ export default function Nav({
           <a href="#story" onClick={(e) => scrollTo(e, "story")}>Story</a>
           <a href="#rarities" onClick={(e) => scrollTo(e, "rarities")}>Rarities</a>
           <a href="#/token" className="nav__token">🔥 $AMMO</a>
+          <a href={JACKPOT_URL} target="_blank" rel="noopener" className="nav__jackpot">🎰 Jackpot</a>
           <a href="#/docs">Docs</a>
         </nav>
       )}

@@ -1738,3 +1738,21 @@ a.gamenav__item:hover::after {
   color: var(--muted);
   font-size: 12px;
 }
+
+/* Jackpot tab (opens the jackpot subdomain) */
+.gamenav__item--jackpot {
+  color: rgba(255, 211, 107, 0.85);
+}
+
+.gamenav__item--jackpot::after {
+  background: var(--sun);
+}
+
+.gamenav__item--jackpot:hover {
+  color: var(--sun);
+}
+
+.nav__links .nav__jackpot {
+  color: var(--sun);
+  font-weight: 700;
+}

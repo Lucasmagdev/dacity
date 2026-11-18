@@ -35,8 +35,10 @@ const demoStore = {
   nonce: 0,
 };
 const randHex = (n: number) => Array.from(crypto.getRandomValues(new Uint8Array(n)), (x) => x.toString(16).padStart(2, "0")).join("");
-async function demoSpin(bet: number, buy: boolean): Promise<SpinResponse> {
-  const c = DEMO_CFG;
+/** Demo mode always plays: same bets, Buy price and max win as the real game, but open even when the real one is closed. */
+const demoCfgFrom = (live: SlotConfig): SlotConfig => ({ ...live, enabled: true, buyEnabled: true });
+
+async function demoSpin(bet: number, buy: boolean, c: SlotConfig = DEMO_CFG): Promise<SpinResponse> {
   const cost = buy ? bet * c.buyCostX : bet;
   let bal = demoStore.bal;
   if (cost > bal) throw new Error("Not enough demo DC: tap Refill");
@@ -92,13 +94,21 @@ export default function Shell() {
   const [fairOpen, setFairOpen] = useState(false);
   const [howOpen, setHowOpen] = useState(false);
   const [cfgNow, setCfgNow] = useState<SlotConfig>(DEMO ? DEMO_CFG : CLOSED);
+  // Demo mode on the real site: play money in this browser, same engine and limits, nothing touches real DC.
+  const [practice, setPractice] = useState(() => { try { return localStorage.getItem("aj.practice") === "1"; } catch { return false; } });
+  const practiceRef = useRef(practice);
+  practiceRef.current = practice;
+  const setDemoMode = (on: boolean) => {
+    try { localStorage.setItem("aj.practice", on ? "1" : "0"); } catch { /* private mode */ }
+    setPractice(on);
+  };
   const slotEl = useRef<HTMLDivElement>(null);
   const slot = useRef<SlotHandle | null>(null);
   const phaseRef = useRef(phase);
   phaseRef.current = phase;
 
   const refreshBalance = useCallback(async () => {
-    if (DEMO) {
+    if (DEMO || practiceRef.current) {
       setBalance(demoStore.bal);
       slot.current?.setBalance(demoStore.bal);
       return;
@@ -173,15 +183,17 @@ export default function Shell() {
     if (!adult || !slotEl.current) return;
     let alive = true;
     const el = slotEl.current;
+    const shown = (cfg: SlotConfig) => (practice ? demoCfgFrom(cfg) : cfg);
     loadConfig().then(({ cfg, pot }) => {
       if (!alive) return;
       setCfgNow(cfg);
       slot.current = mountSlot(el, {
-        config: cfg,
+        config: shown(cfg),
         balance: 0,
-        pot,
+        pot: practice ? demoStore.pot : pot,
         spin: async (bet, buy) => {
           if (DEMO) return demoSpin(bet, buy);
+          if (practice) return demoSpin(bet, buy, demoCfgFrom(cfg));
           if (phaseRef.current !== "ready") {
             setVisible(true);
             throw new Error("Connect your wallet to play");
@@ -194,11 +206,11 @@ export default function Shell() {
       refreshBalance().catch(() => undefined);
     });
     const t = setInterval(() => {
-      loadConfig().then(({ cfg, pot }) => { setCfgNow(cfg); slot.current?.setConfig(cfg); slot.current?.setPot(pot); }).catch(() => undefined);
-      if (phaseRef.current === "ready" && !DEMO) refreshBalance().catch(() => undefined);
+      loadConfig().then(({ cfg, pot }) => { setCfgNow(cfg); slot.current?.setConfig(shown(cfg)); if (!practice) slot.current?.setPot(pot); }).catch(() => undefined);
+      if (phaseRef.current === "ready" && !DEMO && !practice) refreshBalance().catch(() => undefined);
     }, 20_000);
     return () => { alive = false; clearInterval(t); slot.current?.destroy(); slot.current = null; };
-  }, [adult, refreshBalance, setVisible]);
+  }, [adult, practice, refreshBalance, setVisible]);
 
   if (!supabase && !DEMO) return <div className="aj-page"><p className="aj-note">The jackpot isn't configured (VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY).</p></div>;
 
@@ -232,12 +244,21 @@ export default function Shell() {
       <header className="aj-top">
         <div className="aj-logo"><span className="a">● AUDACITY</span><span className="j">JACKPOT</span></div>
         <div className="aj-tools">
-          {phase === "ready" && (
+          <div className="aj-mode" role="group" aria-label="Play mode">
+            <button type="button" className="aj-tb" aria-pressed={!practice} onClick={() => setDemoMode(false)}>REAL DC</button>
+            <button type="button" className="aj-tb" aria-pressed={practice} onClick={() => setDemoMode(true)}>DEMO</button>
+          </div>
+          {practice ? (
+            <>
+              <span className="aj-pill demo" title="Play money: not real DC, can't be withdrawn"><b>{fmt(balance)}</b> DEMO DC</span>
+              <button className="aj-tb" type="button" onClick={() => { demoStore.bal = DEMO_START; void refreshBalance(); }}>REFILL</button>
+            </>
+          ) : phase === "ready" && (
             <span className="aj-pill" title="100 DC = 1 USDC">
               <b>{fmt(balance)}</b> DC <i>≈ ${fmt(balance / DC_PER_USD)}</i>
             </span>
           )}
-          <a className="aj-tb" href={`${MAIN_SITE}/`} target="_blank" rel="noreferrer">DEPOSIT DC</a>
+          {!practice && <a className="aj-tb" href={`${MAIN_SITE}/`} target="_blank" rel="noreferrer">DEPOSIT DC</a>}
           <button className="aj-tb" type="button" onClick={() => setHowOpen(true)}>HOW TO PLAY</button>
           <button className="aj-tb" type="button" onClick={() => setFairOpen(true)}>PROVABLY FAIR</button>
           {w.connected && w.publicKey ? (
@@ -254,7 +275,12 @@ export default function Shell() {
           )}
         </div>
       </header>
-      {error && <p className="aj-err">{error}</p>}
+      {error && !practice && <p className="aj-err">{error}</p>}
+      {practice && (
+        <p className="aj-demo-note">
+          <b>DEMO MODE</b> · play money in this browser, same rules and odds as the real game. Nothing here is real DC and it can't be withdrawn. Switch to <b>REAL DC</b> to play for real.
+        </p>
+      )}
 
       {adult ? (
         <div ref={slotEl} />
