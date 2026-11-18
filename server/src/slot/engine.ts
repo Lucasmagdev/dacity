@@ -7,7 +7,8 @@
  * and replaying the same (serverSeed, clientSeed, nonce) through playRound() gives the exact same round.
  *
  * The rules (pay anywhere, tumbles, multipliers, The Heist, vault jackpots) and their odds live here.
- * Change them only together with a new simulation (server/src/slot/sim.ts) and keep RTP where you want it.
+ * Change them only together with a new simulation (server/scripts/slot-sim.ts) and keep RTP where you want it.
+ * Tuned for launch: ~89% RTP in the base game and in a bought Heist (58x), + ~1% back through the GRAND pot ≈ 90%.
  */
 
 export const COLS = 6;
@@ -49,15 +50,15 @@ export type Round = {
 
 /** Pays x bet for 8-9 / 10-11 / 12+ of a kind anywhere on the grid, and the weight on the reels. */
 export const PAYS: Record<PayId, { name: string; pay: [number, number, number]; w: number }> = {
-  coin: { name: "$AMMO", pay: [6, 15, 40], w: 3 },
-  red: { name: "Red Ash", pay: [1.5, 4, 12], w: 5 },
-  papa: { name: "Papa Krown", pay: [1, 2.5, 7], w: 7 },
-  lil: { name: "Lil Blinds", pay: [0.75, 1.5, 5], w: 9 },
-  rifle: { name: "Rifle", pay: [0.5, 1, 4], w: 12 },
-  smg: { name: "SMG", pay: [0.4, 0.75, 3], w: 14 },
-  pistol: { name: "Pistol", pay: [0.3, 0.6, 2.5], w: 16 },
-  vest: { name: "Vest", pay: [0.2, 0.5, 2], w: 17 },
-  medkit: { name: "Med kit", pay: [0.15, 0.4, 1.5], w: 18 },
+  coin: { name: "$AMMO", pay: [5.45, 13.5, 36], w: 3 },
+  red: { name: "Red Ash", pay: [1.35, 3.6, 11], w: 5 },
+  papa: { name: "Papa Krown", pay: [0.9, 2.25, 6.35], w: 7 },
+  lil: { name: "Lil Blinds", pay: [0.7, 1.35, 4.55], w: 9 },
+  rifle: { name: "Rifle", pay: [0.45, 0.9, 3.6], w: 12 },
+  smg: { name: "SMG", pay: [0.35, 0.7, 2.7], w: 14 },
+  pistol: { name: "Pistol", pay: [0.25, 0.55, 2.25], w: 16 },
+  vest: { name: "Vest", pay: [0.2, 0.45, 1.8], w: 17 },
+  medkit: { name: "Med kit", pay: [0.15, 0.35, 1.35], w: 18 },
 };
 const PAY_IDS = Object.keys(PAYS) as PayId[];
 

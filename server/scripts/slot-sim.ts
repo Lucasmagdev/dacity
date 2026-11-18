@@ -36,7 +36,7 @@ for (let i = 0; i < N; i++) {
 const B = 5000;
 let buyPaid = 0;
 for (let i = 0; i < B; i++) buyPaid += playRound(Math.random, { buy: true, maxWinX: MAXW }).totalX;
-const BUY_COST = 60;
+const BUY_COST = 58; // slot_config.buy_cost_x
 console.log({
   rtp: (paid / N).toFixed(4),
   hitRate: (hits / N).toFixed(3),

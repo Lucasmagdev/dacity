@@ -242,7 +242,7 @@ export default function Shell() {
 
       <footer className="aj-foot">
         {LICENCE && <span>{LICENCE}</span>}
-        <span>18+ · Bets and wins in DC (100 DC = 1 USDC) · Theoretical RTP ≈ 96.5% plus the progressive GRAND pot · Max win {CLOSED.maxWinX.toLocaleString("en-US")}× bet</span>
+        <span>18+ · Bets and wins in DC (100 DC = 1 USDC) · Theoretical RTP ≈ 89% plus the progressive GRAND pot (≈ 90% in all) · Max win {CLOSED.maxWinX.toLocaleString("en-US")}× bet</span>
         <span>Every round is decided by the server from your seeds and can be verified under Provably fair. Gamble responsibly.</span>
       </footer>
 
