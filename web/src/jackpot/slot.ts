@@ -337,8 +337,11 @@ export function mountSlot(root: HTMLElement, opts: SlotOptions): SlotHandle {
     flash("M"); snd.mult();
     await sleep(T(950));
   }
-  /** Animates one spin; returns what it paid in DC (jackpot pot share included). */
-  async function playSpin(s: Spin, b: number, potPaid: number): Promise<number> {
+  /**
+   * Animates one spin; returns what it paid in DC (jackpot pot share included). `room` = what is left before
+   * the round's max win: a spin never shows (or counts) more than that, since anything above the cap isn't paid.
+   */
+  async function playSpin(s: Spin, b: number, potPaid: number, room = Infinity): Promise<number> {
     snd.spin();
     await clearGrid();
     grid = s.grid; lastV = 0;
@@ -382,33 +385,40 @@ export function mountSlot(root: HTMLElement, opts: SlotOptions): SlotHandle {
       const amount = s.jackpotX * b + (s.jackpot === "GRAND" ? potPaid : 0);
       paid += amount;
       flash("V"); await sleep(T(900));
-      await celebrateJackpot(s.jackpot, amount, s.nV);
-    } else if (s.winX >= 10) await celebrate(win, b);
-    return paid;
+      await celebrateJackpot(s.jackpot, Math.min(amount, Math.max(0, room - (paid - amount))), s.nV);
+    } else if (s.winX >= 10) await celebrate(Math.min(win, room), b);
+    return Math.min(paid, room);
   }
 
   async function replay(r: SpinResponse) {
     const b = r.bet, round = r.round;
+    const total = r.payout + r.potPaid;
     let shown = 0;
-    if (round.base) shown += await playSpin(round.base, b, r.potPaid);
-    if (round.triggered) {
+    // max win: the animation stops counting at what the round actually pays
+    const room = () => (round.capped ? Math.max(0, total - shown) : Infinity);
+    const maxed = () => round.capped && room() <= 0.005;
+    if (round.base) shown += await playSpin(round.base, b, r.potPaid, room());
+    if (round.triggered && !maxed()) {
       fs = true; fsLeft = RULES.heistSpins; heat = 0; upd();
       await banner("THE HEIST IS ON", `<b>${RULES.heistSpins} FREE SPINS</b> · HEAT STACKS ON EVERY WIN`, "/jackpot/box.jpg", 2400);
       let heistTotal = 0;
       for (const s of round.free) {
         fsLeft--; upd();
-        const p = await playSpin(s, b, r.potPaid);
+        const p = await playSpin(s, b, r.potPaid, room());
         heistTotal += p; shown += p;
         setWin(heistTotal, "HEIST TOTAL");
         await sleep(T(300));
+        if (maxed()) break; // nothing after the max win is paid, so the Heist ends here
       }
-      showOv({ t: "HEIST COMPLETE", k: "THE CREW GOT AWAY WITH", img: "/jackpot/vault.jpg", a: fmt(0), s: `HEAT x${heat} · ${(heistTotal / b).toFixed(1)}× BET` });
+      const hitMax = maxed();
+      showOv(hitMax
+        ? { t: "MAX WIN", k: "THE VAULT IS EMPTY · CAPPED AT", img: "/jackpot/vault.jpg", a: fmt(0), s: `${cfg.maxWinX.toLocaleString("en-US")}× BET · THE BIGGEST WIN A ROUND CAN PAY` }
+        : { t: "HEIST COMPLETE", k: "THE CREW GOT AWAY WITH", img: "/jackpot/vault.jpg", a: fmt(0), s: `HEAT x${heat} · ${(heistTotal / b).toFixed(1)}× BET` });
       fxStart(heistTotal >= 20 * b ? 5 : 2); snd.tier();
       await countUp(heistTotal, 2400, () => undefined);
       await hold(auto > 0 ? 1800 : 3500);
       fs = false; heat = 0; fsLeft = 0;
     }
-    const total = r.payout + r.potPaid;
     if (round.capped) msg(`MAX WIN REACHED · <b>${fmt(total)} DC</b>`);
     else if (Math.abs(total - shown) > 0.01 && total > 0) msg(`ROUND PAID <b>${fmt(total)} DC</b>`);
     setWin(total, round.triggered ? "ROUND WIN" : "WIN");
