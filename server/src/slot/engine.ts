@@ -55,10 +55,10 @@ export const PAYS: Record<PayId, { name: string; pay: [number, number, number]; 
   papa: { name: "Papa Krown", pay: [0.9, 2.25, 6.35], w: 7 },
   lil: { name: "Lil Blinds", pay: [0.7, 1.35, 4.55], w: 9 },
   rifle: { name: "Rifle", pay: [0.45, 0.9, 3.6], w: 12 },
-  smg: { name: "SMG", pay: [0.35, 0.7, 2.7], w: 14 },
+  smg: { name: "Lowrider", pay: [0.35, 0.7, 2.7], w: 14 },
   pistol: { name: "Pistol", pay: [0.25, 0.55, 2.25], w: 16 },
-  vest: { name: "Vest", pay: [0.2, 0.45, 1.8], w: 17 },
-  medkit: { name: "Med kit", pay: [0.15, 0.35, 1.35], w: 18 },
+  vest: { name: "SMG", pay: [0.2, 0.45, 1.8], w: 17 },
+  medkit: { name: "Cash", pay: [0.15, 0.35, 1.35], w: 18 },
 };
 const PAY_IDS = Object.keys(PAYS) as PayId[];
 

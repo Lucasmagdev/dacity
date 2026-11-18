@@ -28,18 +28,18 @@ export type SlotHandle = { setBalance: (n: number) => void; setPot: (n: number) 
 
 const IMG: Record<string, string> = {
   coin: "/jackpot/ammo.png",
-  red: "/characters/rare-256.webp",
-  papa: "/characters/uncommon-256.webp",
-  lil: "/characters/common-256.webp",
+  red: "/jackpot/char-red.png",
+  papa: "/jackpot/char-papa.png",
+  lil: "/jackpot/char-lil.png",
   rifle: "/jackpot/rifle.jpg",
   smg: "/jackpot/smg.jpg",
   pistol: "/jackpot/pistol.jpg",
-  vest: "/jackpot/vest.jpg",
+  vest: "/jackpot/smg-original.jpg",
   medkit: "/jackpot/medkit.jpg",
   S: "/jackpot/box.jpg",
   V: "/jackpot/vault.jpg",
 };
-const NAME = (s: string) => (s === "S" ? "Gangster Box" : s === "V" ? "Vault" : PAYS[s as PayId]?.name ?? s);
+const NAME = (s: string) => (s === "S" ? "Bank" : s === "V" ? "Vault" : PAYS[s as PayId]?.name ?? s);
 const JP_X: Record<JackpotId, number> = { GRAND: 2000, MAJOR: 500, MINOR: 100, MINI: 20 };
 const TIERS: [number, string][] = [[10, "BIG WIN"], [25, "MEGA WIN"], [50, "EPIC WIN"], [100, "LEGENDARY WIN"]];
 
@@ -50,7 +50,7 @@ type Tile = HTMLDivElement & { _c: number; _r: number; _cell: Cell };
 
 const TEMPLATE = `
 <section class="aj-ladder" aria-label="Vault jackpots">
-  <div class="aj-jp grand" data-min="7"><div class="k">GRAND <i>7+ VAULTS · PROGRESSIVE</i></div><div class="v" data-jp="GRAND">0</div></div>
+  <div class="aj-jp grand" data-min="7"><img class="emb" src="/jackpot/logo-a.png" alt=""><div class="k">GRAND <i>7+ VAULTS · PROGRESSIVE</i></div><div class="v" data-jp="GRAND">0</div></div>
   <div class="aj-jp major" data-min="6"><div class="k">MAJOR <i>6</i></div><div class="v" data-jp="MAJOR">0</div></div>
   <div class="aj-jp minor" data-min="5"><div class="k">MINOR <i>5</i></div><div class="v" data-jp="MINOR">0</div></div>
   <div class="aj-jp mini" data-min="4"><div class="k">MINI <i>4</i></div><div class="v" data-jp="MINI">0</div></div>
@@ -168,7 +168,7 @@ export function mountSlot(root: HTMLElement, opts: SlotOptions): SlotHandle {
       t.classList.add("m"); t.style.setProperty("--mc", mcol(cell.m ?? 2)); t.innerHTML = `<span>x${cell.m}</span>`;
     } else {
       const img = new Image(); img.src = IMG[cell.s]; img.alt = NAME(cell.s); img.draggable = false; t.appendChild(img);
-      if (cell.s === "S") { t.classList.add("sc"); t.insertAdjacentHTML("beforeend", "<b>BOX</b>"); }
+      if (cell.s === "S") { t.classList.add("sc"); t.insertAdjacentHTML("beforeend", "<b>BANK</b>"); }
       else if (cell.s === "V") { t.classList.add("vt"); t.insertAdjacentHTML("beforeend", "<b>VAULT</b>"); }
       else if (cell.s === "coin") t.classList.add("top");
       else if (cell.s === "red" || cell.s === "papa" || cell.s === "lil") t.classList.add("hi");
@@ -374,12 +374,12 @@ export function mountSlot(root: HTMLElement, opts: SlotOptions): SlotHandle {
     let paid = win;
     if (s.scatterX > 0) {
       paid += s.scatterX * b;
-      flash("S"); snd.scatter(); msg(`${s.nS} GANGSTER BOXES · <b>${fmt(s.scatterX * b)}</b> + ${RULES.heistSpins} FREE SPINS`);
+      flash("S"); snd.scatter(); msg(`${s.nS} BANKS · <b>${fmt(s.scatterX * b)}</b> + ${RULES.heistSpins} FREE SPINS`);
       await sleep(T(1300));
     }
     if (s.addedSpins > 0) {
       fsLeft += s.addedSpins; upd(); flash("S"); snd.scatter();
-      msg(`${s.nS} BOXES · <b>+${s.addedSpins} FREE SPINS</b>`); await sleep(T(1100));
+      msg(`${s.nS} BANKS · <b>+${s.addedSpins} FREE SPINS</b>`); await sleep(T(1100));
     }
     if (s.jackpot) {
       const amount = s.jackpotX * b + (s.jackpot === "GRAND" ? potPaid : 0);

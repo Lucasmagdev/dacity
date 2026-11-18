@@ -382,6 +382,37 @@ IMAGEM
 Ornate trading card frame, art deco border with palm leaf ornaments, [COLOR] neon glow lines along the edges, empty dark center area, very dark violet background, clean vector-like shapes, no text, no numbers
 ```
 
+### G2 · Capa DexScreener (header do token) · 3:1
+
+DexScreener pede 3:1 (sobe em **1500×500**). Na Leonardo: dimensão custom **1536×512** (ou gere 16:9 e corte). Mobile corta as laterais, então o assunto fica no **terço central**; bordas são só clima. Sem texto: nome e ticker o DexScreener já mostra.
+
+IMAGEM
+```
+Ultra-wide panoramic banner of a fictional tropical coastal metropolis at dusk, skyline of art deco hotels and glass towers stretching across the whole frame, glowing hot pink and electric cyan neon signs reflecting on wet streets and a calm bay, tall palm tree silhouettes at the far left and far right edges, in the center a single gold bullet cartridge standing upright on a dark rooftop ledge with a soft gold glow and a few loose shell casings around it, distant vintage sports cars with light trails on a coastal highway, huge orange and magenta sunset sky fading to deep violet at the top, painted crime-thriller key art, bold digital painting, clean ink outlines, cel shading with painterly texture, golden-hour rim light, saturated palette of hot pink, sunset orange, gold, electric cyan and deep violet, cinematic, highly detailed, no text, no logos
+```
+
+Variação sem munição (só cidade, mais limpa): troque o trecho `in the center a single gold bullet cartridge ... around it` por `the center of the image is the brightest part of the skyline with the tallest neon tower`.
+
+### G3 · Capa DexScreener com gangue, cases e título · 3:1
+
+Mesma cena do G2, agora com os 3 gangsters de `personagens/`, as cases abertas (`art/case-gangster-box.png`) e o título. Dimensão **1536×512** (não 1024×1024). Para o título sair certo, use **Lucid Origin** e Prompt Enhance OFF. Se a letra vier torta, gere sem o trecho do título e escreva no Canva.
+
+IMAGEM
+```
+Ultra-wide panoramic banner, bold neon title text "AUDACITY GAME" at the top center in chunky retro 80s chrome and hot pink letters with a glowing cyan outline. Below it, three original gangster characters standing side by side on a dark rooftop, posing confidently toward the viewer: on the left a huge burly biker with a long fiery orange beard, pink paisley bandana, black leather vest with a skull patch, cigarette in his mouth; in the middle a bald tough guy with a thick black mustache, white tank top, heavy gold chain, gold stud earring, small cross tattoo under the eye, holding a pistol pointed up; on the right a grinning skinny guy with curly dreadlocks, cyan shutter shades, purple t-shirt, holding a compact submachine gun. In front of them on the rooftop ledge, three open blue-grey armored loot cases with brass corners and handles, cyan star decals, purple interiors bursting with golden light and stacks of cash, a single gold bullet cartridge and loose shell casings next to the cases. Behind them a fictional tropical coastal metropolis at dusk, art deco hotels with pink and cyan neon signs, palm tree silhouettes at the far left and far right edges, coastal highway with car light trails, calm sea, huge orange sun in a magenta and orange sky fading to deep violet at the top. Bold comic-style digital painting, thick clean ink outlines, cel shading, saturated palette of hot pink, sunset orange, gold, electric cyan and deep violet, cinematic, highly detailed, no other text, no logos
+```
+
+Negative: o padrão do topo, **sem** `text, letters, words` (senão o título some).
+
+### G4 · Capa DexScreener misteriosa (case + título no céu) · 3:1
+
+Sem personagens: a case aberta é o centro, mistério em volta, título escrito no céu. 1536×512, Lucid Origin, Prompt Enhance OFF. Anexo opcional: `art/case-gangster-box.png` como Image/Content Reference, força média. Negative sem `text, letters, words`.
+
+IMAGEM
+```
+Ultra-wide panoramic banner, the words "AUDACITY GAME" written huge across the sunset sky at the top center, formed by glowing hot pink neon light and skywriting smoke trails blending into the clouds, letters clearly readable. Below, in the center on a dark rooftop ledge, a single blue-grey armored loot case with brass corners and handles and cyan star decals, its lid half open, an intense golden light and swirling sparks bursting out of the purple interior, the contents hidden by the glare. Around the case, mysterious objects half lost in shadow and purple fog: a locked vintage briefcase, a stack of cash wrapped in a band, a gold bullet cartridge standing upright, scattered shell casings, an old brass key, a sealed envelope with a red wax seal, a few dark silhouettes of men in hats standing far back in the fog watching the case. Behind it a fictional tropical coastal metropolis at dusk, art deco hotels with pink and cyan neon signs, palm tree silhouettes at the far left and far right edges, coastal highway with car light trails, calm sea, huge orange sun in a magenta and orange sky fading to deep violet at the top. Bold comic-style digital painting, thick clean ink outlines, cel shading, moody and mysterious atmosphere, saturated palette of hot pink, sunset orange, gold, electric cyan and deep violet, cinematic, highly detailed, no other text, no logos
+```
+
 ---
 
 ## Onde salvar
